@@ -1,0 +1,1078 @@
+VERSION 1.0 CLASS
+BEGIN
+  MultiUse = -1  'True
+  Persistable = 0  'NotPersistable
+  DataBindingBehavior = 0  'vbNone
+  DataSourceBehavior  = 0  'vbNone
+  MTSTransactionMode  = 0  'NotAnMTSObject
+END
+Attribute VB_Name = "clsPOP3"
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = True
+Attribute VB_PredeclaredId = False
+Attribute VB_Exposed = False
+''
+' Class to emulate a PO3 sever.
+' It's a proxy between e-mail clien and OWA sever.
+'
+'@author Carlos B
+'@version 1.0
+'@date 08/10/2005
+Option Explicit
+#Const DEBUG_MODE = 0
+
+Private lngPop3Read As Long
+Private lngPop3Write As Long
+Private lngSMTPRead As Long
+Private lngSMTPWrite As Long
+Private bSaveinsent As Boolean
+
+Private strUser As String
+Private strPassWord As String
+
+Private objDOMFolders   As DOMDocument
+Private objDOMInbox     As DOMDocument
+Private objDOMMsg       As DOMDocument
+''
+'Translations between XML tags of OWA and valid headers of a POP3 message
+'@see initArrays
+Private dicTags   As Dictionary
+Private Const XMLPATH As String = "a:multistatus/a:response/a:propstat/a:prop/"
+Private m_strIP As String
+Private strExchSvrName  As String
+Private strSMTPState As String
+Private strMailData As String
+Private vPorts(0 To 1) As Integer
+
+Property Let IP(ByVal strIP As String)
+    m_strIP = strIP
+End Property
+
+Property Let ServerName(ByVal strServerName As String)
+    strExchSvrName = strServerName
+End Property
+
+Property Let Port(ByVal intPort As Integer, ByVal intValue As Integer)
+    vPorts(intPort) = intValue
+End Property
+
+Property Let Saveinsent(ByVal bSave As Boolean)
+    bSaveinsent = bSave
+End Property
+
+''
+'Creates a new socket.
+'
+'@param intPort por lo lisen
+'@return The number of the socket
+Private Function fncNewSokect(ByVal intPort As Integer) As Long
+    Dim lngAddressFamily    As Long
+    Dim lngRetValue         As Long
+    Dim lngSocket           As Long
+    Dim lngSocketType       As Long
+    Dim lngProtocol         As Long
+    '
+
+    '
+    'Get values for arguments to pass to the vbSocket function
+    lngAddressFamily = CLng(AF_INET)
+    lngSocketType = CLng(SOCK_STREAM)
+    lngProtocol = CLng(IPPROTO_TCP)
+    '
+    'Call the vbSocket function in order to create a new socket
+    lngSocket = modWinsockAPI.vbSocket(lngAddressFamily, lngSocketType, lngProtocol)
+    '
+    If lngSocket = INVALID_SOCKET Then
+        '
+        'If the function has returned the INVALID_SOCKET
+        'value the socket was not created.
+        Err.Raise Err.LastDllError, GetErrorDescription(Err.LastDllError)
+        '
+    Else
+        'Call the vbBind function to bind the socket to a new address
+        lngRetValue = vbBind(lngSocket, m_strIP, intPort)
+        
+        If lngRetValue = SOCKET_ERROR Then
+            '
+            'If an error was occurred, raise an error message box
+            Err.Raise Err.LastDllError, , GetErrorDescription(Err.LastDllError)
+        Else
+            'Call the vbListen function
+            lngRetValue = vbListen(lngSocket)
+            'Check a value returned by the vbListen function
+            If lngRetValue = SOCKET_ERROR Then
+                'An error was occurred - raise the error message
+                Err.Raise Err.LastDllError, GetErrorDescription(Err.LastDllError)
+            End If
+            '
+        End If
+    End If
+    fncNewSokect = lngSocket
+End Function
+
+''
+'Close al sockets and call to WSACleanup API
+Public Sub Destroy()
+    If lngPop3Read <> 0 Then
+        Call closesocket(lngPop3Read)
+    End If
+    If lngPop3Write <> 0 Then
+        Call closesocket(lngPop3Write)
+    End If
+    If lngSMTPRead <> 0 Then
+        Call closesocket(lngSMTPRead)
+    End If
+    If lngSMTPWrite <> 0 Then
+        Call closesocket(lngSMTPWrite)
+    End If
+    
+    Call WSACleanup
+End Sub
+
+''
+'Sub to search incomings calls
+Public Sub Refresh()
+
+    Dim lngRetValue     As Long
+    Dim udtRead_fds     As fd_set
+    Dim udtWrite_fds    As fd_set
+    Dim udtError_fds    As fd_set
+    Dim lngSocketCount  As Long
+    Dim lngSocket       As Long
+    Dim i               As Integer
+        '
+        'Prepare sockets arrays to pass to
+        'the select Winsock API function
+        '
+            '
+            'Get socket's handle
+            '
+        'Put that handle into each array
+    If lngPop3Read <> 0 Then
+        lngSocketCount = lngSocketCount + 1
+        udtRead_fds.fd_array(lngSocketCount) = lngPop3Read
+        udtWrite_fds.fd_array(lngSocketCount) = lngPop3Read
+        udtError_fds.fd_array(lngSocketCount) = lngPop3Read
+    End If
+    
+    If lngPop3Write <> 0 Then
+        lngSocketCount = lngSocketCount + 1
+        udtRead_fds.fd_array(lngSocketCount) = lngPop3Write
+        udtWrite_fds.fd_array(lngSocketCount) = lngPop3Write
+        udtError_fds.fd_array(lngSocketCount) = lngPop3Write
+    End If
+    If lngSMTPRead <> 0 Then
+        lngSocketCount = lngSocketCount + 1
+        udtRead_fds.fd_array(lngSocketCount) = lngSMTPRead
+        udtWrite_fds.fd_array(lngSocketCount) = lngSMTPRead
+        udtError_fds.fd_array(lngSocketCount) = lngSMTPRead
+    End If
+    If lngSMTPWrite <> 0 Then
+        lngSocketCount = lngSocketCount + 1
+        udtRead_fds.fd_array(lngSocketCount) = lngSMTPWrite
+        udtWrite_fds.fd_array(lngSocketCount) = lngSMTPWrite
+        udtError_fds.fd_array(lngSocketCount) = lngSMTPWrite
+    End If
+      
+    'Initialize the fd_count member of the
+    'fd_set structure for each set of sockets
+    udtRead_fds.fd_count = lngSocketCount
+    udtWrite_fds.fd_count = lngSocketCount
+    udtError_fds.fd_count = lngSocketCount
+    '
+    'Call the select function
+    lngRetValue = vbselect(0&, udtRead_fds, udtWrite_fds, udtError_fds, 0&)
+    '
+        If lngRetValue = SOCKET_ERROR Then
+            '
+            'If the function returned value of SOCKET_ERROR
+            'just show a message box with error description
+            '
+            'Call ShowErrorMessage(Err.LastDllError)
+            Err.Raise Err.LastDllError, , GetErrorDescription(Err.LastDllError)
+            '
+        ElseIf lngRetValue > 0 Then
+            '
+            'If returned value grater than 0 that means that
+            'the select function has found some sockets that
+            'can be writable, readable or in error state
+            '
+            'Check for writable sockets
+            If udtWrite_fds.fd_count > 0 Then
+                '
+                For i = 1 To udtWrite_fds.fd_count
+                    '
+                    'Get the socket handle
+                    lngSocket = udtWrite_fds.fd_array(i)
+                    'Call recv(lngSocket)
+                    '
+                    If lngSocket = lngSMTPRead Then
+                        Received lngSocket
+                    End If
+                Next i
+                '
+            End If
+            '
+            'Check for readable sockets
+            If udtRead_fds.fd_count > 0 Then
+                '
+                For i = 1 To udtRead_fds.fd_count
+                    '
+                    'Get the socket handle
+                    lngSocket = udtRead_fds.fd_array(i)
+                    If lngSocket = lngPop3Read And lngPop3Write = 0 Then
+                        lngPop3Write = Accept(lngPop3Read)
+                        Send Empty
+                    End If
+                    If lngSocket = lngSMTPRead And lngSMTPWrite = 0 Then
+                        lngSMTPWrite = Accept(lngSMTPRead)
+                        SendSMTP Empty
+                    End If
+                    If lngSocket = lngPop3Write Then
+                        Received lngSocket
+                    End If
+                    If lngSocket = lngSMTPWrite Then
+                        Received lngSocket
+                    End If
+                Next i
+                '
+            End If
+            '
+            'Check for sockets in error state
+'            If udtError_fds.fd_count > 0 Then
+'                '
+'                For i = 1 To udtError_fds.fd_count
+'                    '
+'                    'Get the socket handle
+'                    lngSocket = udtError_fds.fd_array(i)
+'                    '
+''                    'Mark the corresponding listview item with red color
+''                    lvSockets.ListItems("S" & lngSocket).ForeColor = vbRed
+'                    '
+'                Next i
+'                '
+'            End If
+            '
+        End If
+End Sub
+
+
+''
+'Handle received data in a socket.
+Private Sub Received(ByVal lngSocket As Long)
+    '
+    Dim strData             As String
+    Dim lngBytesReceived    As Long
+        '
+    'Call the vbRecv function to read data
+    lngBytesReceived = vbRecv(lngSocket, strData)
+    '
+    If lngBytesReceived > 0 Then
+        '
+        If lngSocket = lngPop3Write Then
+            Send strData
+        Else
+            SendSMTP strData
+        End If
+    ElseIf lngBytesReceived = SOCKET_ERROR Then
+        '
+        'An error was occurred
+        Err.Raise Err.LastDllError, , GetErrorDescription(Err.LastDllError)
+    End If
+End Sub
+
+
+''
+'Accept a call of email client.
+'Create the Socket to senddata to client
+'
+'@return Number of the Socket, 0 if not is acepted
+Private Function Accept(ByVal lngSocketRead As Long) As Long
+Dim lngSocket As Long
+    '
+    'Call the vbAccept function in order to accept the
+    'connection request and create a new socket
+    lngSocket = vbAccept(lngSocketRead)
+    '
+    If lngSocket = INVALID_SOCKET Then
+        '
+        'An error was occurred - raise the error message
+        Err.Raise Err.LastDllError, , GetErrorDescription(Err.LastDllError)
+        Accept = 0
+    Else
+        '
+        'Accept the connection request
+        Accept = lngSocket
+    End If  '--> If lngRetValue = INVALID_SOCKET Then
+    '
+End Function
+
+''
+'Evaluate the data received
+'and send a reply to the email client
+'
+'@param strDataRecived A valid POP3 command (rfc1939)
+Private Sub Send(ByVal strDataRecived As String)
+On Error GoTo GestionErrores
+      
+    Dim oElement As IXMLDOMElement
+    Dim oElements As IXMLDOMNodeList
+    Dim cDataToSend As Collection
+    Dim strDataToSend As String
+    Dim intMsg As Integer
+    Dim intTotal As Integer
+    Dim bCloseSocket As Boolean
+    '
+    Set cDataToSend = New Collection
+    If Left(strDataRecived, 4) <> "PASS" Then
+        Debug.Print strDataRecived
+    End If
+    Select Case Left(strDataRecived, 4)
+    Case Empty
+        cDataToSend.Add "+OK POP3 server ready"
+    Case "USER"
+        strUser = Mid(strDataRecived, 6, Len(strDataRecived) - 7)
+        cDataToSend.Add "+OK Password required for " & strUser
+    Case "PASS"
+        strPassWord = Mid(strDataRecived, 6, Len(strDataRecived) - 7)
+        If GetFoldersURL Then
+            cDataToSend.Add "+OK mailbox for " & strUser & " ready"
+        Else
+            cDataToSend.Add "-ERR Unable to conect with mailbox "
+        End If
+    Case "STAT"
+        If GetMsgList Then
+            cDataToSend.Add "+OK " & objDOMInbox.childNodes(1).childNodes.Length & " 0"
+        Else
+            cDataToSend.Add "-ERR Unable to conect with mailbox "
+        End If
+    Case "RETR"
+        Set cDataToSend = getMsg(objDOMInbox.childNodes(1).childNodes(CInt(Mid(strDataRecived, 6)) - 1).selectSingleNode("a:propstat/a:prop/a:href").Text, CInt(Mid(strDataRecived, 6)))
+        bCloseSocket = (Left(cDataToSend.Item(1), 4) = "-ERR")
+    Case "QUIT"
+        cDataToSend.Add "+OK " & m_strIP & " server signing off, 0 messages deleted"
+        bCloseSocket = True
+    Case "LIST"
+        cDataToSend.Add "+OK scan listing follows " & vbCrLf
+        intTotal = objDOMInbox.childNodes(1).childNodes.Length
+        For intMsg = 1 To intTotal
+            strDataToSend = strDataToSend & intMsg & " 1 " & vbCrLf
+        Next
+        cDataToSend.Add strDataToSend
+        cDataToSend.Add "."
+    Case "NOOP"
+        cDataToSend.Add "+OK "
+    Case "UIDL"
+        cDataToSend.Add "+OK " & vbCrLf
+        Set oElements = objDOMInbox.selectNodes(XMLPATH & "a:id")
+        For Each oElement In oElements
+            intMsg = intMsg + 1
+            strDataToSend = strDataToSend & intMsg & " " & oElement.Text & " " & vbCrLf
+        Next
+        cDataToSend.Add strDataToSend
+        cDataToSend.Add "."
+    Case "CAPA"
+        cDataToSend.Add "+OK Capability list follows"
+        cDataToSend.Add "UIDL"
+        cDataToSend.Add "."
+    Case "DELE"
+        intMsg = CInt(Mid(strDataRecived, 6))
+        Set oElement = objDOMInbox.childNodes(1).childNodes(intMsg - 1)
+        If Delete(oElement.selectSingleNode("a:propstat/a:prop/a:href").Text) Then
+            cDataToSend.Add "+OK message " & intMsg & " deleted"
+            Sleep 500
+        Else
+            cDataToSend.Add "-ERR deleting message " & Mid(strDataRecived, 6)
+            bCloseSocket = True
+        End If
+        
+    Case "AUTH", "CAPA"
+        cDataToSend.Add "-ERR " & Left(strDataRecived, 4) & " unsuported feature "
+        bCloseSocket = True
+    Case Else
+        Debug.Assert False
+    End Select
+    SendMsg cDataToSend, lngPop3Write
+    If bCloseSocket Then
+        'Call the closesocket Winsock API function
+        'in order to close the socket
+        Call closesocket(lngPop3Write)
+        lngPop3Write = 0
+    End If
+Exit Sub
+GestionErrores:
+    Call closesocket(lngPop3Write)
+    lngPop3Write = 0
+End Sub
+
+''
+'Send a reply to the email client.
+'
+'@param cDataToSend Strings to send
+Private Sub SendMsg(ByVal cDataToSend As Collection, lngSocket)
+Dim intIndex As Integer
+Dim intTotal As Integer
+Dim strDataToSend As String
+intTotal = cDataToSend.Count
+For intIndex = 1 To intTotal
+    strDataToSend = cDataToSend(intIndex)
+    
+    '
+    'Add CRLF if needed
+    If Right(strDataToSend, 2) <> vbCrLf Then
+        strDataToSend = strDataToSend & vbCrLf
+    End If
+    '
+    'Call the vbSend function in order to send data
+    If vbSend(lngSocket, strDataToSend) = SOCKET_ERROR Then
+        '
+        'If the vbSend function has returned a value of
+        'SOCKET_ERROR, just display a message box with the
+        'error description
+        Call closesocket(lngSocket)
+       
+        Debug.Print GetErrorDescription(Err.LastDllError)
+'        Debug.Print vbSend(lngPop3Write, "-ERR " & Err.LastDllError)
+        'Debug.Assert False
+    End If
+    Sleep 100
+Next
+End Sub
+
+Public Sub Start()
+    'value returned by the InitializeWinsock function
+    Dim lngRetValue As Long
+    Call WSACleanup
+    '
+    'innitialize the Winsock service
+    lngRetValue = modWinsockAPI.InitializeWinsock(SOCKET_VERSION_22)
+    '
+    If lngRetValue = 0 Then
+        '
+        'if the Winsock service was initialized
+        'successfully, initialize the controls
+        initArrays
+        lngPop3Read = fncNewSokect(vPorts(0))
+        If vPorts(1) <> 0 Then
+            lngSMTPRead = fncNewSokect(vPorts(1))
+        End If
+    Else
+        '
+        'if the Winsock service was not initialized
+        'successfully, show message box with the
+        'error description
+        
+        '
+        'as we cannot initialize the Winsock service
+        'we have nothing to do with this application
+        Err.Raise lngRetValue, , GetErrorDescription(lngRetValue)
+    End If
+End Sub
+
+''
+'Get the headers of a message.
+'
+'@return Header of the mail
+Private Function getMsgHeader() As String
+Dim strDataToSend   As String
+Dim vKeys           As Variant
+Dim Key             As Variant
+Dim strValue        As String
+Dim intPos1         As Integer
+Dim intPos2         As Integer
+Dim strEmail        As String
+Dim strName         As String
+Dim strReturn       As String
+
+vKeys = dicTags.Keys
+For Each Key In vKeys
+    If Not objDOMMsg.selectSingleNode(XMLPATH & dicTags.Item(Key)) Is Nothing Then
+        strValue = objDOMMsg.selectSingleNode(XMLPATH & dicTags.Item(Key)).Text
+        Select Case Key
+        Case "Importance"
+            Select Case strValue
+            Case 1
+                strDataToSend = strDataToSend & "Importance: Normal" & vbCrLf
+                strDataToSend = strDataToSend & "X-Priority: 3 (Normal)" & vbCrLf
+            Case 2
+                strDataToSend = strDataToSend & "Importance: High" & vbCrLf
+                strDataToSend = strDataToSend & "X-Priority:  1 (Highest)" & vbCrLf
+            Case Else
+                strDataToSend = strDataToSend & "Importance: Low" & vbCrLf
+                strDataToSend = strDataToSend & "X-Priority:  5 (Low)" & vbCrLf
+            End Select
+        Case "Date"
+            strValue = GetPOPDate(strValue)
+            strDataToSend = strDataToSend & Key & ": " & strValue & vbCrLf
+        Case "To", "Cc", "Bcc", "From"
+            strReturn = Empty
+            Do
+                strValue = strValue & "  "
+                intPos1 = InStr(strValue, ">")
+                If intPos1 > 0 Then
+                    intPos2 = InStr(strValue, "<")
+                    strName = Trim(Mid(strValue, 1, intPos2 - 1))
+                    strEmail = Mid(strValue, intPos2, intPos1 - intPos2 + 1)
+                    If Left(strName, 1) <> """" Then
+                        strName = """" & strName & """"
+                    End If
+                    strReturn = strReturn & strName & " " & strEmail & ", "
+                    strValue = Mid(strValue, intPos1 + 2)
+                End If
+            Loop While intPos1 <> 0
+            strDataToSend = strDataToSend & Key & ": " & Mid(strReturn, 1, Len(strReturn) - 2) & vbCrLf
+        Case Else
+            strDataToSend = strDataToSend & Key & ": " & strValue & vbCrLf
+        End Select
+    ElseIf Key = "Content-Type" Then
+        strDataToSend = strDataToSend & "Content-Type: text/plain; charset=ISO-8859-1 " & vbCrLf
+    End If
+Next
+getMsgHeader = strDataToSend
+End Function
+
+''
+'Init a public dictionary with the trlanslation of XML tags of OWA
+' and valid headers of a POP3 message
+'@see dicTags
+Private Sub initArrays()
+    Set dicTags = New Dictionary
+    dicTags.Add "Date", "e:date"
+    dicTags.Add "From", "e:from"
+    dicTags.Add "To", "e:to"
+    dicTags.Add "Cc", "e:cc"
+    dicTags.Add "Bcc", "e:bcc"
+    dicTags.Add "Subject", "e:subject"
+    dicTags.Add "Importance", "e:importance"
+    'dicTags.Add "Received", "d:received"
+    'dicTags.Add "Content-Type", "d:content-type"
+    dicTags.Add "Content-Transfer-Encoding", "d:content-transfer-encoding"
+    dicTags.Add "MIME-Version", "d:mime-version"
+    dicTags.Add "Message-ID", "d:message-id"
+    
+    dicTags.Add "X-Mailer", "d:x-mailer"
+End Sub
+
+
+''
+'Get the date of a message, converting OWA format in a standar date (rfc1939).
+'
+'@param strDate Date in OWA format
+'@return Standar date (rfc1939)
+Private Function GetPOPDate(ByVal strDate As String) As String
+Dim vDate As Variant
+Dim vDays(1 To 7) As String
+Dim vMonths(1 To 12) As String
+Dim strReturn As String
+vDays(1) = "Mon"
+vDays(2) = "Tue"
+vDays(3) = "Wed"
+vDays(4) = "Thu"
+vDays(5) = "Fri"
+vDays(6) = "Sat"
+vDays(7) = "Sun"
+
+vMonths(1) = "Jan"
+vMonths(2) = "Feb"
+vMonths(3) = "Mar"
+vMonths(4) = "Apr"
+vMonths(5) = "May"
+vMonths(6) = "Jun"
+vMonths(7) = "Jul"
+vMonths(8) = "Aug"
+vMonths(9) = "Sep"
+vMonths(10) = "Oct"
+vMonths(11) = "Nov"
+vMonths(12) = "Dec"
+    vDate = Split(strDate, "T")
+    strReturn = vDays(DatePart("w", vDate(0)))
+    strReturn = strReturn & ", " & DatePart("d", vDate(0))
+    strReturn = strReturn & " " & vMonths(DatePart("m", vDate(0)))
+    strReturn = strReturn & " " & DatePart("yyyy", vDate(0))
+    GetPOPDate = strReturn & " " & FormatDateTime(Left(vDate(1), 8), vbLongTime) & " UT"
+End Function
+
+''
+'Load an OWA mesagge into a XML object.
+'
+'@param strUrl Url of the .EML file
+'@see objDOMMsg
+Private Sub LoadMsg(ByVal strUrl As String)
+Dim oXMLHTTP As XMLHTTP
+' Create an instance of the xmlHTTP object
+Set oXMLHTTP = CreateObject("microsoft.xmlhttp")
+With oXMLHTTP
+    ' Open a request to a particular url
+    .open "PROPFIND", strUrl, False, strUser, strPassWord
+    ' Set the header type
+    .setRequestHeader "Content-type:", "text/xml"
+    .setRequestHeader "Depth", "1"
+    ' Send the request
+    .Send
+    While .readyState <> 4
+        Sleep 10
+        DoEvents
+        'Debug.Assert oXMLHTTP.readyState <> 3
+    Wend
+    Set objDOMMsg = .responseXML
+    objDOMMsg.save "c:\mensaje.xml"
+End With
+Set oXMLHTTP = Nothing
+End Sub
+
+''
+'Get all files asociated to a message.
+'
+'@param strUrl  Url of the .EML file
+'@return
+Private Function GetAttachmentsList(ByVal strUrl As String) As IXMLDOMNodeList
+Dim oXMLHTTP As XMLHTTP
+
+Set oXMLHTTP = New XMLHTTP
+With oXMLHTTP
+    .open "X-MS-ENUMATTS", strUrl, False, strUser, strPassWord
+    .setRequestHeader "Depth", "1"
+    .setRequestHeader "Content-type", "xml"
+    .Send
+    If .Status = 207 Then
+        .responseXML.save "c:\ATTS2.xml"
+        'Set GetAttachmentsList = oXMLHTTP.responseXML.selectNodes("a:multistatus/a:response/a:href")
+        Set GetAttachmentsList = .responseXML.selectNodes("a:multistatus/a:response")
+    End If
+End With
+Set oXMLHTTP = Nothing
+End Function
+''
+'Retrieve the attachment of a message.
+'
+'@param strUrl  Url of the .EML file
+'@return Binary content encoded in Base64
+Private Function GetAttachment(ByVal strUrl As String) As String
+Dim oXMLHTTP    As XMLHTTP
+Dim objMIME     As Base64
+Set objMIME = New Base64
+Set oXMLHTTP = New XMLHTTP
+oXMLHTTP.open "GET", strUrl, False, strUser, strPassWord
+oXMLHTTP.Send
+GetAttachment = objMIME.EncodeArr(oXMLHTTP.responseBody)
+Set objMIME = Nothing
+Set oXMLHTTP = Nothing
+End Function
+
+''
+'Delete a message
+'
+'@param strUrl  Url of the .EML file
+Private Function Delete(ByVal strUrl As String) As Boolean
+On Error GoTo GestionErrores
+Dim oXMLHTTP    As XMLHTTP
+Set oXMLHTTP = New XMLHTTP
+With oXMLHTTP
+    .open "DELETE", strUrl, False, strUser, strPassWord
+    .setRequestHeader "Depth", "infinity"
+    .Send
+'    Debug.Print .Status
+End With
+Set oXMLHTTP = Nothing
+Delete = True
+Exit Function
+GestionErrores:
+Delete = False
+End Function
+
+
+'Private Function GetAttachmentName(ByVal strUrl As String) As String
+'Dim oXMLHTTP As XMLHTTP
+'Set oXMLHTTP = New XMLHTTP
+'With oXMLHTTP
+'    .open "PROPFIND", strUrl, False, strUser, strPassword
+'    .Send
+'    'GetAttachment = oXMLHTTP.responseText
+'    If .Status = 207 Then
+'        '.responseXML.save "c:\ATT.xml"
+'        GetAttachmentName = .responseXML.selectSingleNode("a:multistatus/a:response/a:propstat/a:prop/a:displayname").Text
+'    End If
+'End With
+'Set oXMLHTTP = Nothing
+'End Function
+
+''
+'Retrieve a OWA message and convert it into valid POP3 reply
+'
+'@param intMsg Nuember of the mesagge to get
+'@return Strig to send to e-mail client (rfc1939).
+Private Function getMsg(ByVal strUrl As String, ByVal intMsg As Integer) As Collection
+On Error GoTo GestionErrores
+    Dim cDataToSend     As Collection
+    Dim strPart         As String
+    Dim strBody         As String
+    Dim bHasAttachment  As Boolean
+    Dim strContentType  As String
+    Dim oElements       As IXMLDOMNodeList
+    Dim oElement        As IXMLDOMElement
+    'Dim strUrl          As String
+
+    strPart = Right(String(23, "0") & 1, 23)
+    'strUrl = objDOMInbox.childNodes(1).childNodes(intMsg - 1).selectSingleNode("a:propstat/a:prop/a:href").Text
+    LoadMsg strUrl
+    If objDOMMsg.selectSingleNode(XMLPATH & "e:hasattachment") Is Nothing Then
+        bHasAttachment = True
+    Else
+        bHasAttachment = (objDOMMsg.selectSingleNode(XMLPATH & "e:hasattachment").Text = 1)
+    End If
+    If bHasAttachment Then
+    '            strContentType = "Content-Type: multipart/related;" & vbCrLf & _
+    '                            vbTab & "type=""multipart/alternative:"""
+    
+        'strContentType = "Content-Type: multipart/mixed;"
+        strContentType = "Content-Type: multipart/related;"
+    Else
+        strContentType = "Content-Type: multipart/alternative;"
+    End If
+    Set cDataToSend = New Collection
+    cDataToSend.Add "+OK" & vbCrLf
+    'Header
+    cDataToSend.Add getMsgHeader() & _
+    strContentType & vbCrLf & _
+    vbTab & "boundary=""--------------" & strPart & """" & vbCrLf & _
+    vbCrLf
+    
+    'Msg Body (HTML data)
+    If Not objDOMMsg.selectSingleNode(XMLPATH & "e:htmldescription") Is Nothing Then
+        strBody = objDOMMsg.selectSingleNode(XMLPATH & "e:htmldescription").Text
+        strBody = Replace(strBody, "onload=""initTemplate()""", Empty)
+    End If
+    
+    cDataToSend.Add vbCrLf & "This is a multi-part message in MIME format."
+    cDataToSend.Add "----------------" & strPart & vbCrLf & _
+                     "Content-Type: text/html; charset=ISO-8859-1" & vbCrLf & _
+                     "Content-Transfer-Encoding: 8bit " & vbCrLf & _
+                     "Content-Disposition: inline" & vbCrLf & _
+                     vbCrLf & _
+                     strBody & vbCrLf & _
+                     "" & vbCrLf
+    
+    SendMsg cDataToSend, lngPop3Write
+    
+    If bHasAttachment Then
+        'Send mail Attachments
+            'Attachment
+            Set oElements = GetAttachmentsList(strUrl)
+            For Each oElement In oElements
+                strUrl = oElement.selectSingleNode("a:href").Text
+                Dim strFilename As String
+                'http://msdn.microsoft.com/library/en-us/wss/wss/_webdav_x-ms-enumatts.asp
+                'PR_ATTACH_METHOD
+                'Contains a MAPI-defined constant representing the way the contents of an attachment can be accessed.
+                Set cDataToSend = New Collection
+                If oElement.selectSingleNode("a:propstat/a:prop/d:x37050003").Text = 5 Then
+                    'ATTACH_EMBEDDED_MSG
+                    'Falta por implementar una funcion recursiva que vaya contra strURL
+                    'bCloseSocket = (Left(cDataToSend.Item(1), 4) = "-ERR")
+                    strFilename = oElement.selectSingleNode("a:propstat/a:prop/f:cn").Text
+                Else
+                    strFilename = oElement.selectSingleNode("a:propstat/a:prop/e:attachmentfilename").Text
+                End If
+        '                strFilename = GetAttachmentName(strUrl)
+        '                If Left(strFilename, 17) = "1_multipart/file:" Then
+        '                    strFilename = Mid(strFilename, InStrRev(strFilename, "/") + 1)
+        '                Else
+                'PR_ATTACH_CONTENT_ID
+                If oElement.selectSingleNode("a:propstat/a:prop/d:x3712001f") Is Nothing Then
+                    cDataToSend.Add vbCrLf & "----------------" & strPart & vbCrLf & _
+                    "Content-Type: Content-Type: application/octet-stream; name=""" & strFilename & """" & vbCrLf & _
+                    "Content-Transfer-Encoding: base64 " & vbCrLf & _
+                    "Content-Disposition: attachment; fileName = """ & strFilename & """" & vbCrLf & vbCrLf & vbCrLf
+                Else
+                    'If has PR_ATTACH_CONTENT_ID is
+                    cDataToSend.Add vbCrLf & "----------------" & strPart & vbCrLf & _
+                    "Content-Type: IMAGE/JPEG; name=""" & strFilename & """" & vbCrLf & _
+                    "Content-ID: <" & oElement.selectSingleNode("a:propstat/a:prop/d:x3712001f").Text & ">" & vbCrLf & _
+                    "Content-Transfer-Encoding: base64 " & vbCrLf & vbCrLf
+                End If
+                cDataToSend.Add GetAttachment(strUrl) & vbCrLf & vbCrLf
+        '                Else
+        '                  Debug.Print "Attachment name: " & objPropstatNode.selectSingleNode("a:prop/d:x3704001f").Text
+        '                End If
+    
+                SendMsg cDataToSend, lngPop3Write
+            Next
+    End If
+    Set cDataToSend = New Collection
+    cDataToSend.Add "----------------" & strPart & "--" & vbCrLf
+    cDataToSend.Add "."
+    Set getMsg = cDataToSend
+Exit Function
+GestionErrores:
+    Debug.Assert False
+    Set cDataToSend = New Collection
+    cDataToSend.Add "-ERR Unable to conect with mailbox "
+    Set getMsg = cDataToSend
+End Function
+
+''
+'Get the list of al messages in the inbox folder.
+'
+'@return Reply to e-mail client
+Private Function GetMsgList() As Boolean
+On Error GoTo GestionErrores
+
+#If DEBUG_MODE = 1 Then
+    Dim oDom As New DOMDocument
+    oDom.async = False
+    oDom.Load ("C:\OWA2.XML")
+    Set oPOP3.objDOM = oDom
+#Else
+    Dim strUrl As String
+    Dim oXMLHTTP As XMLHTTP
+    strUrl = objDOMFolders.selectSingleNode(XMLPATH & "d:inbox").Text & "/"
+    ' Create an instance of the xmlHTTP object
+    Set oXMLHTTP = CreateObject("microsoft.xmlhttp")
+    With oXMLHTTP
+        ' Open a request to a particular url
+        .open "SEARCH", strUrl, False, strUser, strPassWord
+        ' Set the header type - we want XML
+        .setRequestHeader "Content-type:", "text/xml"
+        .setRequestHeader "Depth", "1"
+        ' Send the request
+        Sleep 100
+        Call .Send("<?xml version='1.0' ?>" & _
+                 "<a:searchrequest xmlns:a='DAV:'><a:sql>" & _
+                  "SELECT" & _
+                  " ""DAV:href""" & _
+                  ",""urn:schemas:httpmail:subject""" & _
+                  ",""DAV:id""" & _
+                  " FROM scope('shallow traversal of """ & strUrl & """')" & _
+                 " WHERE ""DAV:ishidden""=False" & _
+                 " AND ""DAV:isfolder""=False" & _
+                "</a:sql></a:searchrequest>")
+        While .readyState <> 4
+            Sleep 10
+            DoEvents
+            'Debug.Assert oXMLHTTP.readyState <> 3
+        Wend
+        Set objDOMInbox = .responseXML
+        '    oPOP3.objDOMInbox.save "C:\OWA2.XML"
+    End With
+    
+'    objDOMInbox.save "C:\OWA2.XML"
+#End If
+    GetMsgList = True
+Exit Function
+GestionErrores:
+    Debug.Print Err.Description
+    GetMsgList = False
+End Function
+Private Sub SendSMTP(ByVal strDataRecived As String)
+On Error GoTo GestionErrores
+    Dim strSubURL As String
+    Dim strAlias As String
+    Dim strFrom As String
+    Dim strTo As String
+    Dim strSubject As String
+    Dim strBody As String
+    Dim bResult As Boolean
+      
+    Dim oElement As IXMLDOMElement
+    Dim oElements As IXMLDOMNodeList
+    Dim cDataToSend As Collection
+    Dim strDataToSend As String
+    Dim intMsg As Integer
+    Dim intTotal As Integer
+    Dim bCloseSocket As Boolean
+    '
+    Set cDataToSend = New Collection
+    If Left(strDataRecived, 4) <> "PASS" And strSMTPState <> "DATA" Then
+        Debug.Print strDataRecived
+    End If
+    If strSMTPState = "LOGIN" Or strSMTPState = "PASSWORD" Then
+        strDataRecived = "AUTH " & strDataRecived
+    End If
+    Select Case Left(strDataRecived, 4)
+    Case Empty
+        cDataToSend.Add "220 " & m_strIP & " Simple Mail Transfer Service Ready"
+    Case "HELO"
+        cDataToSend.Add "250 " & m_strIP
+    Case "EHLO"
+'        cDataToSend.Add "250-" & m_strIP
+'        cDataToSend.Add "250-8BITMIME"
+'        If strPassWord = Empty Or strUser = Empty Then
+'            cDataToSend.Add "250-AUTH=LOGIN PLAIN"
+'            cDataToSend.Add "250-AUTH LOGIN PLAIN"
+'        End If
+'        cDataToSend.Add "250 Size 51200000"
+        cDataToSend.Add "500 Syntax error, command unrecognized"
+    Case "AUTH"
+        Dim objBase As New Base64
+        Dim strReply As String
+        If strDataRecived = "AUTH LOGIN" & vbCrLf Then
+            'cDataToSend.Add "334 " & objBase.Encode(strUser & "@" & Mid(strExchSvrName, InStr(strExchSvrName, "//") + 2))
+            cDataToSend.Add "334 " & objBase.Encode("Username:")
+            strSMTPState = "LOGIN"
+        ElseIf Left(strDataRecived, 10) = "AUTH PLAIN" Then
+            strReply = objBase.Decode(Mid(strDataRecived, 12))
+            If Len(strReply) > 1 Then
+                strUser = Mid(strReply, 2, InStr(2, strReply, Chr(0)) - 2)
+                strPassWord = Mid(strReply, InStr(2, strReply, Chr(0)) + 1)
+                cDataToSend.Add "235 AUTHENTICATION SUCCESSFUL"
+            Else
+                cDataToSend.Add "533  Authentication required [AUTH]"
+            End If
+        Else
+            If strSMTPState = "LOGIN" Then
+                strUser = objBase.Decode(Mid(strDataRecived, 6))
+                strSMTPState = "PASSWORD"
+                cDataToSend.Add "334 " & objBase.Encode("Password:")
+            ElseIf strSMTPState = "PASSWORD" Then
+                strPassWord = objBase.Decode(Mid(strDataRecived, 6))
+                cDataToSend.Add "235 AUTHENTICATION SUCCESSFUL"
+                strSMTPState = ""
+            Else
+                cDataToSend.Add "556 CLIENT AUTHENTICATION REQUIRED. USE ESMTP EHLO AND AUTH"
+            End If
+        End If
+    Case "MAIL"
+        If strPassWord = Empty Or strUser = Empty Then
+            cDataToSend.Add "556 CLIENT AUTHENTICATION REQUIRED. USE ESMTP EHLO AND AUTH"
+            bCloseSocket = True
+        Else
+            cDataToSend.Add "250 OK"
+        End If
+    Case "RCPT"
+        strTo = Mid(strDataRecived, InStr(strDataRecived, "TO:") + 3)
+        cDataToSend.Add "250 OK"
+    Case "RSET"
+        cDataToSend.Add "250 OK"
+    Case "DATA"
+        cDataToSend.Add "354 Start mail input; end with <CRLF>.<CRLF>"
+        strSMTPState = "DATA"
+        strMailData = Empty
+    Case "QUIT"
+        cDataToSend.Add "221 " & m_strIP & " Service closing transmission channel"
+        bCloseSocket = True
+    Case Else
+        If strSMTPState = "DATA" Then
+            strMailData = strMailData & strDataRecived
+            If Right(strDataRecived, 3) = "." & vbCrLf Then
+                
+                'Encoding the subject in QP format
+                'strDataRecived = EncodeSubject(strDataRecived)
+                If SendMail() Then
+                     cDataToSend.Add "250 OK"
+                 Else
+                     cDataToSend.Add "500 Syntax error, command unrecognized"
+                End If
+                strSMTPState = Empty
+                strMailData = Empty
+            End If
+        Else
+            Debug.Assert False
+        End If
+    End Select
+    SendMsg cDataToSend, lngSMTPWrite
+    If bCloseSocket Then
+        'Call the closesocket Winsock API function
+        'in order to close the socket
+        Call closesocket(lngSMTPWrite)
+        lngSMTPWrite = 0
+    End If
+Exit Sub
+GestionErrores:
+    Debug.Assert False
+    Call closesocket(lngSMTPWrite)
+    lngPop3Write = 0
+End Sub
+
+
+Private Function GetFoldersURL() As Boolean
+
+On Error GoTo ErrHandler
+Dim query As String
+Dim strUrl As String
+Dim oXMLHTTP    As XMLHTTP
+
+query = "<?xml version='1.0'?>"
+query = query + "<a:propfind xmlns:a='DAV:'>"
+query = query + "<a:prop xmlns:m='urn:schemas:httpmail:'>"
+query = query + "<m:sendmsg/>"
+query = query + "<m:inbox/>"
+query = query + "</a:prop>"
+query = query + "</a:propfind>"
+
+Set oXMLHTTP = New XMLHTTP
+strUrl = strExchSvrName & "/exchange/" & strUser & "/"
+With oXMLHTTP
+    .open "PROPFIND", strUrl, False, strUser, strPassWord
+    .setRequestHeader "Content-Type", "text/xml"
+    .setRequestHeader "Depth", "0"
+    
+    .Send query
+    
+    ' process the result
+    If (.Status >= 200 And .Status < 300) Then
+       Set objDOMFolders = .responseXML
+       GetFoldersURL = True
+    Else
+       GetFoldersURL = False
+    End If
+End With
+Set oXMLHTTP = Nothing
+Exit Function
+ErrHandler:
+    GetFoldersURL = False
+End Function
+
+Function SendMail() As Boolean
+
+Dim strText
+Dim strSubURL
+strSubURL = objDOMFolders.selectSingleNode(XMLPATH & "d:sendmsg").Text
+'         To use MSXML 4.0 use the followinf DIM/SET statements
+         Dim xmlReq As XMLHTTP
+         Set xmlReq = New XMLHTTP
+
+         On Error GoTo ErrHandler
+
+          'Create the DAV PUT request.
+
+         xmlReq.open "PUT", strSubURL, False, strUser, strPassWord
+         If strMailData <> "" Then
+            xmlReq.setRequestHeader "Content-Type", "message/rfc822"
+            If Not bSaveinsent Then
+                xmlReq.setRequestHeader "Saveinsent", "f"
+            End If
+            xmlReq.Send strMailData
+         
+         End If
+
+         'Process the results.
+         If (xmlReq.Status >= 200 And xmlReq.Status < 300) Then
+            SendMail = True
+         Else
+            SendMail = False
+         End If
+ErrExit:
+      Set xmlReq = Nothing
+      Exit Function
+ErrHandler:
+    Debug.Print Err.Description
+      SendMail = False
+End Function
+
+Private Function EncodeSubject(ByVal strData As String) As String
+Dim intPosIni As Integer
+Dim intPosFin As Integer
+Dim strSubject As String
+Dim objQP As Base64
+Set objQP = New Base64
+intPosIni = InStr(strData, "Subject:") + Len("Subject:")
+intPosFin = InStr(intPosIni, strData, vbNewLine)
+strSubject = Mid(strData, intPosIni, intPosFin - intPosIni)
+If Left(strSubject, 16) <> " =?ISO-8859-1?Q?" Then
+    'Subject: =?ISO-8859-1?Q?Le=F3n=2C_Cami=F3n_y_Espa=F1a?=
+    EncodeSubject = Left(strData, intPosIni) & objQP.QP(strSubject) & Mid(strData, intPosFin)
+Else
+    EncodeSubject = strData
+End If
+Set objQP = Nothing
+End Function
