@@ -19,7 +19,7 @@ Begin VB.Form frmMain
       Top             =   2160
       Width           =   2415
       Begin VB.CheckBox chkSend 
-         Caption         =   "Save send messages"
+         Caption         =   "Save sent messages"
          Height          =   495
          Left            =   120
          TabIndex        =   12
