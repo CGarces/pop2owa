@@ -87,7 +87,7 @@ Section "Principal" SEC01
   !insertmacro MUI_STARTMENU_WRITE_END
 
 ; Write defalut aplication values
-  WriteRegStr HKCU "Software\${PRODUCT}" "ExchangeServer" "http:/mail.yourcompany.com"
+  WriteRegStr HKCU "Software\${PRODUCT}" "ExchangeServer" "http://mail.yourcompany.com"
   WriteRegStr HKCU "Software\${PRODUCT}" "IP" "127.0.0.1"
   WriteRegDWORD HKCU "Software\${PRODUCT}" "POP3" 0x6E
   WriteRegDWORD HKCU "Software\${PRODUCT}" "SMTP" 0x19
