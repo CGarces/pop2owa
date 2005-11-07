@@ -904,14 +904,18 @@ On Error GoTo GestionErrores
             strDataToSend = "556 CLIENT AUTHENTICATION REQUIRED. USE ESMTP EHLO AND AUTH"
             bCloseSocket = True
         Else
+            strMailData = strDataRecived
             strDataToSend = "250 OK"
         End If
-    Case "RCPT", "RSET"
+    Case "RCPT"
+        strMailData = strMailData & strDataRecived
+        strDataToSend = "250 OK"
+    Case "RSET"
         strDataToSend = "250 OK"
     Case "DATA"
         strDataToSend = "354 Start mail input; end with <CRLF>.<CRLF>"
         strSMTPState = "DATA"
-        strMailData = Empty
+        strMailData = strMailData & vbCrLf
     Case "QUIT"
         strDataToSend = "221 " & m_strIP & " Service closing transmission channel"
         bCloseSocket = True
@@ -1002,7 +1006,7 @@ strSubURL = objDOMFolders.selectSingleNode(XMLPATH & "d:sendmsg").Text
 
          xmlReq.open "PUT", strSubURL, False, strUser, strPassWord
          If strMailData <> "" Then
-            xmlReq.setRequestHeader "Content-Type", "message/rfc822"
+            xmlReq.setRequestHeader "Content-Type", "message/rfc821"
             If Not bSaveinsent Then
                 xmlReq.setRequestHeader "Saveinsent", "f"
             End If
