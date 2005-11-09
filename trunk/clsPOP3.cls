@@ -759,22 +759,28 @@ On Error GoTo GestionErrores
         End If
         'End of multipart msg
         SendMsg "--" & strBoundary & "--", lngPop3Write
-        
     Else
-        'Only plaint text without attachments
-
+        'NOT It's a multi-part msg.
         If Not Right(strContentType, 1) = ";" Then strContentType = strContentType & ";"
         strDataToSend = getMsgHeader() & _
                         strContentType & vbCrLf & vbCrLf
         SendMsg strDataToSend, lngPop3Write
-        
-        If Not objDOMMsg.selectSingleNode(XMLPATH & "e:textdescription") Is Nothing Then
-            strBody = objDOMMsg.selectSingleNode(XMLPATH & "e:textdescription").Text
+        If InStr(strContentType, "html") > 0 Then
+            'HTML
+            If Not objDOMMsg.selectSingleNode(XMLPATH & "e:htmldescription") Is Nothing Then
+                strBody = objDOMMsg.selectSingleNode(XMLPATH & "e:htmldescription").Text
+                strBody = Replace(strBody, "onload=""initTemplate()""", Empty)
+            End If
+        Else
+            'Plain text without attachments
+            If Not objDOMMsg.selectSingleNode(XMLPATH & "e:textdescription") Is Nothing Then
+                strBody = objDOMMsg.selectSingleNode(XMLPATH & "e:textdescription").Text
+            End If
         End If
         SendMsg vbCrLf & strBody & vbCrLf & "" & vbCrLf, lngPop3Write
     End If
     'End of msg
-    getMsg = "."
+    getMsg = vbCrLf & "."
 Exit Function
 GestionErrores:
     Debug.Assert False
@@ -938,7 +944,9 @@ On Error GoTo GestionErrores
             Debug.Assert False
         End If
     End Select
-    SendMsg strDataToSend, lngSMTPWrite
+    If strDataToSend <> Empty Then
+        SendMsg strDataToSend, lngSMTPWrite
+    End If
     If bCloseSocket Then
         'Call the closesocket Winsock API function
         'in order to close the socket
@@ -1078,7 +1086,6 @@ For Each oElement In oElements
         strContentDisposition = "attachment"
     Else
         strContentDisposition = oElement.selectSingleNode("a:propstat/a:prop/d:x3716001f").Text
-        Debug.Assert (strContentDisposition = "attachment")
     End If
     
     'PR_ATTACH_CONTENT_ID
@@ -1088,6 +1095,7 @@ For Each oElement In oElements
     Else
         'If has PR_ATTACH_CONTENT_ID
         strDataToSend = strDataToSend & "Content-Type: IMAGE/JPEG; name=""" & strFilename & """" & vbCrLf & _
+                    "Content-Disposition: " & strContentDisposition & "; fileName = """ & strFilename & """" & vbCrLf & _
                     "Content-ID: <" & oElement.selectSingleNode("a:propstat/a:prop/d:x3712001f").Text & ">" & vbCrLf & vbCrLf & vbCrLf
         'oElement.selectSingleNode("a:propstat/a:prop/d:x3716001f").Text
     End If
