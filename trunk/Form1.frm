@@ -212,6 +212,7 @@ End Sub
 Private Sub Timer1_Timer()
 On Error GoTo GestionErrores
     '
+    DoEvents
     oPOP3.Refresh
     Me.Refresh
 Exit Sub
