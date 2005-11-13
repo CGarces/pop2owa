@@ -361,15 +361,19 @@ On Error GoTo GestionErrores
     Case "NOOP"
         strDataToSend = "+OK "
     Case "UIDL"
-        
-        SendMsg "+OK ", lngPop3Write
         Set oElements = objDOMInbox.selectNodes(XMLPATH & "a:id")
-        For Each oElement In oElements
-            intMsg = intMsg + 1
-            strDataToSend = strDataToSend & intMsg & " " & oElement.Text & " " & vbCrLf
-        Next
-        SendMsg strDataToSend, lngPop3Write
-        strDataToSend = "."
+        If Len(strDataRecived) > 6 Then
+            intMsg = CInt(Mid(strDataRecived, 6))
+            strDataToSend = "+OK " & intMsg & " " & oElements(intMsg - 1).Text & vbCrLf
+        Else
+            strDataToSend = "+OK " & vbCrLf
+            Set oElements = objDOMInbox.selectNodes(XMLPATH & "a:id")
+            For Each oElement In oElements
+                intMsg = intMsg + 1
+                strDataToSend = strDataToSend & intMsg & " " & oElement.Text & " " & vbCrLf
+            Next
+            strDataToSend = strDataToSend & "."
+        End If
     Case "CAPA"
         SendMsg "+OK Capability list follows", lngPop3Write
         SendMsg "UIDL", lngPop3Write
@@ -396,11 +400,12 @@ On Error GoTo GestionErrores
     If bCloseSocket Then
         'Call the closesocket Winsock API function
         'in order to close the socket
-        Call closesocket(lngPop3Write)
+         Call closesocket(lngPop3Write)
         lngPop3Write = 0
     End If
 Exit Sub
 GestionErrores:
+    Debug.Assert False
     Call closesocket(lngPop3Write)
     lngPop3Write = 0
 End Sub
@@ -428,6 +433,7 @@ Private Sub SendMsg(ByVal strDataToSend As String, lngSocket)
         'Debug.Assert False
     End If
     Sleep 100
+    DoEvents
 End Sub
 
 
@@ -609,8 +615,14 @@ With oXMLHTTP
         DoEvents
         'Debug.Assert oXMLHTTP.readyState <> 3
     Wend
-    Set objDOMMsg = .responseXML
-    objDOMMsg.save "c:\mensaje.xml"
+    If (.Status >= 200 And .Status < 300) Then
+        Set objDOMMsg = .responseXML
+        #If DEBUG_MODE = 1 Then
+            objDOMInbox.save "C:\mensaje.xml"
+        #End If
+    Else
+        Err.Raise 51
+    End If
 End With
 Set oXMLHTTP = Nothing
 End Sub
@@ -630,7 +642,9 @@ With oXMLHTTP
     .setRequestHeader "Content-type", "xml"
     .Send
     If .Status = 207 Then
-        .responseXML.save "c:\ATTS2.xml"
+        #If DEBUG_MODE = 1 Then
+            objDOMInbox.save "c:\ATTS2.xml"
+        #End If
         'Set GetAttachmentsList = oXMLHTTP.responseXML.selectNodes("a:multistatus/a:response/a:href")
         Set GetAttachmentsList = .responseXML.selectNodes("a:multistatus/a:response")
     End If
@@ -684,7 +698,9 @@ With oXMLHTTP
     .Send
     'GetAttachment = oXMLHTTP.responseText
     If .Status = 207 Then
-        '.responseXML.save "c:\ATT.xml"
+        #If DEBUG_MODE = 1 Then
+            objDOMInbox.save "c:\ATT.xml"
+        #End If
         GetAttachmentName = .responseXML.selectSingleNode("a:multistatus/a:response/a:propstat/a:prop/a:displayname").Text
     End If
 End With
@@ -725,7 +741,10 @@ On Error GoTo GestionErrores
             strContentType = "Content-Type: text/plain;charset=""iso-8859-1"";"
         End If
     End If
-    
+    'Patch to get HTML msg without attachments
+    If InStr(strContentType, "html") > 0 And Not (bHasAttachment) Then
+        strContentType = "Content-Type: multipart/related;boundary=""--------------" & Right(String(23, "0") & 1, 23) & """"
+    End If
     SendMsg "+OK", lngPop3Write
     'Header
     'Search the boundary strings
@@ -758,7 +777,7 @@ On Error GoTo GestionErrores
             SendAttachments strUrl, strBoundary
         End If
         'End of multipart msg
-        SendMsg "--" & strBoundary & "--", lngPop3Write
+        getMsg = "--" & strBoundary & "--" & vbCrLf & "."
     Else
         'NOT It's a multi-part msg.
         If Not Right(strContentType, 1) = ";" Then strContentType = strContentType & ";"
@@ -777,10 +796,9 @@ On Error GoTo GestionErrores
                 strBody = objDOMMsg.selectSingleNode(XMLPATH & "e:textdescription").Text
             End If
         End If
-        SendMsg vbCrLf & strBody & vbCrLf & "" & vbCrLf, lngPop3Write
+        getMsg = vbCrLf & strBody & vbCrLf & "" & vbCrLf & "."
     End If
     'End of msg
-    getMsg = vbCrLf & "."
 Exit Function
 GestionErrores:
     Debug.Assert False
@@ -794,12 +812,6 @@ End Function
 Private Function GetMsgList() As Boolean
 On Error GoTo GestionErrores
 
-#If DEBUG_MODE = 1 Then
-    Dim oDom As New DOMDocument
-    oDom.async = False
-    oDom.Load ("C:\OWA2.XML")
-    Set oPOP3.objDOM = oDom
-#Else
     Dim strUrl As String
     Dim oXMLHTTP As XMLHTTP
     strUrl = objDOMFolders.selectSingleNode(XMLPATH & "d:inbox").Text & "/"
@@ -829,14 +841,14 @@ On Error GoTo GestionErrores
             'Debug.Assert oXMLHTTP.readyState <> 3
         Wend
         Set objDOMInbox = .responseXML
-        '    oPOP3.objDOMInbox.save "C:\OWA2.XML"
+        #If DEBUG_MODE = 1 Then
+            objDOMInbox.save "C:\OWA2.XML"
+        #End If
     End With
-    
-'    objDOMInbox.save "C:\OWA2.XML"
-#End If
     GetMsgList = True
 Exit Function
 GestionErrores:
+    Debug.Assert False
     Debug.Print Err.Description
     GetMsgList = False
 End Function
