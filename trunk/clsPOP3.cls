@@ -19,7 +19,6 @@ Attribute VB_Exposed = False
 '@version 1.0
 '@date 08/10/2005
 Option Explicit
-#Const DEBUG_MODE = 0
 
 Private lngPop3Read As Long
 Private lngPop3Write As Long
@@ -390,11 +389,11 @@ On Error GoTo GestionErrores
             bCloseSocket = True
         End If
         
-    Case "AUTH", "CAPA"
+    Case "AUTH"
         strDataToSend = "-ERR " & Left(strDataRecived, 4) & " unsuported feature "
-        bCloseSocket = True
     Case Else
         Debug.Assert False
+        strDataToSend = "-ERR " & Left(strDataRecived, 4) & " unsuported feature "
     End Select
     SendMsg strDataToSend, lngPop3Write
     If bCloseSocket Then
@@ -492,15 +491,19 @@ For Each Key In vKeys
         Select Case Key
         Case "Importance"
             Select Case strValue
-            Case 1
-                strDataToSend = strDataToSend & "Importance: Normal" & vbCrLf
-                strDataToSend = strDataToSend & "X-Priority: 3 (Normal)" & vbCrLf
+            Case 0
+                strDataToSend = strDataToSend & "Importance: Low" & vbCrLf
+                strDataToSend = strDataToSend & "X-MSMail-Priority: Low" & vbCrLf
+                strDataToSend = strDataToSend & "X-Priority: 5" & vbCrLf
+'Default values are omited
+'            Case 1
+'                strDataToSend = strDataToSend & "Importance: Normal" & vbCrLf
+'                strDataToSend = strDataToSend & "X-MSMail-Priority: Normal" & vbCrLf
+'                strDataToSend = strDataToSend & "X-Priority: 3" & vbCrLf
             Case 2
                 strDataToSend = strDataToSend & "Importance: High" & vbCrLf
-                strDataToSend = strDataToSend & "X-Priority:  1 (Highest)" & vbCrLf
-            Case Else
-                strDataToSend = strDataToSend & "Importance: Low" & vbCrLf
-                strDataToSend = strDataToSend & "X-Priority:  5 (Low)" & vbCrLf
+                strDataToSend = strDataToSend & "X-MSMail-Priority: High" & vbCrLf
+                strDataToSend = strDataToSend & "X-Priority: 1" & vbCrLf
             End Select
         Case "Date"
             strValue = GetPOPDate(strValue)
@@ -618,7 +621,7 @@ With oXMLHTTP
     If (.Status >= 200 And .Status < 300) Then
         Set objDOMMsg = .responseXML
         #If DEBUG_MODE = 1 Then
-            objDOMInbox.save "C:\mensaje.xml"
+            objDOMMsg.save "C:\mensaje.xml"
         #End If
     Else
         Err.Raise 51
@@ -643,9 +646,8 @@ With oXMLHTTP
     .Send
     If .Status = 207 Then
         #If DEBUG_MODE = 1 Then
-            objDOMInbox.save "c:\ATTS2.xml"
+            .responseXML.save "c:\ATTS2.xml"
         #End If
-        'Set GetAttachmentsList = oXMLHTTP.responseXML.selectNodes("a:multistatus/a:response/a:href")
         Set GetAttachmentsList = .responseXML.selectNodes("a:multistatus/a:response")
     End If
 End With
@@ -735,6 +737,8 @@ On Error GoTo GestionErrores
     Else
         If bHasAttachment Then
             'Has Attachment, it's a multi part msg.
+            
+            'If the attachments are inline related, ese mixed. I don 't nowk how fix it.
             strContentType = "Content-Type: multipart/related;boundary=""--------------" & Right(String(23, "0") & 1, 23) & """"
         Else
             'Ony have plain text
@@ -1083,7 +1087,10 @@ For Each oElement In oElements
                     "Content-Transfer-Encoding: base64 " & vbCrLf
 
     strUrl = oElement.selectSingleNode("a:href").Text
-    strContentType = oElement.selectSingleNode("a:propstat/a:prop/d:x370e001f").Text
+    strContentType = "application/octet-stream"
+    If Not oElement.selectSingleNode("a:propstat/a:prop/d:x370e001f") Is Nothing Then
+        strContentType = oElement.selectSingleNode("a:propstat/a:prop/d:x370e001f").Text
+    End If
     
     'PR_ATTACH_METHOD
     If oElement.selectSingleNode("a:propstat/a:prop/d:x37050003").Text = 5 Then
