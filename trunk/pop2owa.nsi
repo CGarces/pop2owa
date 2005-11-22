@@ -6,7 +6,7 @@
   ;General
 Var STARTMENU_FOLDER
 !define PRODUCT "pop2owa"
-!define VERSION "v0.4"
+!define VERSION "v0.5"
 Name "${PRODUCT} ${VERSION}"
 OutFile "${PRODUCT}_${VERSION}.exe"
 InstallDir "$PROGRAMFILES\${PRODUCT}"
@@ -86,12 +86,18 @@ Section "Principal" SEC01
   CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\Uninstall.lnk" "$INSTDIR\uninst.exe"
   !insertmacro MUI_STARTMENU_WRITE_END
 
+  ReadRegStr $R0 HKCU "Software\${PRODUCT}" "ExchangeServer" 
+  StrCmp $R0 "" write done
+
+write:
 ; Write defalut aplication values
   WriteRegStr HKCU "Software\${PRODUCT}" "ExchangeServer" "http://mail.yourcompany.com"
   WriteRegStr HKCU "Software\${PRODUCT}" "IP" "127.0.0.1"
   WriteRegDWORD HKCU "Software\${PRODUCT}" "POP3" 0x6E
   WriteRegDWORD HKCU "Software\${PRODUCT}" "SMTP" 0x19
   WriteRegDWORD HKCU "Software\${PRODUCT}" "Saveinsent" 0x1
+done:
+
 SectionEnd
 
 
