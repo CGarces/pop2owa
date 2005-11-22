@@ -555,6 +555,8 @@ Private Sub initArrays()
     dicTags.Add "Message-ID", "d:message-id"
     
     dicTags.Add "X-Mailer", "d:x-mailer"
+    dicTags.Add "Disposition-Notification-To", "d:disposition-notification-to"
+
 End Sub
 
 
@@ -735,24 +737,25 @@ On Error GoTo GestionErrores
     If Not objDOMMsg.selectSingleNode(XMLPATH & "d:content-type") Is Nothing Then
         strContentType = "Content-Type: " & objDOMMsg.selectSingleNode(XMLPATH & "d:content-type").Text
     Else
-        If bHasAttachment Then
-            'Has Attachment, it's a multi part msg.
-            
-            'If the attachments are inline related, ese mixed. I don 't nowk how fix it.
+'        If bHasAttachment Then
+'            'Has Attachment, it's a multi part msg.
+'
+'            'If the attachments are inline related, ese mixed. I don 't nowk how fix it.
+'            strContentType = "Content-Type: multipart/related;boundary=""--------------" & Right(String(23, "0") & 1, 23) & """"
+'        Else
+'            'Ony have plain text
+'            strContentType = "Content-Type: text/plain;charset=""iso-8859-1"";"
+
+            'In some case the Content-Type not is correct.
+            'MSExchange sent text/plain instead text/html.
+            'Force to read the HTML content to work OK in all cases
             strContentType = "Content-Type: multipart/related;boundary=""--------------" & Right(String(23, "0") & 1, 23) & """"
-        Else
-            'Ony have plain text
-            strContentType = "Content-Type: text/plain;charset=""iso-8859-1"";"
-        End If
-    End If
-    'Patch to get HTML msg without attachments
-    If InStr(strContentType, "html") > 0 And Not (bHasAttachment) Then
-        strContentType = "Content-Type: multipart/related;boundary=""--------------" & Right(String(23, "0") & 1, 23) & """"
+'        End If
     End If
     SendMsg "+OK", lngPop3Write
     'Header
     'Search the boundary strings
-    intPos = InStr(strContentType, "boundary")
+    intPos = InStr(LCase(strContentType), "boundary")
     If intPos > 0 Then
         'It's a multi part msg.
         strBoundary = Mid(strContentType, intPos + Len("boundary") + 2)
@@ -783,23 +786,23 @@ On Error GoTo GestionErrores
         'End of multipart msg
         getMsg = "--" & strBoundary & "--" & vbCrLf & "."
     Else
-        'NOT It's a multi-part msg.
-        If Not Right(strContentType, 1) = ";" Then strContentType = strContentType & ";"
-        strDataToSend = getMsgHeader() & _
-                        strContentType & vbCrLf & vbCrLf
-        SendMsg strDataToSend, lngPop3Write
-        If InStr(strContentType, "html") > 0 Then
-            'HTML
-            If Not objDOMMsg.selectSingleNode(XMLPATH & "e:htmldescription") Is Nothing Then
-                strBody = objDOMMsg.selectSingleNode(XMLPATH & "e:htmldescription").Text
-                strBody = Replace(strBody, "onload=""initTemplate()""", Empty)
-            End If
-        Else
-            'Plain text without attachments
-            If Not objDOMMsg.selectSingleNode(XMLPATH & "e:textdescription") Is Nothing Then
-                strBody = objDOMMsg.selectSingleNode(XMLPATH & "e:textdescription").Text
-            End If
-        End If
+'        'NOT It's a multi-part msg.
+'        If Not Right(strContentType, 1) = ";" Then strContentType = strContentType & ";"
+'        strDataToSend = getMsgHeader() & _
+'                        strContentType & vbCrLf & vbCrLf
+'        SendMsg strDataToSend, lngPop3Write
+'        If InStr(LCase(strContentType), "html") > 0 Then
+'            'HTML
+'            If Not objDOMMsg.selectSingleNode(XMLPATH & "e:htmldescription") Is Nothing Then
+'                strBody = objDOMMsg.selectSingleNode(XMLPATH & "e:htmldescription").Text
+'                strBody = Replace(strBody, "onload=""initTemplate()""", Empty)
+'            End If
+'        Else
+'            'Plain text without attachments
+'            If Not objDOMMsg.selectSingleNode(XMLPATH & "e:textdescription") Is Nothing Then
+'                strBody = objDOMMsg.selectSingleNode(XMLPATH & "e:textdescription").Text
+'            End If
+'        End If
         getMsg = vbCrLf & strBody & vbCrLf & "" & vbCrLf & "."
     End If
     'End of msg
@@ -1097,7 +1100,16 @@ For Each oElement In oElements
         'ATTACH_EMBEDDED_MSG
         strFilename = oElement.selectSingleNode("a:propstat/a:prop/f:cn").Text
     Else
-        strFilename = oElement.selectSingleNode("a:propstat/a:prop/e:attachmentfilename").Text
+        'x3704001f  PR_ATTACH_FILENAME
+        'x3707001f  PR_ATTACH_LONG_FILENAME
+        If oElement.selectSingleNode("a:propstat/a:prop/e:attachmentfilename") Is Nothing Then
+            Debug.Assert False
+            strFilename = oElement.selectSingleNode("a:propstat/a:prop/d:x3704001f").Text
+        Else
+            Debug.Assert oElement.selectSingleNode("a:propstat/a:prop/d:x3704001f").Text = oElement.selectSingleNode("a:propstat/a:prop/e:attachmentfilename").Text
+            strFilename = oElement.selectSingleNode("a:propstat/a:prop/e:attachmentfilename").Text
+        End If
+        
     End If
     
     'x3716001f  PR_ATTACH_CONTENT_DISPOSITION
