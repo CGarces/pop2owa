@@ -288,7 +288,6 @@ Private Sub Reset()
     Set oPOP3 = New clsPOP3
     With oPOP3
         .IP = Me.txtIP.Text
-        .ServerName = Me.txtServer.Text
         .Port(0) = Me.txtPort(0).Text
         If chkSMTP.Value = vbChecked Then
             .Port(1) = Me.txtPort(1).Text
@@ -296,4 +295,5 @@ Private Sub Reset()
         .Saveinsent = (Me.chkSend.Value = vbChecked)
         .Start
     End With
+    strExchSvrName = Me.txtServer.Text
 End Sub
