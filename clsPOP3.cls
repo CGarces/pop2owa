@@ -245,6 +245,8 @@ End Sub
 
 ''
 'Handle received data in a socket.
+'
+'@param lngSocket The descriptor that identifies a connected socket.
 Private Sub Received(ByVal lngSocket As Long)
     '
     Dim strData             As String
@@ -270,9 +272,10 @@ End Sub
 
 ''
 'Accept a call of email client.
-'Create the Socket to senddata to client
 '
-'@return Number of the Socket, 0 if not is acepted
+'@param lngSocketRead The descriptor that identifies a connected socket.
+'
+'@return The descriptor that identifies a connected socket, 0 if not is acepted
 Private Function Accept(ByVal lngSocketRead As Long) As Long
 Dim lngSocket As Long
     '
@@ -294,10 +297,10 @@ Dim lngSocket As Long
 End Function
 
 ''
-'Evaluate the data received
+'Evaluate a POP3 command and
 'and send a reply to the email client
 '
-'@param strDataRecived A valid POP3 command (rfc1939)
+'@param strDataRecived A valid POP3 command ((<A HREF='http://www.hunnysoft.com/rfc/rfc.html' target='_blank'>RFC1939</A>))
 Private Sub SendPOP3(ByVal strDataRecived As String)
 On Error GoTo GestionErrores
       
@@ -398,6 +401,7 @@ End Sub
 'Send a reply to the email client.
 '
 '@param strDataToSend Strings to send
+'@param lngSocket The descriptor that identifies a connected socket
 Private Sub SendMsg(ByVal strDataToSend As String, lngSocket)
     'Add CRLF if needed
     If Right(strDataToSend, 2) <> vbCrLf Then
@@ -457,7 +461,7 @@ End Sub
 ''
 'Retrieve a OWA message and convert it into valid POP3 reply
 '
-'@param intMsg Nuember of the mesagge to get
+'@param strUrl URL of the .EML file
 '@return Strig to send to e-mail client (rfc1939).
 Private Function getMsg(ByVal strUrl As String) As String
 On Error GoTo GestionErrores
@@ -486,6 +490,11 @@ On Error GoTo GestionErrores
         'In some case the Content-Type not is correct.
         'MSExchange sent text/plain instead text/html.
         'Force to read the HTML content to work OK in all cases
+        strContentType = "Content-Type: multipart/related;boundary=""--------------" & Right(String(23, "0") & 1, 23) & """"
+    End If
+    If InStr(strContentType, "html") > 0 And Not (bHasAttachment) Then
+        'I have a problem with HTML without attachment
+        'try to emulate a multi part msg.
         strContentType = "Content-Type: multipart/related;boundary=""--------------" & Right(String(23, "0") & 1, 23) & """"
     End If
     SendMsg "+OK", lngPop3Write
@@ -547,6 +556,13 @@ GestionErrores:
     Debug.Assert False
     getMsg = "-ERR Unable to conect with mailbox "
 End Function
+
+
+''
+'Evaluate a STMP command and
+'and send a reply to the email client
+'
+'@param strDataRecived A valid SMTP command (<A HREF='http://www.faqs.org/rfcs/rfc822.html' target='_blank'>RFC822</A>)
 Private Sub SendSMTP(ByVal strDataRecived As String)
 On Error GoTo GestionErrores
     Dim strSubURL As String
@@ -684,6 +700,7 @@ Else
 End If
 Set objQP = Nothing
 End Function
+
 Private Sub SendAttachments(ByVal strUrl As String, ByVal strBoundary As String)
 On Error GoTo GestionErrores
 
@@ -751,4 +768,3 @@ GestionErrores:
     Debug.Assert False
     Err.Raise Err.Number
 End Sub
-

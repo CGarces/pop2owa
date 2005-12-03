@@ -22,8 +22,9 @@ Option Explicit
 
 ''
 'Translations between XML tags of OWA and valid headers of a POP3 message
-'@see initArrays
+'@see #initArrays
 Private dicTags         As Dictionary
+
 Private objDOMFolders   As DOMDocument
 
 Public intMsgCount As Integer
@@ -41,7 +42,7 @@ End Function
 'Get all files asociated to a message.
 '
 '@param strUrl  Url of the .EML file
-'@return
+'@return Node list with Attachments properties
 Public Function GetAttachmentsList(ByVal strUrl As String) As IXMLDOMNodeList
 Dim oXMLHTTP As XMLHTTP
 
@@ -106,7 +107,7 @@ End Function
 'Load an OWA mesagge into a XML object.
 '
 '@param strUrl Url of the .EML file
-'@see objDOMMsg
+'@see clsOWA.objDOMMsg
 Public Sub LoadMsg(ByVal strUrl As String)
 Dim oXMLHTTP As XMLHTTP
 ' Create an instance of the xmlHTTP object
@@ -135,7 +136,6 @@ With oXMLHTTP
 End With
 Set oXMLHTTP = Nothing
 End Sub
-
 
 Private Function GetAttachmentName(ByVal strUrl As String) As String
 Dim oXMLHTTP As XMLHTTP
@@ -204,6 +204,13 @@ GestionErrores:
     Debug.Print Err.Description
     GetMsgList = False
 End Function
+
+
+''
+'Get Well-Known Mailbox Folder URLs that are retrieved from a users root mailbox folder.
+'
+'@return True if the URLs are retrieved
+'@remarks <A HREF='http://msdn.microsoft.com/library/en-us/wss/wss/_exch2k_getting_well-known_mailbox_folder_urls.asp' target='_blank'>Microsoft Exchange 2000 SDK June 2005</A>
 Public Function GetFoldersURL() As Boolean
 
 On Error GoTo ErrHandler
@@ -350,7 +357,7 @@ End Function
 ''
 'Init a public dictionary with the trlanslation of XML tags of OWA
 ' and valid headers of a POP3 message
-'@see dicTags
+'@see #dicTags
 Private Sub initArrays()
     Set dicTags = New Dictionary
     dicTags.Add "Date", "e:date"
@@ -372,6 +379,11 @@ Private Sub initArrays()
 End Sub
 
 
+''
+'Send one email in standar rfc821 format.
+'
+'@param strMailData Message string (rfc821)
+'@return <B>True</B> if the mail is sent.
 Public Function SendMail(ByVal strMailData As String) As Boolean
 
 Dim strSubURL
@@ -409,5 +421,5 @@ ErrHandler:
 End Function
 
 Private Sub Class_Initialize()
-initArrays
+    initArrays
 End Sub
