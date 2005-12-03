@@ -11,18 +11,14 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
-'*************************************************************************************
+''
 'Base 64 Encoding class
 '
-'Author:    Wil Johnson
-'           Wil.Johnson@att.net
 '
-'Version:   1.1
-'
-'Date:      3/21/2000
-'
-'Notes:
-'   This code is for example purposes only, and is provided as-is.  While it has
+'@author Wil Johnson (Wil.Johnson@att.net)
+'@version 1.1
+'@date 21/03/2000
+'@remarks   This code is for example purposes only, and is provided as-is.  While it has
 '   worked well under limited testing, the current error handling is minimal and
 '   should be expanded upon before release into a production environment.  Please
 '   report all bugs found to the author for correction, even if you have already
@@ -30,8 +26,6 @@ Attribute VB_Exposed = False
 '
 '   Again, this code is a rough draft.  Feel free to use it, but do so at your own
 '   risk.  These release notes must also remain intact.
-'
-'*************************************************************************************
 
 
 Option Explicit
