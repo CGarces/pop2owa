@@ -211,7 +211,7 @@ End Function
 '
 '@return True if the URLs are retrieved
 '@remarks <A HREF='http://msdn.microsoft.com/library/en-us/wss/wss/_exch2k_getting_well-known_mailbox_folder_urls.asp' target='_blank'>Microsoft Exchange 2000 SDK June 2005</A>
-Public Function GetFoldersURL() As Boolean
+Public Function GetFoldersURL() As Long
 
 On Error GoTo ErrHandler
 Dim query As String
@@ -238,15 +238,13 @@ With oXMLHTTP
     ' process the result
     If (.Status >= 200 And .Status < 300) Then
        Set objDOMFolders = .responseXML
-       GetFoldersURL = True
-    Else
-       GetFoldersURL = False
     End If
+    GetFoldersURL = .Status
 End With
 Set oXMLHTTP = Nothing
 Exit Function
 ErrHandler:
-    GetFoldersURL = False
+    GetFoldersURL = -1
 End Function
 
 
