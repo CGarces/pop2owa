@@ -322,11 +322,15 @@ On Error GoTo GestionErrores
         strDataToSend = "+OK Password required for " & strUser
     Case "PASS"
         strPassWord = Mid(strDataRecived, 6, Len(strDataRecived) - 7)
-        If objOWA.GetFoldersURL Then
+        'If objOWA.GetFoldersURL Then
+        Select Case objOWA.GetFoldersURL
+        Case 200 To 299
             strDataToSend = "+OK mailbox for " & strUser & " ready"
-        Else
+        Case 401
+            strDataToSend = "-ERR Invalid Password"
+        Case Else
             strDataToSend = "-ERR Unable to conect with mailbox "
-        End If
+        End Select
     Case "STAT"
         If objOWA.GetMsgList Then
             strDataToSend = "+OK " & objOWA.intMsgCount & " 0"
