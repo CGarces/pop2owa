@@ -9,3 +9,10 @@ Public bSaveinsent As Boolean
 Public Const XMLPATH As String = "a:multistatus/a:response/a:propstat/a:prop/"
 
 
+Public Function WriteLog(ByVal strText As String)
+Dim intFile As Integer
+intFile = FreeFile
+Open App.Path & "\pop2owa.err" For Append As #intFile
+    Print #intFile, Now & vbTab & strText
+Close #intFile
+End Function
