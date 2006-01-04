@@ -57,6 +57,8 @@ With oXMLHTTP
             .responseXML.save "c:\ATTS2.xml"
         #End If
         Set GetAttachmentsList = .responseXML.selectNodes("a:multistatus/a:response")
+    Else
+        WriteLog "GetAttachmentsList: " & .Status & vbTab & .statusText
     End If
 End With
 Set oXMLHTTP = Nothing
@@ -131,6 +133,7 @@ With oXMLHTTP
             objDOMMsg.save "C:\mensaje.xml"
         #End If
     Else
+        WriteLog "LoadMsg: " & .Status & vbTab & .statusText
         Err.Raise 51
     End If
 End With
@@ -149,6 +152,8 @@ With oXMLHTTP
             objDOMInbox.save "c:\ATT.xml"
         #End If
         GetAttachmentName = .responseXML.selectSingleNode("a:multistatus/a:response/a:propstat/a:prop/a:displayname").Text
+    Else
+        WriteLog "GetAttachmentName: " & .Status & vbTab & .statusText
     End If
 End With
 Set oXMLHTTP = Nothing
@@ -238,12 +243,15 @@ With oXMLHTTP
     ' process the result
     If (.Status >= 200 And .Status < 300) Then
        Set objDOMFolders = .responseXML
+    Else
+        WriteLog "GetFoldersURL: " & .Status & vbTab & .statusText
     End If
     GetFoldersURL = .Status
 End With
 Set oXMLHTTP = Nothing
 Exit Function
 ErrHandler:
+    WriteLog "GetFoldersURL: " & Err.Number & vbTab & Err.Description
     GetFoldersURL = -1
 End Function
 
@@ -386,36 +394,38 @@ Public Function SendMail(ByVal strMailData As String) As Boolean
 
 Dim strSubURL
 strSubURL = objDOMFolders.selectSingleNode(XMLPATH & "d:sendmsg").Text
+
 '         To use MSXML 4.0 use the followinf DIM/SET statements
-         Dim xmlReq As XMLHTTP
-         Set xmlReq = New XMLHTTP
+Dim xmlReq As XMLHTTP
+Set xmlReq = New XMLHTTP
 
-         On Error GoTo ErrHandler
+On Error GoTo ErrHandler
 
-          'Create the DAV PUT request.
+     'Create the DAV PUT request.
+    
+    xmlReq.open "PUT", strSubURL, False, strUser, strPassWord
+    If strMailData <> "" Then
+       xmlReq.setRequestHeader "Content-Type", "message/rfc821"
+       If Not bSaveinsent Then
+           xmlReq.setRequestHeader "Saveinsent", "f"
+       End If
+       xmlReq.Send strMailData
+    
+    End If
+    
+    'Process the results.
+    If (xmlReq.Status >= 200 And xmlReq.Status < 300) Then
+       SendMail = True
+    Else
+       WriteLog "SendMail: " & xmlReq.Status & vbTab & xmlReq.statusText
+       SendMail = False
+    End If
+    Set xmlReq = Nothing
 
-         xmlReq.open "PUT", strSubURL, False, strUser, strPassWord
-         If strMailData <> "" Then
-            xmlReq.setRequestHeader "Content-Type", "message/rfc821"
-            If Not bSaveinsent Then
-                xmlReq.setRequestHeader "Saveinsent", "f"
-            End If
-            xmlReq.Send strMailData
-         
-         End If
-
-         'Process the results.
-         If (xmlReq.Status >= 200 And xmlReq.Status < 300) Then
-            SendMail = True
-         Else
-            SendMail = False
-         End If
-ErrExit:
-      Set xmlReq = Nothing
-      Exit Function
+Exit Function
 ErrHandler:
-    Debug.Print Err.Description
-      SendMail = False
+    WriteLog "SendMail: " & Err.Number & vbTab & Err.Description
+    SendMail = False
 End Function
 
 Private Sub Class_Initialize()
