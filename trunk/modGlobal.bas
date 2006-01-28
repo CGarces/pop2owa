@@ -4,8 +4,9 @@ Public strPassWord      As String
 Public objDOMMsg        As DOMDocument
 Public objDOMInbox      As DOMDocument
 Public strExchSvrName  As String
-Public bSaveinsent As Boolean
 
+Public bSaveinsent      As Boolean
+Public bAuthentication  As Boolean
 Public Const XMLPATH As String = "a:multistatus/a:response/a:propstat/a:prop/"
 
 
