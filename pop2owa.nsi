@@ -6,7 +6,7 @@
   ;General
 Var STARTMENU_FOLDER
 !define PRODUCT "pop2owa"
-!define VERSION "v0.7.1"
+!define VERSION "v0.8"
 Name "${PRODUCT} ${VERSION}"
 OutFile "${PRODUCT}_${VERSION}.exe"
 InstallDir "$PROGRAMFILES\${PRODUCT}"
@@ -86,7 +86,8 @@ Section "Principal" SEC01
   CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\Uninstall.lnk" "$INSTDIR\uninst.exe"
   !insertmacro MUI_STARTMENU_WRITE_END
 
-  ReadRegStr $R0 HKCU "Software\${PRODUCT}" "ExchangeServer" 
+  ;Test the last value inserted (v0.8)
+  ReadRegStr $R0 HKCU "Software\${PRODUCT}" "FormBasedAuth"
   StrCmp $R0 "" write done
 
 write:
@@ -96,6 +97,8 @@ write:
   WriteRegDWORD HKCU "Software\${PRODUCT}" "POP3" 0x6E
   WriteRegDWORD HKCU "Software\${PRODUCT}" "SMTP" 0x19
   WriteRegDWORD HKCU "Software\${PRODUCT}" "Saveinsent" 0x1
+  WriteRegDWORD HKCU "Software\${PRODUCT}" "FormBasedAuth" 0x1
+  
 done:
 
 SectionEnd

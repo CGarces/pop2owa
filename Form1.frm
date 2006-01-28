@@ -18,6 +18,14 @@ Begin VB.Form frmMain
       TabIndex        =   1
       Top             =   2160
       Width           =   2415
+      Begin VB.CheckBox chkFBA 
+         Caption         =   "Form-Based-Auth"
+         Height          =   375
+         Left            =   120
+         TabIndex        =   13
+         Top             =   1320
+         Width           =   2055
+      End
       Begin VB.CheckBox chkSend 
          Caption         =   "Save sent messages"
          Height          =   495
@@ -31,7 +39,7 @@ Begin VB.Form frmMain
          Height          =   375
          Left            =   720
          TabIndex        =   7
-         Top             =   1680
+         Top             =   1800
          Width           =   1575
       End
       Begin VB.TextBox txtServer 
@@ -173,8 +181,8 @@ End Sub
 Private Sub Form_Load()
 On Error GoTo GestionErrores
 Dim intIndex As Integer
-
-   'Redraw controls
+    Me.Caption = Me.Caption & " " & App.Major & "." & App.Minor
+    'Redraw controls
     For intIndex = 0 To Me.Frame1.Count - 1
     With Frame1(intIndex)
         .Move TabStrip1.ClientLeft, _
@@ -206,7 +214,7 @@ On Error Resume Next
 End Sub
 
 Private Sub TabStrip1_Click()
-Frame1(TabStrip1.SelectedItem.Index - 1).ZOrder 0
+Frame1(TabStrip1.SelectedItem.index - 1).ZOrder 0
 End Sub
 
 Private Sub Timer1_Timer()
@@ -251,6 +259,9 @@ With c
     'Leave a copy in send folder
     .ValueKey = "Saveinsent"
     Me.chkSend.Value = .Value
+    'Form-Based-Authentication on/off
+    .ValueKey = "FormBasedAuth"
+    Me.chkFBA.Value = .Value
 End With
 End Sub
 
@@ -280,7 +291,9 @@ With c
     'Leave a copy in send folder
     .ValueKey = "Saveinsent"
     .Value = chkSend.Value
-    
+    'Form-Based-Authentication on/off
+    .ValueKey = "FormBasedAuth"
+    .Value = Me.chkFBA.Value
 End With
 End Sub
 
@@ -293,6 +306,7 @@ Private Sub Reset()
             .Port(1) = Me.txtPort(1).Text
         End If
         .Saveinsent = (Me.chkSend.Value = vbChecked)
+        .FormBasedAuthentication = (Me.chkFBA.Value = vbChecked)
         .Start
     End With
     strExchSvrName = Me.txtServer.Text
