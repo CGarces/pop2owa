@@ -27,6 +27,8 @@ Private dicTags         As Dictionary
 
 Private objDOMFolders   As DOMDocument
 
+Private strCookies As String
+
 Public intMsgCount As Integer
 
 ''
@@ -51,6 +53,10 @@ With oXMLHTTP
     .open "X-MS-ENUMATTS", strUrl, False, strUser, strPassWord
     .setRequestHeader "Depth", "1"
     .setRequestHeader "Content-type", "xml"
+    If strCookies <> Empty Then
+        .setRequestHeader "Cookies", "Necessary according to Q234486"
+        .setRequestHeader "Cookies", strCookies
+    End If
     .Send
     If .Status = 207 Then
         #If DEBUG_MODE = 1 Then
@@ -75,9 +81,15 @@ Dim oXMLHTTP    As XMLHTTP
 Dim objMIME     As Base64
 Set objMIME = New Base64
 Set oXMLHTTP = New XMLHTTP
-    oXMLHTTP.open "GET", strUrl, False, strUser, strPassWord
-    oXMLHTTP.Send
-    GetAttachment = objMIME.EncodeArr(oXMLHTTP.responseBody)
+With oXMLHTTP
+    .open "GET", strUrl, False, strUser, strPassWord
+    If strCookies <> Empty Then
+        .setRequestHeader "Cookies", "Necessary according to Q234486"
+        .setRequestHeader "Cookies", strCookies
+    End If
+    .Send
+    GetAttachment = objMIME.EncodeArr(.responseBody)
+End With
 Set objMIME = Nothing
 Set oXMLHTTP = Nothing
 End Function
@@ -93,6 +105,10 @@ Dim oXMLHTTP    As XMLHTTP
     Set oXMLHTTP = New XMLHTTP
     With oXMLHTTP
         .open "DELETE", GetURL(intMsg), False, strUser, strPassWord
+        If strCookies <> Empty Then
+            .setRequestHeader "Cookies", "Necessary according to Q234486"
+            .setRequestHeader "Cookies", strCookies
+        End If
         .setRequestHeader "Depth", "infinity"
         .Send
     '    Debug.Print .Status
@@ -120,6 +136,11 @@ With oXMLHTTP
     ' Set the header type
     .setRequestHeader "Content-type:", "text/xml"
     .setRequestHeader "Depth", "1"
+    If strCookies <> Empty Then
+        .setRequestHeader "Cookies", "Necessary according to Q234486"
+        .setRequestHeader "Cookies", strCookies
+    End If
+
     ' Send the request
     .Send
     While .readyState <> 4
@@ -145,6 +166,11 @@ Dim oXMLHTTP As XMLHTTP
 Set oXMLHTTP = New XMLHTTP
 With oXMLHTTP
     .open "PROPFIND", strUrl, False, strUser, strPassWord
+    If strCookies <> Empty Then
+        .setRequestHeader "Cookies", "Necessary according to Q234486"
+        .setRequestHeader "Cookies", strCookies
+    End If
+
     .Send
     'GetAttachment = oXMLHTTP.responseText
     If .Status = 207 Then
@@ -177,6 +203,11 @@ On Error GoTo GestionErrores
         ' Set the header type - we want XML
         .setRequestHeader "Content-type:", "text/xml"
         .setRequestHeader "Depth", "1"
+        If strCookies <> Empty Then
+            .setRequestHeader "Cookies", "Necessary according to Q234486"
+            .setRequestHeader "Cookies", strCookies
+        End If
+    
         ' Send the request
         Sleep 100
         Call .Send("<?xml version='1.0' ?>" & _
@@ -185,7 +216,7 @@ On Error GoTo GestionErrores
                      " ""DAV:href""" & _
                      ",""urn:schemas:httpmail:subject""" & _
                      ",""DAV:id""" & _
-                     ",""DAV:ishidden""" & _
+                     ",""DAV:getcontentlength""" & _
                      " FROM scope('shallow traversal of """ & strUrl & """')" & _
                     " WHERE ""DAV:ishidden""=False" & _
                     " AND ""DAV:isfolder""=False" & _
@@ -221,6 +252,7 @@ Public Function GetFoldersURL() As Long
 On Error GoTo ErrHandler
 Dim query As String
 Dim strUrl As String
+
 Dim oXMLHTTP    As XMLHTTP
 
 query = "<?xml version='1.0'?>"
@@ -237,7 +269,10 @@ With oXMLHTTP
     .open "PROPFIND", strUrl, False, strUser, strPassWord
     .setRequestHeader "Content-Type", "text/xml"
     .setRequestHeader "Depth", "0"
-    
+    If strCookies <> Empty Then
+        .setRequestHeader "Cookies", "Necessary according to Q234486"
+        .setRequestHeader "Cookies", strCookies
+    End If
     .Send query
     
     ' process the result
@@ -255,6 +290,42 @@ ErrHandler:
     GetFoldersURL = -1
 End Function
 
+''
+'Access the Exchange store via WebDAV with Form-Based-Authentication turned on.
+'
+'@return Descripción_de_la_salida
+'@author Carlos B
+'@version 1.0
+'@date 20/01/2006
+Public Function LogingFBA() As Boolean
+On Error GoTo ErrHandler
+Dim vHeaders    As Variant
+Dim intCounter  As Integer
+Dim intIndex    As Integer
+Dim strUrl As String
+Dim oXMLHTTP    As XMLHTTP
+
+strUrl = strExchSvrName & "/exchweb/bin/auth/owaauth.dll"
+Set oXMLHTTP = New XMLHTTP
+With oXMLHTTP
+    .open "POST", strUrl, False
+    .setRequestHeader "Content-type:", "application/x-www-form-urlencoded"
+    'Generate the body for FBA login
+    .Send "destination=" & strExchSvrName & "/exchange/&username=" & strUser & "&password=" & strPassWord
+    vHeaders = Split(.getAllResponseHeaders(), vbNewLine)
+End With
+For intIndex = 0 To UBound(vHeaders) - 1
+    If Left(vHeaders(intIndex), 10) = "Set-Cookie" Then
+        intCounter = intCounter + 1
+        strCookies = strCookies & Mid(vHeaders(intIndex), 12) & ";"
+    End If
+Next
+LogingFBA = (intCounter = 2)
+Exit Function
+ErrHandler:
+    WriteLog "GetFoldersURL: " & Err.Number & vbTab & Err.Description
+    LogingFBA = False
+End Function
 
 ''
 'Get the date of a message, converting OWA format in a standar date (rfc1939).
