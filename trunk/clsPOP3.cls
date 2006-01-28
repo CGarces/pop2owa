@@ -45,6 +45,9 @@ End Property
 Property Let Saveinsent(ByVal bSave As Boolean)
     bSaveinsent = bSave
 End Property
+Property Let FormBasedAuthentication(ByVal bAuth As Boolean)
+    bAuthentication = bAuth
+End Property
 
 ''
 'Creates a new socket.
@@ -310,6 +313,7 @@ On Error GoTo GestionErrores
     Dim intMsg As Integer
     Dim intTotal As Integer
     Dim bCloseSocket As Boolean
+    Dim lngSize As Long
     '
     If Left(strDataRecived, 4) <> "PASS" Then
         Debug.Print strDataRecived
@@ -322,6 +326,11 @@ On Error GoTo GestionErrores
         strDataToSend = "+OK Password required for " & strUser
     Case "PASS"
         strPassWord = Mid(strDataRecived, 6, Len(strDataRecived) - 7)
+        If bAuthentication Then
+            If Not objOWA.LogingFBA Then
+                strDataToSend = "-ERR Unable to autenticate"
+            End If
+        End If
         'If objOWA.GetFoldersURL Then
         Select Case objOWA.GetFoldersURL
         Case 200 To 299
@@ -333,7 +342,12 @@ On Error GoTo GestionErrores
         End Select
     Case "STAT"
         If objOWA.GetMsgList Then
-            strDataToSend = "+OK " & objOWA.intMsgCount & " 0"
+            Set oElements = objDOMInbox.selectNodes(XMLPATH & "a:getcontentlength")
+            For Each oElement In oElements
+                'strDataToSend = strDataToSend & intMsg & " 1 " & vbCrLf
+                lngSize = lngSize + oElement.Text
+            Next
+            strDataToSend = "+OK " & objOWA.intMsgCount & " " & lngSize
         Else
             strDataToSend = "-ERR Unable to conect with mailbox "
         End If
@@ -344,13 +358,24 @@ On Error GoTo GestionErrores
         strDataToSend = "+OK " & m_strIP & " server signing off, 0 messages deleted"
         bCloseSocket = True
     Case "LIST"
-        SendMsg "+OK scan listing follows ", lngPop3Write
-        intTotal = objOWA.intMsgCount
-        For intMsg = 1 To intTotal
-            strDataToSend = strDataToSend & intMsg & " 1 " & vbCrLf
-        Next
-        SendMsg strDataToSend, lngPop3Write
-        strDataToSend = "."
+        Set oElements = objDOMInbox.selectNodes(XMLPATH & "a:getcontentlength")
+        If Len(strDataRecived) > 6 Then
+            intMsg = CInt(Mid(strDataRecived, 6))
+            strDataToSend = "+OK " & intMsg & " " & oElements(intMsg - 1).Text & vbCrLf
+        Else
+            intTotal = objOWA.intMsgCount
+            'For intMsg = 1 To intTotal
+            For Each oElement In oElements
+                'strDataToSend = strDataToSend & intMsg & " 1 " & vbCrLf
+                intMsg = intMsg + 1
+                lngSize = lngSize + oElement.Text
+                strDataToSend = strDataToSend & intMsg & " " & oElement.Text & vbCrLf
+            Next
+            SendMsg "+OK " & intTotal & " messages (" & lngSize & ") octets", lngPop3Write
+            Debug.Assert intTotal = oElements.Length
+            SendMsg strDataToSend, lngPop3Write
+            strDataToSend = "."
+        End If
     Case "NOOP"
         strDataToSend = "+OK "
     Case "UIDL"
@@ -501,7 +526,7 @@ On Error GoTo GestionErrores
         'try to emulate a multi part msg.
         strContentType = "Content-Type: multipart/related;boundary=""--------------" & Right(String(23, "0") & 1, 23) & """"
     End If
-    SendMsg "+OK", lngPop3Write
+    SendMsg "+OK " & objDOMMsg.selectSingleNode(XMLPATH & "a:getcontentlength").Text & " octets", lngPop3Write
     'Header
     'Search the boundary strings
     intPos = InStr(LCase(strContentType), "boundary")
