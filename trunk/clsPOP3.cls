@@ -492,7 +492,7 @@ End Sub
 '
 '@param strUrl URL of the .EML file
 '@return Strig to send to e-mail client (rfc1939).
-Private Function getMsg(ByVal strUrl As String) As String
+Private Function getMsg(ByVal strURL As String) As String
 On Error GoTo GestionErrores
     Dim strDataToSend   As String
     Dim strBoundary     As String
@@ -504,7 +504,7 @@ On Error GoTo GestionErrores
     Dim intPos          As Integer
 
     'strUrl = objDOMInbox.childNodes(1).childNodes(intMsg - 1).selectSingleNode("a:propstat/a:prop/a:href").Text
-    objOWA.LoadMsg strUrl
+    objOWA.LoadMsg strURL
     If objDOMMsg.selectSingleNode(XMLPATH & "e:hasattachment") Is Nothing Then
         bHasAttachment = True
     Else
@@ -517,9 +517,15 @@ On Error GoTo GestionErrores
         strContentType = "Content-Type: " & objDOMMsg.selectSingleNode(XMLPATH & "d:content-type").Text
     Else
         'In some case the Content-Type not is correct.
-        'MSExchange sent text/plain instead text/html.
-        'Force to read the HTML content to work OK in all cases
-        strContentType = "Content-Type: multipart/related;boundary=""--------------" & Right(String(23, "0") & 1, 23) & """"
+        '
+        If objDOMMsg.selectSingleNode(XMLPATH & "f:outlookmessageclass").Text = "REPORT.IPM.Note.NDR" Then
+            strContentType = "Content-Type: multipart/report; report-type=delivery-status;boundary=""--------------" & Right(String(23, "0") & 1, 23) & """"
+        Else
+            'MSExchange sent text/plain instead text/html.
+            'Force to read the HTML content to work OK in all cases
+            strContentType = "Content-Type: multipart/related;boundary=""--------------" & Right(String(23, "0") & 1, 23) & """"
+        End If
+        
     End If
     If InStr(strContentType, "html") > 0 And Not (bHasAttachment) Then
         'I have a problem with HTML without attachment
@@ -542,20 +548,29 @@ On Error GoTo GestionErrores
             strBody = objDOMMsg.selectSingleNode(XMLPATH & "e:htmldescription").Text
             strBody = Replace(strBody, "onload=""initTemplate()""", Empty)
         End If
+        If objDOMMsg.selectSingleNode(XMLPATH & "f:outlookmessageclass").Text = "REPORT.IPM.Note.NDR" Then
         
-        strDataToSend = vbCrLf & "This is a multi-part message in MIME format." & vbCrLf & _
-                    "--" & strBoundary & vbCrLf & _
-                    "Content-Type: text/html; charset=ISO-8859-1" & vbCrLf & _
-                    "Content-Transfer-Encoding: 8bit " & vbCrLf & _
-                    "Content-Disposition: inline" & vbCrLf & _
-                    vbCrLf & _
-                    strBody & vbCrLf & _
-                    "" & vbCrLf
-        
-        
+            strDataToSend = vbCrLf & "This is a MIME-encapsulated message." & vbCrLf & _
+                        "--" & strBoundary & vbCrLf & _
+                                "Content-Type: message/delivery-status" & vbCrLf & _
+                        "Content-Transfer-Encoding: 8bit " & vbCrLf & _
+                        "Content-Disposition: inline" & vbCrLf & _
+                        vbCrLf & _
+                        strBody & vbCrLf & _
+                        "" & vbCrLf
+        Else
+            strDataToSend = vbCrLf & "This is a multi-part message in MIME format." & vbCrLf & _
+                        "--" & strBoundary & vbCrLf & _
+                                "Content-Type: text/html; charset=ISO-8859-1" & vbCrLf & _
+                        "Content-Transfer-Encoding: 8bit " & vbCrLf & _
+                        "Content-Disposition: inline" & vbCrLf & _
+                        vbCrLf & _
+                        strBody & vbCrLf & _
+                        "" & vbCrLf
+        End If
         SendMsg strDataToSend, lngPop3Write
         If bHasAttachment Then
-            SendAttachments strUrl, strBoundary
+            SendAttachments strURL, strBoundary
         End If
         'End of multipart msg
         getMsg = "--" & strBoundary & "--" & vbCrLf & "."
@@ -730,7 +745,7 @@ End If
 Set objQP = Nothing
 End Function
 
-Private Sub SendAttachments(ByVal strUrl As String, ByVal strBoundary As String)
+Private Sub SendAttachments(ByVal strURL As String, ByVal strBoundary As String)
 On Error GoTo GestionErrores
 
 Dim strDataToSend   As String
@@ -742,17 +757,18 @@ Dim strFilename As String
 
 'Send mail Attachments
 'Attachment
-Set oElements = objOWA.GetAttachmentsList(strUrl)
+Set oElements = objOWA.GetAttachmentsList(strURL)
 For Each oElement In oElements
     strDataToSend = vbCrLf & "--" & strBoundary & vbCrLf & _
                     "Content-Transfer-Encoding: base64 " & vbCrLf
 
-    strUrl = oElement.selectSingleNode("a:href").Text
+    strURL = oElement.selectSingleNode("a:href").Text
+    
     strContentType = "application/octet-stream"
     If Not oElement.selectSingleNode("a:propstat/a:prop/d:x370e001f") Is Nothing Then
         strContentType = oElement.selectSingleNode("a:propstat/a:prop/d:x370e001f").Text
     End If
-    
+   
     'PR_ATTACH_METHOD
     If oElement.selectSingleNode("a:propstat/a:prop/d:x37050003").Text = 5 Then
         'ATTACH_EMBEDDED_MSG
@@ -777,23 +793,34 @@ For Each oElement In oElements
     End If
     
     'PR_ATTACH_CONTENT_ID
-    If oElement.selectSingleNode("a:propstat/a:prop/d:x3712001f") Is Nothing Then
-        strDataToSend = strDataToSend & "Content-Type: " & strContentType & "; name=""" & strFilename & """" & vbCrLf & _
-                    "Content-Disposition: " & strContentDisposition & "; fileName = """ & strFilename & """" & vbCrLf & vbCrLf & vbCrLf
-    Else
-        'If has PR_ATTACH_CONTENT_ID
-        strDataToSend = strDataToSend & "Content-Type: IMAGE/JPEG; name=""" & strFilename & """" & vbCrLf & _
-                    "Content-Disposition: " & strContentDisposition & "; fileName = """ & strFilename & """" & vbCrLf & _
-                    "Content-ID: <" & oElement.selectSingleNode("a:propstat/a:prop/d:x3712001f").Text & ">" & vbCrLf & vbCrLf & vbCrLf
-        'oElement.selectSingleNode("a:propstat/a:prop/d:x3716001f").Text
-    End If
+    strDataToSend = strDataToSend & objOWA.GetAttHeader(oElement)
+    
+    strDataToSend = strDataToSend & "Content-Type: " & strContentType & "; name=""" & strFilename & """" & vbCrLf & _
+                "Content-Disposition: " & strContentDisposition & "; filename=""" & strFilename & """" & vbCrLf & vbCrLf & vbCrLf
+    
+'
+'    'PR_ATTACH_CONTENT_ID
+'    strDataToSend = strDataToSend & objOWA.GetAttHeader(oElement)
+'    If oElement.selectSingleNode("a:propstat/a:prop/d:x3712001f") Is Nothing Then
+'        strDataToSend = strDataToSend & "Content-Type: " & strContentType & "; name=""" & strFilename & """" & vbCrLf & _
+'                    "Content-Disposition: " & strContentDisposition & "; fileName = """ & strFilename & """" & vbCrLf & vbCrLf & vbCrLf
+'    Else
+'        'If has PR_ATTACH_CONTENT_ID
+'        strDataToSend = strDataToSend & "Content-Type: IMAGE/JPEG; name=""" & strFilename & """" & vbCrLf & _
+'                    "Content-Disposition: " & strContentDisposition & "; fileName = """ & strFilename & """" & vbCrLf & _
+'                    "Content-ID: <" & oElement.selectSingleNode("a:propstat/a:prop/d:x3712001f").Text & ">" & vbCrLf & vbCrLf & vbCrLf
+'        'oElement.selectSingleNode("a:propstat/a:prop/d:x3716001f").Text
+'    End If
+    
+    
     'Send attachment header
     SendMsg strDataToSend, lngPop3Write
     'Send attachment data
-    SendMsg objOWA.GetAttachment(strUrl) & vbCrLf & vbCrLf, lngPop3Write
+    SendMsg objOWA.GetAttachment(strURL) & vbCrLf & vbCrLf, lngPop3Write
 Next
 Exit Sub
 GestionErrores:
     Debug.Assert False
     Err.Raise Err.Number
 End Sub
+
