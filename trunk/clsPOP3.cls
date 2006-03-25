@@ -552,16 +552,15 @@ On Error GoTo GestionErrores
         
             strDataToSend = vbCrLf & "This is a MIME-encapsulated message." & vbCrLf & _
                         "--" & strBoundary & vbCrLf & _
-                                "Content-Type: message/delivery-status" & vbCrLf & _
+                        "--" & strBoundary & vbCrLf & _
+                        "Content-Type: text/html; charset=ISO-8859-1" & vbCrLf & _
                         "Content-Transfer-Encoding: 8bit " & vbCrLf & _
-                        "Content-Disposition: inline" & vbCrLf & _
-                        vbCrLf & _
-                        strBody & vbCrLf & _
+                        vbCrLf & strBody & vbCrLf & _
                         "" & vbCrLf
         Else
             strDataToSend = vbCrLf & "This is a multi-part message in MIME format." & vbCrLf & _
                         "--" & strBoundary & vbCrLf & _
-                                "Content-Type: text/html; charset=ISO-8859-1" & vbCrLf & _
+                        "Content-Type: text/html; charset=ISO-8859-1" & vbCrLf & _
                         "Content-Transfer-Encoding: 8bit " & vbCrLf & _
                         "Content-Disposition: inline" & vbCrLf & _
                         vbCrLf & _
