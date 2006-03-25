@@ -25,6 +25,8 @@ Option Explicit
 '@see #initArrays
 Private dicTags         As Dictionary
 
+Private dicMapi         As Dictionary
+
 Private objDOMFolders   As DOMDocument
 
 Private strCookies As String
@@ -45,12 +47,12 @@ End Function
 '
 '@param strUrl  Url of the .EML file
 '@return Node list with Attachments properties
-Public Function GetAttachmentsList(ByVal strUrl As String) As IXMLDOMNodeList
+Public Function GetAttachmentsList(ByVal strURL As String) As IXMLDOMNodeList
 Dim oXMLHTTP As XMLHTTP
 
 Set oXMLHTTP = New XMLHTTP
 With oXMLHTTP
-    .open "X-MS-ENUMATTS", strUrl, False, strUser, strPassWord
+    .open "X-MS-ENUMATTS", strURL, False, strUser, strPassWord
     .setRequestHeader "Depth", "1"
     .setRequestHeader "Content-type", "xml"
     If strCookies <> Empty Then
@@ -76,13 +78,13 @@ End Function
 '
 '@param strUrl  Url of the .EML file
 '@return Binary content encoded in Base64
-Public Function GetAttachment(ByVal strUrl As String) As String
+Public Function GetAttachment(ByVal strURL As String) As String
 Dim oXMLHTTP    As XMLHTTP
 Dim objMIME     As Base64
 Set objMIME = New Base64
 Set oXMLHTTP = New XMLHTTP
 With oXMLHTTP
-    .open "GET", strUrl, False, strUser, strPassWord
+    .open "GET", strURL, False, strUser, strPassWord
     If strCookies <> Empty Then
         .setRequestHeader "Cookies", "Necessary according to Q234486"
         .setRequestHeader "Cookies", strCookies
@@ -126,13 +128,13 @@ End Function
 '
 '@param strUrl Url of the .EML file
 '@see clsOWA.objDOMMsg
-Public Sub LoadMsg(ByVal strUrl As String)
+Public Sub LoadMsg(ByVal strURL As String)
 Dim oXMLHTTP As XMLHTTP
 ' Create an instance of the xmlHTTP object
 Set oXMLHTTP = CreateObject("microsoft.xmlhttp")
 With oXMLHTTP
     ' Open a request to a particular url
-    .open "PROPFIND", strUrl, False, strUser, strPassWord
+    .open "PROPFIND", strURL, False, strUser, strPassWord
     ' Set the header type
     .setRequestHeader "Content-type:", "text/xml"
     .setRequestHeader "Depth", "1"
@@ -161,11 +163,11 @@ End With
 Set oXMLHTTP = Nothing
 End Sub
 
-Private Function GetAttachmentName(ByVal strUrl As String) As String
+Private Function GetAttachmentName(ByVal strURL As String) As String
 Dim oXMLHTTP As XMLHTTP
 Set oXMLHTTP = New XMLHTTP
 With oXMLHTTP
-    .open "PROPFIND", strUrl, False, strUser, strPassWord
+    .open "PROPFIND", strURL, False, strUser, strPassWord
     If strCookies <> Empty Then
         .setRequestHeader "Cookies", "Necessary according to Q234486"
         .setRequestHeader "Cookies", strCookies
@@ -192,14 +194,14 @@ End Function
 Public Function GetMsgList() As Boolean
 On Error GoTo GestionErrores
 
-    Dim strUrl As String
+    Dim strURL As String
     Dim oXMLHTTP As XMLHTTP
-    strUrl = objDOMFolders.selectSingleNode(XMLPATH & "d:inbox").Text & "/"
+    strURL = objDOMFolders.selectSingleNode(XMLPATH & "d:inbox").Text & "/"
     ' Create an instance of the xmlHTTP object
     Set oXMLHTTP = CreateObject("microsoft.xmlhttp")
     With oXMLHTTP
         ' Open a request to a particular url
-        .open "SEARCH", strUrl, False, strUser, strPassWord
+        .open "SEARCH", strURL, False, strUser, strPassWord
         ' Set the header type - we want XML
         .setRequestHeader "Content-type:", "text/xml"
         .setRequestHeader "Depth", "1"
@@ -217,7 +219,7 @@ On Error GoTo GestionErrores
                      ",""urn:schemas:httpmail:subject""" & _
                      ",""DAV:id""" & _
                      ",""DAV:getcontentlength""" & _
-                     " FROM scope('shallow traversal of """ & strUrl & """')" & _
+                     " FROM scope('shallow traversal of """ & strURL & """')" & _
                     " WHERE ""DAV:ishidden""=False" & _
                     " AND ""DAV:isfolder""=False" & _
                     "</a:sql></a:searchrequest>")
@@ -251,7 +253,7 @@ Public Function GetFoldersURL() As Long
 
 On Error GoTo ErrHandler
 Dim query As String
-Dim strUrl As String
+Dim strURL As String
 
 Dim oXMLHTTP    As XMLHTTP
 
@@ -264,9 +266,9 @@ query = query + "</a:prop>"
 query = query + "</a:propfind>"
 
 Set oXMLHTTP = New XMLHTTP
-strUrl = strExchSvrName & "/exchange/" & strUser & "/"
+strURL = strExchSvrName & "/exchange/" & strUser & "/"
 With oXMLHTTP
-    .open "PROPFIND", strUrl, False, strUser, strPassWord
+    .open "PROPFIND", strURL, False, strUser, strPassWord
     .setRequestHeader "Content-Type", "text/xml"
     .setRequestHeader "Depth", "0"
     If strCookies <> Empty Then
@@ -302,13 +304,13 @@ On Error GoTo ErrHandler
 Dim vHeaders    As Variant
 Dim intCounter  As Integer
 Dim intIndex    As Integer
-Dim strUrl As String
+Dim strURL As String
 Dim oXMLHTTP    As XMLHTTP
 
-strUrl = strExchSvrName & "/exchweb/bin/auth/owaauth.dll"
+strURL = strExchSvrName & "/exchweb/bin/auth/owaauth.dll"
 Set oXMLHTTP = New XMLHTTP
 With oXMLHTTP
-    .open "POST", strUrl, False
+    .open "POST", strURL, False
     .setRequestHeader "Content-type:", "application/x-www-form-urlencoded"
     'Generate the body for FBA login
     .Send "destination=" & strExchSvrName & "/exchange/&username=" & strUser & "&password=" & strPassWord
@@ -404,6 +406,9 @@ For Each Key In vKeys
         Case "Date"
             strValue = GetPOPDate(strValue)
             strDataToSend = strDataToSend & Key & ": " & strValue & vbCrLf
+        Case "Content-Transfer-Encoding"
+            'OWA has unencoded the mail. I owerwite this tag
+            strDataToSend = strDataToSend & Key & ": 8bit " & vbCrLf
         Case "To", "Cc", "Bcc", "From", "Disposition-Notification-To"
             strReturn = Empty
             Do
@@ -425,11 +430,47 @@ For Each Key In vKeys
             strDataToSend = strDataToSend & Key & ": " & strValue & vbCrLf
         End Select
     ElseIf Key = "Content-Transfer-Encoding" Then
+        'If is missed in the mail, put a default value
         strDataToSend = strDataToSend & "Content-Transfer-Encoding: 8bit " & vbCrLf
     End If
 Next
 getMsgHeader = strDataToSend
 End Function
+Public Function GetAttHeader(ByRef oElement As IXMLDOMElement) As String
+
+
+Dim strDataToSend   As String
+Dim vKeys           As Variant
+Dim Key             As Variant
+Dim strValue        As String
+Dim intPos1         As Integer
+Dim intPos2         As Integer
+Dim strEmail        As String
+Dim strName         As String
+Dim strReturn       As String
+
+vKeys = dicMapi.Keys
+For Each Key In vKeys
+    If Not oElement.selectSingleNode("a:propstat/a:prop/" & dicMapi.Item(Key)) Is Nothing Then
+        strValue = oElement.selectSingleNode("a:propstat/a:prop/" & dicMapi.Item(Key)).Text
+        Select Case Key
+        Case "Content-ID"
+            strDataToSend = strDataToSend & Key & ": <" & strValue & ">" & vbCrLf
+        Case Else
+            strDataToSend = strDataToSend & Key & ": " & strValue & vbCrLf
+        End Select
+    'Defaulf values
+    Else
+        Select Case Key
+        Case "d:x370e001f"
+        strDataToSend = strDataToSend & "Content-Transfer-Encoding: 8bit " & vbCrLf
+        End Select
+    End If
+Next
+GetAttHeader = strDataToSend
+End Function
+
+
 
 ''
 'Init a public dictionary with the trlanslation of XML tags of OWA
@@ -447,12 +488,18 @@ Private Sub initArrays()
     'dicTags.Add "Received", "d:received"
     'dicTags.Add "Content-Type", "d:content-type"
     dicTags.Add "Content-Transfer-Encoding", "d:content-transfer-encoding"
+    dicTags.Add "Content-Disposition", "d:content-disposition"
     dicTags.Add "MIME-Version", "d:mime-version"
     dicTags.Add "Message-ID", "d:message-id"
     dicTags.Add "X-Mailer", "d:x-mailer"
+    dicTags.Add "X-MAPI-Message-Class", "f:outlookmessageclass"
     dicTags.Add "Disposition-Notification-To", "d:disposition-notification-to"
     dicTags.Add "Content-Class", "a:contentclass"
 
+    Set dicMapi = New Dictionary
+    dicMapi.Add "Content-Location", "d:x3713001f"
+    dicMapi.Add "Content-ID", "d:x3712001f"
+    'dicMapi.Add "Content-Disposition", "d:x3716001f"
 End Sub
 
 
