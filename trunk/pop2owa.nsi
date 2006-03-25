@@ -6,7 +6,7 @@
   ;General
 Var STARTMENU_FOLDER
 !define PRODUCT "pop2owa"
-!define VERSION "v0.8"
+!define VERSION "v0.9"
 Name "${PRODUCT} ${VERSION}"
 OutFile "${PRODUCT}_${VERSION}.exe"
 InstallDir "$PROGRAMFILES\${PRODUCT}"
@@ -98,7 +98,7 @@ write:
   WriteRegDWORD HKCU "Software\${PRODUCT}" "SMTP" 0x19
   WriteRegDWORD HKCU "Software\${PRODUCT}" "Saveinsent" 0x1
   WriteRegDWORD HKCU "Software\${PRODUCT}" "FormBasedAuth" 0x1
-  
+
 done:
 
 SectionEnd
