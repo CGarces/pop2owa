@@ -634,14 +634,17 @@ On Error GoTo GestionErrores
     Case "HELO"
         strDataToSend = "250 " & m_strIP
     Case "EHLO"
-'        strDataToSend = strDataToSend & vbNewLine & "250-" & m_strIP
+        strDataToSend = "250-" & m_strIP
 '        strDataToSend = strDataToSend & vbNewLine & "250-8BITMIME"
-'        If strPassWord = Empty Or strUser = Empty Then
+'       If strPassWord = Empty Or strUser = Empty Then
 '            strDataToSend = strDataToSend & vbNewLine & "250-AUTH=LOGIN PLAIN"
-'            strDataToSend = strDataToSend & vbNewLine & "250-AUTH LOGIN PLAIN"
+            strDataToSend = strDataToSend & vbNewLine & "250-AUTH LOGIN PLAIN"
+            strDataToSend = strDataToSend & vbNewLine & "250 HELP"
 '        End If
 '        strDataToSend = strDataToSend & vbNewLine & "250 Size 51200000"
-        strDataToSend = "500 Syntax error, command unrecognized"
+        'strDataToSend = "500 Syntax error, command unrecognized"
+'         strDataToSend = strDataToSend & vbNewLine & "250 AUTH LOGIN PLAIN"
+    
     Case "AUTH"
         Dim objBase As New Base64
         Dim strReply As String
@@ -654,22 +657,29 @@ On Error GoTo GestionErrores
             If Len(strReply) > 1 Then
                 strUser = Mid(strReply, 2, InStr(2, strReply, Chr(0)) - 2)
                 strPassWord = Mid(strReply, InStr(2, strReply, Chr(0)) + 1)
-                strDataToSend = "235 AUTHENTICATION SUCCESSFUL"
+                If bAuthentication Then
+                    If Not objOWA.LogingFBA Then
+                        strDataToSend = "533  Authentication required [AUTH]"
+                    End If
+                End If
+                strDataToSend = ValidateSMTPAUTH
             Else
                 strDataToSend = "533  Authentication required [AUTH]"
             End If
         Else
-            If strSMTPState = "LOGIN" Then
+            Select Case strSMTPState
+            Case "LOGIN"
                 strUser = objBase.Decode(Mid(strDataRecived, 6))
                 strSMTPState = "PASSWORD"
                 strDataToSend = "334 " & objBase.Encode("Password:")
-            ElseIf strSMTPState = "PASSWORD" Then
+            Case "PASSWORD"
                 strPassWord = objBase.Decode(Mid(strDataRecived, 6))
-                strDataToSend = "235 AUTHENTICATION SUCCESSFUL"
+                strDataToSend = ValidateSMTPAUTH
                 strSMTPState = ""
-            Else
-                strDataToSend = "556 CLIENT AUTHENTICATION REQUIRED. USE ESMTP EHLO AND AUTH"
-            End If
+            Case Else
+                strDataToSend = "504 Unrecognized authentication type."
+                'strDataToSend = "556 CLIENT AUTHENTICATION REQUIRED. USE ESMTP EHLO AND AUTH"
+            End Select
         End If
     Case "MAIL"
         If strPassWord = Empty Or strUser = Empty Then
@@ -744,6 +754,11 @@ End If
 Set objQP = Nothing
 End Function
 
+''
+'Send a message attachment to the email client.
+'
+'@param strURL URL of the .EML file
+'@param string that identify the attachment in the message
 Private Sub SendAttachments(ByVal strURL As String, ByVal strBoundary As String)
 On Error GoTo GestionErrores
 
@@ -823,3 +838,22 @@ GestionErrores:
     Err.Raise Err.Number
 End Sub
 
+''
+'Validate the current user & password, using GetFoldersURL
+'
+'@return SMTP comand with the result of the operation
+'
+'@see clsOWA.GetFoldersURL
+'@date 2006/03/31
+Private Function ValidateSMTPAUTH() As String
+    Select Case objOWA.GetFoldersURL
+    Case 200 To 299
+        ValidateSMTPAUTH = "235 AUTHENTICATION SUCCESSFUL"
+    Case 401
+        'Wrong password
+        ValidateSMTPAUTH = "535 5.7.0 authentication failed"
+    Case Else
+        'Unknow error
+        ValidateSMTPAUTH = "533  Authentication required [AUTH]"
+    End Select
+End Function
