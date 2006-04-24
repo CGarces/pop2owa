@@ -268,7 +268,7 @@ Private Sub Received(ByVal lngSocket As Long)
     ElseIf lngBytesReceived = SOCKET_ERROR Then
         '
         'An error was occurred
-        Err.Raise Err.LastDllError, , GetErrorDescription(Err.LastDllError)
+        Err.Raise Err.LastDllError, "clsPOP3.Received", GetErrorDescription(Err.LastDllError)
     End If
 End Sub
 
@@ -315,17 +315,17 @@ On Error GoTo GestionErrores
     Dim bCloseSocket As Boolean
     Dim lngSize As Long
     '
-    If Left(strDataRecived, 4) <> "PASS" Then
+    If Left$(strDataRecived, 4) <> "PASS" Then
         Debug.Print strDataRecived
     End If
-    Select Case Left(strDataRecived, 4)
+    Select Case Left$(strDataRecived, 4)
     Case Empty
         strDataToSend = "+OK POP3 server ready"
     Case "USER"
-        strUser = Mid(strDataRecived, 6, Len(strDataRecived) - 7)
+        strUser = Mid$(strDataRecived, 6, Len(strDataRecived) - 7)
         strDataToSend = "+OK Password required for " & strUser
     Case "PASS"
-        strPassWord = Mid(strDataRecived, 6, Len(strDataRecived) - 7)
+        strPassWord = Mid$(strDataRecived, 6, Len(strDataRecived) - 7)
         If bAuthentication Then
             If Not objOWA.LogingFBA Then
                 strDataToSend = "-ERR Unable to autenticate"
@@ -336,9 +336,11 @@ On Error GoTo GestionErrores
         Case 200 To 299
             strDataToSend = "+OK mailbox for " & strUser & " ready"
         Case 401
-            strDataToSend = "-ERR Invalid Password"
+            strDataToSend = "-ERR Invalid Password for " & strUser
+            bCloseSocket = True
         Case Else
             strDataToSend = "-ERR Unable to conect with mailbox "
+            bCloseSocket = True
         End Select
     Case "STAT"
         If objOWA.GetMsgList Then
@@ -352,15 +354,16 @@ On Error GoTo GestionErrores
             strDataToSend = "-ERR Unable to conect with mailbox "
         End If
     Case "RETR"
-        strDataToSend = getMsg(objDOMInbox.childNodes(1).childNodes(CInt(Mid(strDataRecived, 6)) - 1).selectSingleNode("a:propstat/a:prop/a:href").Text)
-        bCloseSocket = (Left(strDataToSend, 4) = "-ERR")
+        strDataToSend = getMsg(objDOMInbox.childNodes(1).childNodes(CInt(Mid$(strDataRecived, 6)) - 1).selectSingleNode("a:propstat/a:prop/a:href").Text)
+        bCloseSocket = (Left$(strDataToSend, 4) = "-ERR")
     Case "QUIT"
         strDataToSend = "+OK " & m_strIP & " server signing off, 0 messages deleted"
         bCloseSocket = True
+        
     Case "LIST"
         Set oElements = objDOMInbox.selectNodes(XMLPATH & "a:getcontentlength")
         If Len(strDataRecived) > 6 Then
-            intMsg = CInt(Mid(strDataRecived, 6))
+            intMsg = CInt(Mid$(strDataRecived, 6))
             strDataToSend = "+OK " & intMsg & " " & oElements(intMsg - 1).Text & vbCrLf
         Else
             intTotal = objOWA.intMsgCount
@@ -381,7 +384,7 @@ On Error GoTo GestionErrores
     Case "UIDL"
         Set oElements = objDOMInbox.selectNodes(XMLPATH & "a:id")
         If Len(strDataRecived) > 6 Then
-            intMsg = CInt(Mid(strDataRecived, 6))
+            intMsg = CInt(Mid$(strDataRecived, 6))
             strDataToSend = "+OK " & intMsg & " " & oElements(intMsg - 1).Text & vbCrLf
         Else
             strDataToSend = "+OK " & vbCrLf
@@ -392,28 +395,31 @@ On Error GoTo GestionErrores
             strDataToSend = strDataToSend & "."
         End If
     Case "CAPA"
-        SendMsg "+OK Capability list follows", lngPop3Write
-        SendMsg "UIDL", lngPop3Write
-        strDataToSend = "."
+        strDataToSend = "+OK Capability list follows" & vbCrLf & _
+                        "USER" & vbCrLf & _
+                        "UIDL" & vbCrLf & _
+                        "."
     Case "DELE"
-        intMsg = CInt(Mid(strDataRecived, 6))
+        intMsg = CInt(Mid$(strDataRecived, 6))
         If objOWA.Delete(intMsg) Then
             strDataToSend = "+OK message " & intMsg & " deleted"
             'Additional Sleep, My Outlook 2000 fails if delete msg faster
             Sleep 500
         Else
-            strDataToSend = "-ERR deleting message " & Mid(strDataRecived, 6)
+            strDataToSend = "-ERR deleting message " & Mid$(strDataRecived, 6)
             bCloseSocket = True
         End If
         
     Case "AUTH"
-        strDataToSend = "-ERR " & Left(strDataRecived, 4) & " unsuported feature "
+        strDataToSend = "-ERR " & Left$(strDataRecived, 4) & " unsuported feature "
     Case Else
         Debug.Assert False
-        strDataToSend = "-ERR " & Left(strDataRecived, 4) & " unsuported feature "
+        strDataToSend = "-ERR Syntax error"
     End Select
     SendMsg strDataToSend, lngPop3Write
     If bCloseSocket Then
+        Set objDOMMsg = Nothing
+        Set objDOMInbox = Nothing
         'Call the closesocket Winsock API function
         'in order to close the socket
          Call closesocket(lngPop3Write)
@@ -422,8 +428,9 @@ On Error GoTo GestionErrores
 Exit Sub
 GestionErrores:
     Debug.Assert False
-    Call closesocket(lngPop3Write)
-    lngPop3Write = 0
+'    Call closesocket(lngPop3Write)
+'    lngPop3Write = 0
+    Err.Raise Err.Number, "SendPOP3", Err.Description
 End Sub
 
 ''
@@ -431,9 +438,9 @@ End Sub
 '
 '@param strDataToSend Strings to send
 '@param lngSocket The descriptor that identifies a connected socket
-Private Sub SendMsg(ByVal strDataToSend As String, lngSocket)
+Private Sub SendMsg(ByVal strDataToSend As String, ByVal lngSocket As Long)
     'Add CRLF if needed
-    If Right(strDataToSend, 2) <> vbCrLf Then
+    If Right$(strDataToSend, 2) <> vbCrLf Then
         strDataToSend = strDataToSend & vbCrLf
     End If
     '
@@ -519,27 +526,27 @@ On Error GoTo GestionErrores
         'In some case the Content-Type not is correct.
         '
         If objDOMMsg.selectSingleNode(XMLPATH & "f:outlookmessageclass").Text = "REPORT.IPM.Note.NDR" Then
-            strContentType = "Content-Type: multipart/report; report-type=delivery-status;boundary=""--------------" & Right(String(23, "0") & 1, 23) & """"
+            strContentType = "Content-Type: multipart/report; report-type=delivery-status;boundary=""--------------" & Right$(String$(23, "0") & 1, 23) & """"
         Else
             'MSExchange sent text/plain instead text/html.
             'Force to read the HTML content to work OK in all cases
-            strContentType = "Content-Type: multipart/related;boundary=""--------------" & Right(String(23, "0") & 1, 23) & """"
+            strContentType = "Content-Type: multipart/related;boundary=""--------------" & Right$(String$(23, "0") & 1, 23) & """"
         End If
         
     End If
     If InStr(strContentType, "html") > 0 And Not (bHasAttachment) Then
         'I have a problem with HTML without attachment
         'try to emulate a multi part msg.
-        strContentType = "Content-Type: multipart/related;boundary=""--------------" & Right(String(23, "0") & 1, 23) & """"
+        strContentType = "Content-Type: multipart/related;boundary=""--------------" & Right$(String$(23, "0") & 1, 23) & """"
     End If
     SendMsg "+OK " & objDOMMsg.selectSingleNode(XMLPATH & "a:getcontentlength").Text & " octets", lngPop3Write
     'Header
     'Search the boundary strings
-    intPos = InStr(LCase(strContentType), "boundary")
+    intPos = InStr(LCase$(strContentType), "boundary")
     If intPos > 0 Then
         'It's a multi part msg.
-        strBoundary = Mid(strContentType, intPos + Len("boundary") + 2)
-        strBoundary = Left(strBoundary, Len(strBoundary) - 1)
+        strBoundary = Mid$(strContentType, intPos + Len("boundary") + 2)
+        strBoundary = Left$(strBoundary, Len(strBoundary) - 1)
         strDataToSend = objOWA.getMsgHeader() & _
                        strContentType & vbCrLf & vbCrLf
         SendMsg strDataToSend, lngPop3Write
@@ -575,11 +582,11 @@ On Error GoTo GestionErrores
         getMsg = "--" & strBoundary & "--" & vbCrLf & "."
     Else
         'NOT It's a multi-part msg.
-        If Not Right(strContentType, 1) = ";" Then strContentType = strContentType & ";"
+        If Not Right$(strContentType, 1) = ";" Then strContentType = strContentType & ";"
         strDataToSend = objOWA.getMsgHeader() & _
                         strContentType & vbCrLf & vbCrLf
         SendMsg strDataToSend, lngPop3Write
-        If InStr(LCase(strContentType), "html") > 0 Then
+        If InStr(LCase$(strContentType), "html") > 0 Then
             'HTML
             If Not objDOMMsg.selectSingleNode(XMLPATH & "e:htmldescription") Is Nothing Then
                 strBody = objDOMMsg.selectSingleNode(XMLPATH & "e:htmldescription").Text
@@ -593,10 +600,12 @@ On Error GoTo GestionErrores
         End If
         getMsg = vbCrLf & strBody & vbCrLf & "" & vbCrLf & "."
     End If
+    Set objDOMMsg = Nothing
     'End of msg
 Exit Function
 GestionErrores:
     Debug.Assert False
+    WriteLog Err.Source & vbTab & Err.Description
     getMsg = "-ERR Unable to conect with mailbox "
 End Function
 
@@ -622,13 +631,13 @@ On Error GoTo GestionErrores
     Dim intTotal As Integer
     Dim bCloseSocket As Boolean
     '
-    If Left(strDataRecived, 4) <> "PASS" And strSMTPState <> "DATA" Then
+    If Left$(strDataRecived, 4) <> "PASS" And strSMTPState <> "DATA" Then
         Debug.Print strDataRecived
     End If
     If strSMTPState = "LOGIN" Or strSMTPState = "PASSWORD" Then
         strDataRecived = "AUTH " & strDataRecived
     End If
-    Select Case Left(strDataRecived, 4)
+    Select Case Left$(strDataRecived, 4)
     Case Empty
         strDataToSend = "220 " & m_strIP & " Simple Mail Transfer Service Ready"
     Case "HELO"
@@ -652,11 +661,11 @@ On Error GoTo GestionErrores
             'cDataToSend.Add "334 " & objBase.Encode(strUser & "@" & Mid(strExchSvrName, InStr(strExchSvrName, "//") + 2))
             strDataToSend = "334 " & objBase.Encode("Username:")
             strSMTPState = "LOGIN"
-        ElseIf Left(strDataRecived, 10) = "AUTH PLAIN" Then
-            strReply = objBase.Decode(Mid(strDataRecived, 12))
+        ElseIf Left$(strDataRecived, 10) = "AUTH PLAIN" Then
+            strReply = objBase.Decode(Mid$(strDataRecived, 12))
             If Len(strReply) > 1 Then
-                strUser = Mid(strReply, 2, InStr(2, strReply, Chr(0)) - 2)
-                strPassWord = Mid(strReply, InStr(2, strReply, Chr(0)) + 1)
+                strUser = Mid$(strReply, 2, InStr(2, strReply, Chr(0)) - 2)
+                strPassWord = Mid$(strReply, InStr(2, strReply, Chr(0)) + 1)
                 If bAuthentication Then
                     If Not objOWA.LogingFBA Then
                         strDataToSend = "533  Authentication required [AUTH]"
@@ -669,11 +678,11 @@ On Error GoTo GestionErrores
         Else
             Select Case strSMTPState
             Case "LOGIN"
-                strUser = objBase.Decode(Mid(strDataRecived, 6))
+                strUser = objBase.Decode(Mid$(strDataRecived, 6))
                 strSMTPState = "PASSWORD"
                 strDataToSend = "334 " & objBase.Encode("Password:")
             Case "PASSWORD"
-                strPassWord = objBase.Decode(Mid(strDataRecived, 6))
+                strPassWord = objBase.Decode(Mid$(strDataRecived, 6))
                 strDataToSend = ValidateSMTPAUTH
                 strSMTPState = ""
             Case Else
@@ -704,7 +713,7 @@ On Error GoTo GestionErrores
     Case Else
         If strSMTPState = "DATA" Then
             strMailData = strMailData & strDataRecived
-            If Right(strDataRecived, 3) = "." & vbCrLf Then
+            If Right$(strDataRecived, 3) = "." & vbCrLf Then
                 
                 'Encoding the subject in QP format
                 'strDataRecived = EncodeSubject(strDataRecived)
@@ -744,10 +753,10 @@ Dim objQP As Base64
 Set objQP = New Base64
 intPosIni = InStr(strData, "Subject:") + Len("Subject:")
 intPosFin = InStr(intPosIni, strData, vbNewLine)
-strSubject = Mid(strData, intPosIni, intPosFin - intPosIni)
+strSubject = Mid$(strData, intPosIni, intPosFin - intPosIni)
 If Left(strSubject, 16) <> " =?ISO-8859-1?Q?" Then
     'Subject: =?ISO-8859-1?Q?Le=F3n=2C_Cami=F3n_y_Espa=F1a?=
-    EncodeSubject = Left(strData, intPosIni) & objQP.QP(strSubject) & Mid(strData, intPosFin)
+    EncodeSubject = Left$(strData, intPosIni) & objQP.QP(strSubject) & Mid$(strData, intPosFin)
 Else
     EncodeSubject = strData
 End If
@@ -835,7 +844,8 @@ Next
 Exit Sub
 GestionErrores:
     Debug.Assert False
-    Err.Raise Err.Number
+    Err.Raise Err.Number, Err.Source, Err.Description
+    
 End Sub
 
 ''
