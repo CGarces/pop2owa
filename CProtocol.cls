@@ -14,6 +14,7 @@ Attribute VB_Exposed = False
 Attribute VB_Description = "Stores complete information for a given transport protocol."
 Attribute VB_Ext_KEY = "SavedWithClassBuilder6" ,"Yes"
 Attribute VB_Ext_KEY = "Top_Level" ,"Yes"
+Option Explicit
 'local variable(s) to hold property value(s)
 Private mvarConnectionless As Boolean 'local copy
 Private mvarGuaranteedDelivery As Boolean 'local copy
@@ -99,7 +100,7 @@ Private Type Guid
     Data4(0 To 7) As Byte
 End Type
 
-Private Declare Function StringFromGUID2 Lib "ole32.dll" (rguid As Any, ByVal lpsz As String, ByVal cchMax As Long) As Long
+Private Declare Function StringFromGUID2 Lib "ole32.dll" (rguid As Guid, ByVal lpsz As String, ByVal cchMax As Long) As Long
 
 Private Const WSAPROTOCOL_LEN = 256
 
@@ -126,13 +127,13 @@ Private Type WSAPROTOCOL_INFO
     szProtocol As String * WSAPROTOCOL_LEN
 End Type
 
-Private Declare Function WSAEnumProtocols Lib "ws2_32.dll" Alias "WSAEnumProtocolsA" (ByVal lpiProtocols As Long, lpProtocolBuffer As Any, lpdwBufferLength As Long) As Long
+Private Declare Function WSAEnumProtocols Lib "ws2_32.dll" Alias "WSAEnumProtocolsA" (ByVal lpiProtocols As Long, lpProtocolBuffer As WSAPROTOCOL_INFO, lpdwBufferLength As Long) As Long
 
 Private Const SOL_SOCKET = 65535
 Private Const SO_PROTOCOL_INFO = &H2004
 
-Private Declare Function getsockopt Lib "ws2_32.dll" (ByVal s As Long, ByVal level As Long, ByVal optname As Long, ByRef optval As Any, ByRef optlen As Long) As Long
-'
+Private Declare Function getsockopt Lib "ws2_32.dll" (ByVal s As Long, ByVal level As Long, ByVal optname As Long, ByRef optval As WSAPROTOCOL_INFO, ByRef optlen As Long) As Long
+
 
                   
 Private Function GuidToString(udtGuid As Guid) As String
@@ -140,7 +141,7 @@ Private Function GuidToString(udtGuid As Guid) As String
     Dim strGuid As String
     Dim lngRetVal As Long
     '
-    strGuid = String(80, Chr(0))
+    strGuid = String$(80, Chr(0))
     '
     lngRetVal = StringFromGUID2(udtGuid, strGuid, 80&)
     '
