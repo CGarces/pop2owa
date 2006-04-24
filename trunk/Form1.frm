@@ -161,14 +161,22 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
+''
+'Main form, with the program options.
+
 Option Explicit
 
 Dim oPOP3 As clsPOP3
 
+
+''
+'Enabe/Disable the SMTP features.
 Private Sub chkSMTP_Click()
     Me.txtPort(1).Enabled = (chkSMTP.Value = vbChecked)
 End Sub
 
+''
+'Apply the changes and reset the program
 Private Sub cmdOk_Click()
     Timer1.Enabled = False
     oPOP3.Destroy
@@ -177,6 +185,7 @@ Private Sub cmdOk_Click()
     Reset
     Timer1.Enabled = True
 End Sub
+
 
 Private Sub Form_Load()
 On Error GoTo GestionErrores
@@ -200,9 +209,10 @@ Dim intIndex As Integer
 Exit Sub
 GestionErrores:
     Timer1.Enabled = False
+    MsgBox Err.Description, vbCritical, "POP2OWA: " & Err.Source
+    WriteLog Err.Source & vbTab & Err.Description
     oPOP3.Destroy
     Set oPOP3 = Nothing
-    MsgBox Err.Description, vbCritical
     Unload Me
 End Sub
 
@@ -214,7 +224,7 @@ On Error Resume Next
 End Sub
 
 Private Sub TabStrip1_Click()
-Frame1(TabStrip1.SelectedItem.index - 1).ZOrder 0
+Frame1(TabStrip1.SelectedItem.Index - 1).ZOrder 0
 End Sub
 
 Private Sub Timer1_Timer()
@@ -226,9 +236,10 @@ On Error GoTo GestionErrores
 Exit Sub
 GestionErrores:
     Timer1.Enabled = False
+    MsgBox Err.Description, vbCritical, "POP2OWA: " & Err.Source
+    WriteLog Err.Source & vbTab & Err.Description
     oPOP3.Destroy
     Set oPOP3 = Nothing
-    MsgBox Err.Description, vbCritical
     Unload Me
 End Sub
 
