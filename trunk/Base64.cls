@@ -493,12 +493,12 @@ Dim strReturn As String
 Dim strChar As String
 lngTotal = Len(sInput)
 For lngChar = 1 To lngTotal
-    strChar = Mid(sInput, lngChar, 1)
+    strChar = Mid$(sInput, lngChar, 1)
     intAscii = Asc(strChar)
     If (intAscii >= 33 And intAscii <= 60) Or (intAscii >= 62 And intAscii <= 126) Or intAscii = 9 Or intAscii = 10 Or intAscii = 32 Then
-        strReturn = strReturn & Mid(sInput, lngChar, 1)
+        strReturn = strReturn & Mid$(sInput, lngChar, 1)
     Else
-        strReturn = strReturn & "=" & Right("0" & Hex$(intAscii), 2)
+        strReturn = strReturn & "=" & Right$("0" & Hex$(intAscii), 2)
     End If
 Next
 QP = strReturn

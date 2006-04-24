@@ -1,6 +1,10 @@
 VERSION 1.0 CLASS
 BEGIN
   MultiUse = -1  'True
+  Persistable = 0  'NotPersistable
+  DataBindingBehavior = 0  'vbNone
+  DataSourceBehavior  = 0  'vbNone
+  MTSTransactionMode  = 0  'NotAnMTSObject
 END
 Attribute VB_Name = "cRegistry"
 Attribute VB_GlobalNameSpace = False
@@ -480,9 +484,9 @@ On Error GoTo EnumerateSectionsError
            ReDim Preserve sSect(1 To iSectCount) As String
            iPos = InStr(szBuffer, Chr$(0))
            If (iPos > 0) Then
-              sSect(iSectCount) = Left(szBuffer, iPos - 1)
+              sSect(iSectCount) = Left$(szBuffer, iPos - 1)
            Else
-              sSect(iSectCount) = Left(szBuffer, lBuffSize)
+              sSect(iSectCount) = Left$(szBuffer, lBuffSize)
            End If
        End If
        

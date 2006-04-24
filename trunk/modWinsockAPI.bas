@@ -1,19 +1,21 @@
 Attribute VB_Name = "modWinsockAPI"
+''
+'Module with the WinShock APIs & functions.
+'More info at http://www.vbip.com and http://www.winsockvb.com
+
 Option Explicit
 
 Public Const INADDR_NONE = &HFFFF
 Public Const SOCKET_ERROR = -1
 Public Const INVALID_SOCKET = -1
 
+''
+'All Windows Sockets error constants are biased by WSABASEERR from
+'the "normal"
 
-'/*
-' * All Windows Sockets error constants are biased by WSABASEERR from
-' * the "normal"
-' */
 Public Const WSABASEERR = 10000
-'/*
-' * Windows Sockets definitions of regular Microsoft C error constants
-' */
+''
+'Windows Sockets definitions of regular Microsoft C error constants
 Public Const WSAEINTR = (WSABASEERR + 4)
 Public Const WSAEBADF = (WSABASEERR + 9)
 Public Const WSAEACCES = (WSABASEERR + 13)
@@ -21,9 +23,8 @@ Public Const WSAEFAULT = (WSABASEERR + 14)
 Public Const WSAEINVAL = (WSABASEERR + 22)
 Public Const WSAEMFILE = (WSABASEERR + 24)
 
-'/*
-' * Windows Sockets definitions of regular Berkeley error constants
-' */
+''
+'Windows Sockets definitions of regular Berkeley error constants
 Public Const WSAEWOULDBLOCK = (WSABASEERR + 35)
 Public Const WSAEINPROGRESS = (WSABASEERR + 36)
 Public Const WSAEALREADY = (WSABASEERR + 37)
@@ -62,9 +63,8 @@ Public Const WSAEDQUOT = (WSABASEERR + 69)
 Public Const WSAESTALE = (WSABASEERR + 70)
 Public Const WSAEREMOTE = (WSABASEERR + 71)
 
-'/*
-' * Extended Windows Sockets error constant definitions
-' */
+''
+' Extended Windows Sockets error constant definitions
 Public Const WSASYSNOTREADY = (WSABASEERR + 91)
 Public Const WSAVERNOTSUPPORTED = (WSABASEERR + 92)
 Public Const WSANOTINITIALISED = (WSABASEERR + 93)
@@ -115,10 +115,15 @@ Public Type servent
     s_proto   As Long
 End Type
 
+''
+'
+'@param p_name Official name of the protocol
+'@param p_aliases Null-terminated array of alternate names
+'@param p_proto Protocol number, in host byte order
 Public Type protoent
-    p_name    As String 'Official name of the protocol
-    p_aliases As Long   'Null-terminated array of alternate names
-    p_proto   As Long   'Protocol number, in host byte order
+    p_name    As String
+    p_aliases As Long
+    p_proto   As Long
 End Type
 
 Public Type sockaddr_in
@@ -128,9 +133,14 @@ Public Type sockaddr_in
     sin_zero(1 To 8) As Byte
 End Type
 
+
+''
+'
+'@param tv_sec 'seconds
+'@param tv_usec and microseconds
 Public Type timeval
-  tv_sec  As Long   'seconds
-  tv_usec As Long   'and microseconds
+  tv_sec  As Long
+  tv_usec As Long
 End Type
 
 Public Type fd_set
@@ -180,11 +190,32 @@ Public Declare Function getpeername Lib "ws2_32.dll" (ByVal s As Long, ByRef nam
                   
 Public Declare Function bind Lib "ws2_32.dll" (ByVal s As Long, ByRef name As sockaddr_in, ByRef namelen As Long) As Long
                   
-Public Declare Function vbselect Lib "ws2_32.dll" Alias "select" (ByVal nfds As Long, ByRef readfds As Any, ByRef writefds As Any, ByRef exceptfds As Any, ByRef timeout As Long) As Long
+Public Declare Function vbselect Lib "ws2_32.dll" Alias "select" (ByVal nfds As Long, ByRef readfds As fd_set, ByRef writefds As fd_set, ByRef exceptfds As fd_set, ByRef timeout As Long) As Long
 
-Public Declare Function recv Lib "ws2_32.dll" (ByVal s As Long, ByRef buf As Any, ByVal buflen As Long, ByVal flags As Long) As Long
+
+''
+'TCP Receiving.
+'
+'@param s Socket you want to receive data on
+'@param buf Array into which the data will be copied.
+'@param buflen Length of the array, in bytes
+'@param flags Not used
+'@return Return_value_or_object
+'@author Carlos B
+'@version 1.0
+'@date 2006/04/11
+Public Declare Function recv Lib "ws2_32.dll" (ByVal s As Long, ByRef buf As Byte, ByVal buflen As Long, ByVal flags As Long) As Long
                   
-Public Declare Function Send Lib "ws2_32.dll" Alias "send" (ByVal s As Long, ByRef buf As Any, ByVal buflen As Long, ByVal flags As Long) As Long
+
+''
+'TCP Sending.
+'
+'@param s Connected socket you want to use to transmit the data
+'@param buf Array contains the data you want sent.
+'@param buflen The length of the data, in bytes
+'@param flags Used to pass extra information to the function
+'@return Number of bytes sent
+Public Declare Function Send Lib "ws2_32.dll" Alias "send" (ByVal s As Long, ByRef buf As Byte, ByVal buflen As Long, ByVal flags As Long) As Long
                   
 Public Declare Function listen Lib "ws2_32.dll" (ByVal s As Long, ByVal backlog As Long) As Long
 
@@ -772,102 +803,6 @@ ERROR_HANDLER:
     '
 End Function
 
-Public Function GetIPEndPointField(ByVal lngSocket As Long, _
-                                   ByVal EndPointField As IPEndPointFields) As Variant
-'********************************************************************************
-'Author    :Oleg Gdalevich
-'Date/Time :21.10.01
-'Purpose   :Retrieves IP address or host name or port number of
-'           an end-point of the connection established
-'           on the socket - lngSocket
-'
-'Return    :If no errors occures, the function returns the value
-'           requested by the EndPointField argument.
-'           Otherwise, it returns the value of SOCKET_ERROR
-'
-'Arguments :
-'       lngSocket -  socket's handle. The socket must be connected to the remote host.
-'       EndPointField - specifies the value to return:
-'               LOCAL_HOST
-'               LOCAL_HOST_IP
-'               LOCAL_PORT
-'               REMOTE_HOST
-'               REMOTE_HOST_IP
-'               REMOTE_PORT
-'********************************************************************************
-    '
-    Dim udtSocketAddress    As sockaddr_in
-    Dim lngReturnValue      As Long
-    Dim lngPtrToAddress     As Long
-    '
-    On Error GoTo ERROR_HANDLER
-    '
-    Select Case EndPointField
-        Case LOCAL_HOST, LOCAL_HOST_IP, LOCAL_PORT
-            '
-            'If the info of a local end-point of the connection is
-            'requested, call the getsockname Winsock API function
-            lngReturnValue = getsockname(lngSocket, udtSocketAddress, LenB(udtSocketAddress))
-            '
-        Case REMOTE_HOST, REMOTE_HOST_IP, REMOTE_PORT
-            '
-            'If the info of a remote end-point of the connection is
-            'requested, call the getpeername Winsock API function
-            lngReturnValue = getpeername(lngSocket, udtSocketAddress, LenB(udtSocketAddress))
-            '
-    End Select '->EndPointField
-    '
-    If lngReturnValue = 0 Then
-        '
-        'If no errors were occurred, the getsockname or getpeername
-        'function returns 0.
-        '
-        Select Case EndPointField
-            Case LOCAL_PORT, REMOTE_PORT
-                '
-                'If the port number is requested, retrieve that value
-                'from the sin_port member of the udtSocketAddress
-                'structure, and change the byte order of that value from
-                'the network to host byte order.
-                GetIPEndPointField = IntegerToUnsigned(ntohs(udtSocketAddress.sin_port))
-                '
-            Case LOCAL_HOST_IP, REMOTE_HOST_IP
-                '
-                'The host address is stored in the sin_addr member of the structure
-                'as 4-byte value.
-                '
-                'To get an IP address of the host:
-                '
-                'Get pointer to the string that contains the IP address
-                lngPtrToAddress = inet_ntoa(udtSocketAddress.sin_addr)
-                '
-                'Retrieve that string by the pointer
-                GetIPEndPointField = StringFromPointer(lngPtrToAddress)
-                '
-            Case LOCAL_HOST, REMOTE_HOST
-                '
-                'The same procedure as for an IP address.
-                'But here is the GetHostNameByAddress function call
-                'to retrieve host name by IP address.
-                lngPtrToAddress = inet_ntoa(udtSocketAddress.sin_addr)
-                GetIPEndPointField = GetHostNameByAddress(StringFromPointer(lngPtrToAddress))
-                '
-        End Select  '->
-        '
-    Else
-        '
-        GetIPEndPointField = SOCKET_ERROR
-        '
-    End If  '->lngReturnValue = 0
-    '
-EXIT_LABEL:
-    Exit Function
-
-ERROR_HANDLER:
-    GetIPEndPointField = SOCKET_ERROR
-    
-End Function
-
 Private Function GetHostNameByAddress(strIpAddress As String) As String
     '
     Dim lngInetAdr As Long
@@ -893,13 +828,13 @@ Private Function GetHostNameByAddress(strIpAddress As String) As String
         RtlMoveMemory udtHostent, ByVal lngPtrHostEnt, LenB(udtHostent)
         '
         'Prepare the buffer to receive a string
-        strHostName = String(256, 0)
+        strHostName = String$(256, 0)
         '
         'Copy the host name into the strHostName variable
         RtlMoveMemory ByVal strHostName, ByVal udtHostent.hName, 256
         '
         'Cut received string by first chr(0) character
-        strHostName = Left(strHostName, InStr(1, strHostName, Chr(0)) - 1)
+        strHostName = Left$(strHostName, InStr(1, strHostName, Chr(0)) - 1)
         '
         'Return the found value
         GetHostNameByAddress = strHostName
