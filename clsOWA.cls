@@ -12,7 +12,7 @@ Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 ''
-'WebDav code to comunicete with Exchange server
+'WebDav code to comunicate with Exchange server
 '
 '@author Carlos B
 '@version 1.0
@@ -24,7 +24,9 @@ Option Explicit
 'Translations between XML tags of OWA and valid headers of a POP3 message
 '@see #initArrays
 Private dicTags         As Dictionary
-
+''
+'Translations between XML tags of OWA and valid headers of a SMTP message
+'@see #initArrays
 Private dicMapi         As Dictionary
 
 Private objDOMFolders   As DOMDocument
@@ -32,6 +34,7 @@ Private objDOMFolders   As DOMDocument
 Private strCookies As String
 
 Public intMsgCount As Integer
+
 
 ''
 'Get the URL of one inbox message
@@ -48,8 +51,8 @@ End Function
 '@param strUrl  Url of the .EML file
 '@return Node list with Attachments properties
 Public Function GetAttachmentsList(ByVal strURL As String) As IXMLDOMNodeList
+On Error GoTo ErrHandler
 Dim oXMLHTTP As XMLHTTP
-
 Set oXMLHTTP = New XMLHTTP
 With oXMLHTTP
     .open "X-MS-ENUMATTS", strURL, False, strUser, strPassWord
@@ -61,15 +64,15 @@ With oXMLHTTP
     End If
     .Send
     If .Status = 207 Then
-        #If DEBUG_MODE = 1 Then
-            .responseXML.save "c:\ATTS2.xml"
-        #End If
         Set GetAttachmentsList = .responseXML.selectNodes("a:multistatus/a:response")
     Else
-        WriteLog "GetAttachmentsList: " & .Status & vbTab & .statusText
+        Err.Raise vbObjectError + 1, "GetAttachmentsList.Status", .statusText
     End If
 End With
 Set oXMLHTTP = Nothing
+Exit Function
+ErrHandler:
+    Err.Raise Err.Number, "clsOWA.GetAttachmentsList: " & Err.Source, Err.Description
 End Function
 
 
@@ -79,6 +82,7 @@ End Function
 '@param strUrl  Url of the .EML file
 '@return Binary content encoded in Base64
 Public Function GetAttachment(ByVal strURL As String) As String
+On Error GoTo ErrHandler
 Dim oXMLHTTP    As XMLHTTP
 Dim objMIME     As Base64
 Set objMIME = New Base64
@@ -90,10 +94,18 @@ With oXMLHTTP
         .setRequestHeader "Cookies", strCookies
     End If
     .Send
-    GetAttachment = objMIME.EncodeArr(.responseBody)
+    If (.Status >= 200 And .Status < 300) Then
+        GetAttachment = objMIME.EncodeArr(.responseBody)
+    Else
+        Err.Raise vbObjectError + 1, "GetAttachment.Status", .statusText
+    End If
 End With
 Set objMIME = Nothing
 Set oXMLHTTP = Nothing
+Exit Function
+ErrHandler:
+    Debug.Assert False
+    Err.Raise Err.Number, "clsOWA.GetAttachment: " & Err.Source, Err.Description
 End Function
 
 ''
@@ -101,7 +113,7 @@ End Function
 '
 '@param intMsg  Position of the message in the inbox folder
 Public Function Delete(ByVal intMsg As Integer) As Boolean
-On Error GoTo GestionErrores
+On Error GoTo ErrHandler
 Dim oXMLHTTP    As XMLHTTP
     
     Set oXMLHTTP = New XMLHTTP
@@ -119,7 +131,7 @@ Dim oXMLHTTP    As XMLHTTP
 
 Set oXMLHTTP = Nothing
 Exit Function
-GestionErrores:
+ErrHandler:
     Delete = False
 End Function
 
@@ -129,6 +141,7 @@ End Function
 '@param strUrl Url of the .EML file
 '@see clsOWA.objDOMMsg
 Public Sub LoadMsg(ByVal strURL As String)
+On Error GoTo ErrHandler
 Dim oXMLHTTP As XMLHTTP
 ' Create an instance of the xmlHTTP object
 Set oXMLHTTP = CreateObject("microsoft.xmlhttp")
@@ -145,25 +158,23 @@ With oXMLHTTP
 
     ' Send the request
     .Send
-    While .readyState <> 4
-        Sleep 10
-        DoEvents
-        'Debug.Assert oXMLHTTP.readyState <> 3
-    Wend
     If (.Status >= 200 And .Status < 300) Then
         Set objDOMMsg = .responseXML
         #If DEBUG_MODE = 1 Then
             objDOMMsg.save "C:\mensaje.xml"
         #End If
     Else
-        WriteLog "LoadMsg: " & .Status & vbTab & .statusText
-        Err.Raise 51
+        Err.Raise vbObjectError + 1, "Reciving msg", .statusText
     End If
 End With
 Set oXMLHTTP = Nothing
+Exit Sub
+ErrHandler:
+    Err.Raise Err.Number, "Loadmsg: " & Err.Source, Err.Description
 End Sub
 
 Private Function GetAttachmentName(ByVal strURL As String) As String
+On Error GoTo ErrHandler
 Dim oXMLHTTP As XMLHTTP
 Set oXMLHTTP = New XMLHTTP
 With oXMLHTTP
@@ -181,10 +192,14 @@ With oXMLHTTP
         #End If
         GetAttachmentName = .responseXML.selectSingleNode("a:multistatus/a:response/a:propstat/a:prop/a:displayname").Text
     Else
-        WriteLog "GetAttachmentName: " & .Status & vbTab & .statusText
+        Err.Raise vbObjectError + 1, "Reciving Attachment", .statusText
     End If
 End With
 Set oXMLHTTP = Nothing
+Exit Function
+ErrHandler:
+    Err.Raise Err.Number, "GetAttachmentName: " & Err.Source, Err.Description
+
 End Function
 
 ''
@@ -192,7 +207,7 @@ End Function
 '
 '@return Reply to e-mail client
 Public Function GetMsgList() As Boolean
-On Error GoTo GestionErrores
+On Error GoTo ErrHandler
 
     Dim strURL As String
     Dim oXMLHTTP As XMLHTTP
@@ -223,21 +238,21 @@ On Error GoTo GestionErrores
                     " WHERE ""DAV:ishidden""=False" & _
                     " AND ""DAV:isfolder""=False" & _
                     "</a:sql></a:searchrequest>")
+        If .Status = 207 Then
+            Set objDOMInbox = .responseXML
+            intMsgCount = objDOMInbox.childNodes(1).childNodes.Length
+            #If DEBUG_MODE = 1 Then
+                objDOMInbox.save "C:\listado.XML"
+            #End If
+        Else
+            Err.Raise vbObjectError + 1, "Reciving msg", .statusText
+        End If
+        
 
-        While .readyState <> 4
-            Sleep 10
-            DoEvents
-            'Debug.Assert oXMLHTTP.readyState <> 3
-        Wend
-        Set objDOMInbox = .responseXML
-        intMsgCount = objDOMInbox.childNodes(1).childNodes.Length
-        #If DEBUG_MODE = 1 Then
-            objDOMInbox.save "C:\listado.XML"
-        #End If
     End With
     GetMsgList = True
 Exit Function
-GestionErrores:
+ErrHandler:
     Debug.Assert False
     Debug.Print Err.Description
     GetMsgList = False
@@ -295,13 +310,13 @@ End Function
 ''
 'Access the Exchange store via WebDAV with Form-Based-Authentication turned on.
 '
-'@return Descripción_de_la_salida
+'@return Retrun True if the login is correct.
 '@author Carlos B
 '@version 1.0
 '@date 20/01/2006
 Public Function LogingFBA() As Boolean
 On Error GoTo ErrHandler
-Dim vHeaders    As Variant
+Dim vHeaders()  As String
 Dim intCounter  As Integer
 Dim intIndex    As Integer
 Dim strURL As String
@@ -317,9 +332,9 @@ With oXMLHTTP
     vHeaders = Split(.getAllResponseHeaders(), vbNewLine)
 End With
 For intIndex = 0 To UBound(vHeaders) - 1
-    If Left(vHeaders(intIndex), 10) = "Set-Cookie" Then
+    If Left$(vHeaders(intIndex), 10) = "Set-Cookie" Then
         intCounter = intCounter + 1
-        strCookies = strCookies & Mid(vHeaders(intIndex), 12) & ";"
+        strCookies = strCookies & Mid$(vHeaders(intIndex), 12) & ";"
     End If
 Next
 LogingFBA = (intCounter = 2)
@@ -335,7 +350,7 @@ End Function
 '@param strDate Date in OWA format
 '@return Standar date (rfc1939)
 Private Function GetPOPDate(ByVal strDate As String) As String
-Dim vDate As Variant
+Dim vDate() As String
 Dim vDays(1 To 7) As String
 Dim vMonths(1 To 12) As String
 Dim strReturn As String
@@ -364,7 +379,7 @@ vMonths(12) = "Dec"
     strReturn = strReturn & ", " & DatePart("d", vDate(0))
     strReturn = strReturn & " " & vMonths(DatePart("m", vDate(0)))
     strReturn = strReturn & " " & DatePart("yyyy", vDate(0))
-    GetPOPDate = strReturn & " " & FormatDateTime(Left(vDate(1), 8), vbLongTime) & " UT"
+    GetPOPDate = strReturn & " " & FormatDateTime(Left$(vDate(1), 8), vbLongTime) & " UT"
 End Function
 
 ''
@@ -416,16 +431,16 @@ For Each Key In vKeys
                 intPos1 = InStr(strValue, ">")
                 If intPos1 > 0 Then
                     intPos2 = InStr(strValue, "<")
-                    strName = Trim(Mid(strValue, 1, intPos2 - 1))
-                    strEmail = Mid(strValue, intPos2, intPos1 - intPos2 + 1)
-                    If Left(strName, 1) <> """" Then
+                    strName = Trim$(Mid$(strValue, 1, intPos2 - 1))
+                    strEmail = Mid$(strValue, intPos2, intPos1 - intPos2 + 1)
+                    If Left$(strName, 1) <> """" Then
                         strName = """" & strName & """"
                     End If
                     strReturn = strReturn & strName & " " & strEmail & ", "
-                    strValue = Mid(strValue, intPos1 + 2)
+                    strValue = Mid$(strValue, intPos1 + 2)
                 End If
             Loop While intPos1 <> 0
-            strDataToSend = strDataToSend & Key & ": " & Mid(strReturn, 1, Len(strReturn) - 2) & vbCrLf
+            strDataToSend = strDataToSend & Key & ": " & Mid$(strReturn, 1, Len(strReturn) - 2) & vbCrLf
         Case Else
             strDataToSend = strDataToSend & Key & ": " & strValue & vbCrLf
         End Select
@@ -510,15 +525,14 @@ End Sub
 '@return <B>True</B> if the mail is sent.
 Public Function SendMail(ByVal strMailData As String) As Boolean
 
-Dim strSubURL
-strSubURL = objDOMFolders.selectSingleNode(XMLPATH & "d:sendmsg").Text
-
-'         To use MSXML 4.0 use the followinf DIM/SET statements
-Dim xmlReq As XMLHTTP
-Set xmlReq = New XMLHTTP
-
 On Error GoTo ErrHandler
+Dim strSubURL As String
+Dim xmlReq As XMLHTTP
 
+    
+    Set xmlReq = New XMLHTTP
+    strSubURL = objDOMFolders.selectSingleNode(XMLPATH & "d:sendmsg").Text
+     
      'Create the DAV PUT request.
     
     xmlReq.open "PUT", strSubURL, False, strUser, strPassWord
@@ -549,3 +563,4 @@ End Function
 Private Sub Class_Initialize()
     initArrays
 End Sub
+
