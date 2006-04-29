@@ -305,7 +305,7 @@ End Function
 '
 '@param strDataRecived A valid POP3 command ((<A HREF='http://www.hunnysoft.com/rfc/rfc.html' target='_blank'>RFC1939</A>))
 Private Sub SendPOP3(ByVal strDataRecived As String)
-On Error GoTo GestionErrores
+On Error GoTo ErrHandler
       
     Dim oElement As IXMLDOMElement
     Dim oElements As IXMLDOMNodeList
@@ -425,8 +425,11 @@ On Error GoTo GestionErrores
          Call closesocket(lngPop3Write)
         lngPop3Write = 0
     End If
+    
+Set oElement = Nothing
+Set oElements = Nothing
 Exit Sub
-GestionErrores:
+ErrHandler:
     Debug.Assert False
 '    Call closesocket(lngPop3Write)
 '    lngPop3Write = 0
@@ -481,6 +484,8 @@ Public Sub Start()
         If vPorts(1) <> 0 Then
             lngSMTPRead = fncNewSokect(vPorts(1))
         End If
+        
+        
     Else
         '
         'if the Winsock service was not initialized
@@ -490,7 +495,7 @@ Public Sub Start()
         '
         'as we cannot initialize the Winsock service
         'we have nothing to do with this application
-        Err.Raise lngRetValue, , GetErrorDescription(lngRetValue)
+        Err.Raise lngRetValue, "Start", GetErrorDescription(lngRetValue)
     End If
 End Sub
 
@@ -500,14 +505,12 @@ End Sub
 '@param strUrl URL of the .EML file
 '@return Strig to send to e-mail client (rfc1939).
 Private Function getMsg(ByVal strURL As String) As String
-On Error GoTo GestionErrores
+On Error GoTo ErrHandler
     Dim strDataToSend   As String
     Dim strBoundary     As String
     Dim strBody         As String
     Dim bHasAttachment  As Boolean
     Dim strContentType  As String
-    Dim oElements       As IXMLDOMNodeList
-    Dim oElement        As IXMLDOMElement
     Dim intPos          As Integer
 
     'strUrl = objDOMInbox.childNodes(1).childNodes(intMsg - 1).selectSingleNode("a:propstat/a:prop/a:href").Text
@@ -603,9 +606,10 @@ On Error GoTo GestionErrores
     Set objDOMMsg = Nothing
     'End of msg
 Exit Function
-GestionErrores:
+ErrHandler:
     Debug.Assert False
     WriteLog Err.Source & vbTab & Err.Description
+    Set objDOMMsg = Nothing
     getMsg = "-ERR Unable to conect with mailbox "
 End Function
 
@@ -616,7 +620,7 @@ End Function
 '
 '@param strDataRecived A valid SMTP command (<A HREF='http://www.faqs.org/rfcs/rfc822.html' target='_blank'>RFC822</A>)
 Private Sub SendSMTP(ByVal strDataRecived As String)
-On Error GoTo GestionErrores
+On Error GoTo ErrHandler
     Dim strSubURL As String
     Dim strAlias As String
     Dim strFrom As String
@@ -739,29 +743,11 @@ On Error GoTo GestionErrores
         lngSMTPWrite = 0
     End If
 Exit Sub
-GestionErrores:
+ErrHandler:
     Debug.Assert False
     Call closesocket(lngSMTPWrite)
     lngPop3Write = 0
 End Sub
-
-Private Function EncodeSubject(ByVal strData As String) As String
-Dim intPosIni As Integer
-Dim intPosFin As Integer
-Dim strSubject As String
-Dim objQP As Base64
-Set objQP = New Base64
-intPosIni = InStr(strData, "Subject:") + Len("Subject:")
-intPosFin = InStr(intPosIni, strData, vbNewLine)
-strSubject = Mid$(strData, intPosIni, intPosFin - intPosIni)
-If Left(strSubject, 16) <> " =?ISO-8859-1?Q?" Then
-    'Subject: =?ISO-8859-1?Q?Le=F3n=2C_Cami=F3n_y_Espa=F1a?=
-    EncodeSubject = Left$(strData, intPosIni) & objQP.QP(strSubject) & Mid$(strData, intPosFin)
-Else
-    EncodeSubject = strData
-End If
-Set objQP = Nothing
-End Function
 
 ''
 'Send a message attachment to the email client.
@@ -769,7 +755,7 @@ End Function
 '@param strURL URL of the .EML file
 '@param string that identify the attachment in the message
 Private Sub SendAttachments(ByVal strURL As String, ByVal strBoundary As String)
-On Error GoTo GestionErrores
+On Error GoTo ErrHandler
 
 Dim strDataToSend   As String
 Dim oElements       As IXMLDOMNodeList
@@ -805,7 +791,6 @@ For Each oElement In oElements
         Else
             strFilename = oElement.selectSingleNode("a:propstat/a:prop/e:attachmentfilename").Text
         End If
-        
     End If
     
     'x3716001f  PR_ATTACH_CONTENT_DISPOSITION
@@ -841,11 +826,14 @@ For Each oElement In oElements
     'Send attachment data
     SendMsg objOWA.GetAttachment(strURL) & vbCrLf & vbCrLf, lngPop3Write
 Next
+Set oElement = Nothing
+Set oElements = Nothing
 Exit Sub
-GestionErrores:
+ErrHandler:
     Debug.Assert False
+    Set oElement = Nothing
+    Set oElements = Nothing
     Err.Raise Err.Number, Err.Source, Err.Description
-    
 End Sub
 
 ''
@@ -867,3 +855,5 @@ Private Function ValidateSMTPAUTH() As String
         ValidateSMTPAUTH = "533  Authentication required [AUTH]"
     End Select
 End Function
+
+
