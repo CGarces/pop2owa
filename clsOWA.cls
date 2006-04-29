@@ -85,7 +85,6 @@ Public Function GetAttachment(ByVal strURL As String) As String
 On Error GoTo ErrHandler
 Dim oXMLHTTP    As XMLHTTP
 Dim objMIME     As Base64
-Set objMIME = New Base64
 Set oXMLHTTP = New XMLHTTP
 With oXMLHTTP
     .open "GET", strURL, False, strUser, strPassWord
@@ -95,12 +94,13 @@ With oXMLHTTP
     End If
     .Send
     If (.Status >= 200 And .Status < 300) Then
+        Set objMIME = New Base64
         GetAttachment = objMIME.EncodeArr(.responseBody)
+        Set objMIME = Nothing
     Else
         Err.Raise vbObjectError + 1, "GetAttachment.Status", .statusText
     End If
 End With
-Set objMIME = Nothing
 Set oXMLHTTP = Nothing
 Exit Function
 ErrHandler:
@@ -128,11 +128,11 @@ Dim oXMLHTTP    As XMLHTTP
     '    Debug.Print .Status
     End With
     Delete = True
-
 Set oXMLHTTP = Nothing
 Exit Function
 ErrHandler:
     Delete = False
+    Set oXMLHTTP = Nothing
 End Function
 
 ''
@@ -208,53 +208,53 @@ End Function
 '@return Reply to e-mail client
 Public Function GetMsgList() As Boolean
 On Error GoTo ErrHandler
-
-    Dim strURL As String
-    Dim oXMLHTTP As XMLHTTP
-    strURL = objDOMFolders.selectSingleNode(XMLPATH & "d:inbox").Text & "/"
-    ' Create an instance of the xmlHTTP object
-    Set oXMLHTTP = CreateObject("microsoft.xmlhttp")
-    With oXMLHTTP
-        ' Open a request to a particular url
-        .open "SEARCH", strURL, False, strUser, strPassWord
-        ' Set the header type - we want XML
-        .setRequestHeader "Content-type:", "text/xml"
-        .setRequestHeader "Depth", "1"
-        If strCookies <> Empty Then
-            .setRequestHeader "Cookies", "Necessary according to Q234486"
-            .setRequestHeader "Cookies", strCookies
-        End If
+Dim strURL As String
+Dim oXMLHTTP As XMLHTTP
     
-        ' Send the request
-        Sleep 100
-        Call .Send("<?xml version='1.0' ?>" & _
-                    "<a:searchrequest xmlns:a='DAV:'><a:sql>" & _
-                     "SELECT" & _
-                     " ""DAV:href""" & _
-                     ",""urn:schemas:httpmail:subject""" & _
-                     ",""DAV:id""" & _
-                     ",""DAV:getcontentlength""" & _
-                     " FROM scope('shallow traversal of """ & strURL & """')" & _
-                    " WHERE ""DAV:ishidden""=False" & _
-                    " AND ""DAV:isfolder""=False" & _
-                    "</a:sql></a:searchrequest>")
-        If .Status = 207 Then
-            Set objDOMInbox = .responseXML
-            intMsgCount = objDOMInbox.childNodes(1).childNodes.Length
-            #If DEBUG_MODE = 1 Then
-                objDOMInbox.save "C:\listado.XML"
-            #End If
-        Else
-            Err.Raise vbObjectError + 1, "Reciving msg", .statusText
-        End If
-        
+strURL = objDOMFolders.selectSingleNode(XMLPATH & "d:inbox").Text & "/"
+' Create an instance of the xmlHTTP object
+Set oXMLHTTP = CreateObject("microsoft.xmlhttp")
+With oXMLHTTP
+    ' Open a request to a particular url
+    .open "SEARCH", strURL, False, strUser, strPassWord
+    ' Set the header type - we want XML
+    .setRequestHeader "Content-type:", "text/xml"
+    .setRequestHeader "Depth", "1"
+    If strCookies <> Empty Then
+        .setRequestHeader "Cookies", "Necessary according to Q234486"
+        .setRequestHeader "Cookies", strCookies
+    End If
 
-    End With
-    GetMsgList = True
+    ' Send the request
+    Sleep 100
+    Call .Send("<?xml version='1.0' ?>" & _
+                "<a:searchrequest xmlns:a='DAV:'><a:sql>" & _
+                 "SELECT" & _
+                 " ""DAV:href""" & _
+                 ",""urn:schemas:httpmail:subject""" & _
+                 ",""DAV:id""" & _
+                 ",""DAV:getcontentlength""" & _
+                 " FROM scope('shallow traversal of """ & strURL & """')" & _
+                " WHERE ""DAV:ishidden""=False" & _
+                " AND ""DAV:isfolder""=False" & _
+                "</a:sql></a:searchrequest>")
+    If .Status = 207 Then
+        Set objDOMInbox = .responseXML
+        intMsgCount = objDOMInbox.childNodes(1).childNodes.Length
+        #If DEBUG_MODE = 1 Then
+            objDOMInbox.save "C:\listado.XML"
+        #End If
+    Else
+        Err.Raise vbObjectError + 1, "Reciving msg", .statusText
+    End If
+End With
+Set oXMLHTTP = Nothing
+
+GetMsgList = True
 Exit Function
 ErrHandler:
     Debug.Assert False
-    Debug.Print Err.Description
+    Set oXMLHTTP = Nothing
     GetMsgList = False
 End Function
 
@@ -331,6 +331,7 @@ With oXMLHTTP
     .Send "destination=" & strExchSvrName & "/exchange/&username=" & strUser & "&password=" & strPassWord
     vHeaders = Split(.getAllResponseHeaders(), vbNewLine)
 End With
+Set oXMLHTTP = Nothing
 For intIndex = 0 To UBound(vHeaders) - 1
     If Left$(vHeaders(intIndex), 10) = "Set-Cookie" Then
         intCounter = intCounter + 1
@@ -341,6 +342,7 @@ LogingFBA = (intCounter = 2)
 Exit Function
 ErrHandler:
     WriteLog "GetFoldersURL: " & Err.Number & vbTab & Err.Description
+    Set oXMLHTTP = Nothing
     LogingFBA = False
 End Function
 
@@ -458,11 +460,6 @@ Dim strDataToSend   As String
 Dim vKeys           As Variant
 Dim Key             As Variant
 Dim strValue        As String
-Dim intPos1         As Integer
-Dim intPos2         As Integer
-Dim strEmail        As String
-Dim strName         As String
-Dim strReturn       As String
 
 vKeys = dicMapi.Keys
 For Each Key In vKeys
@@ -556,6 +553,7 @@ Dim xmlReq As XMLHTTP
 
 Exit Function
 ErrHandler:
+    Set xmlReq = Nothing
     WriteLog "SendMail: " & Err.Number & vbTab & Err.Description
     SendMail = False
 End Function
@@ -563,4 +561,3 @@ End Function
 Private Sub Class_Initialize()
     initArrays
 End Sub
-
