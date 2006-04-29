@@ -1,6 +1,7 @@
 VERSION 5.00
 Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
 Begin VB.Form frmMain 
+   AutoRedraw      =   -1  'True
    Caption         =   "POP2OWA"
    ClientHeight    =   6765
    ClientLeft      =   60
@@ -65,6 +66,7 @@ Begin VB.Form frmMain
       Left            =   0
       TabIndex        =   2
       Top             =   4560
+      Visible         =   0   'False
       Width           =   2415
       Begin VB.TextBox txtPort 
          Alignment       =   1  'Right Justify
@@ -188,7 +190,7 @@ End Sub
 
 
 Private Sub Form_Load()
-On Error GoTo GestionErrores
+On Error GoTo ErrHandler
 Dim intIndex As Integer
     Me.Caption = Me.Caption & " " & App.Major & "." & App.Minor
     'Redraw controls
@@ -207,7 +209,7 @@ Dim intIndex As Integer
     Reset
     Timer1.Enabled = True
 Exit Sub
-GestionErrores:
+ErrHandler:
     Timer1.Enabled = False
     MsgBox Err.Description, vbCritical, "POP2OWA: " & Err.Source
     WriteLog Err.Source & vbTab & Err.Description
@@ -224,17 +226,22 @@ On Error Resume Next
 End Sub
 
 Private Sub TabStrip1_Click()
-Frame1(TabStrip1.SelectedItem.Index - 1).ZOrder 0
+    Timer1.Enabled = False
+    Frame1(2 - TabStrip1.SelectedItem.Index).Visible = False
+    Frame1(TabStrip1.SelectedItem.Index - 1).Visible = True
+    Frame1(TabStrip1.SelectedItem.Index - 1).ZOrder 0
+    Frame1(TabStrip1.SelectedItem.Index - 1).Refresh
+    Timer1.Enabled = True
 End Sub
 
 Private Sub Timer1_Timer()
-On Error GoTo GestionErrores
+On Error GoTo ErrHandler
     '
     DoEvents
     oPOP3.Refresh
     Me.Refresh
 Exit Sub
-GestionErrores:
+ErrHandler:
     Timer1.Enabled = False
     MsgBox Err.Description, vbCritical, "POP2OWA: " & Err.Source
     WriteLog Err.Source & vbTab & Err.Description
