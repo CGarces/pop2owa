@@ -33,6 +33,11 @@ Private strSMTPState As String
 Private strMailData As String
 Private vPorts(0 To 1) As Integer
 
+Property Get isActive() As Boolean
+    isActive = Not (lngSMTPWrite = 0 And lngPop3Write = 0)
+End Property
+
+
 Property Let IP(ByVal strIP As String)
     m_strIP = strIP
 End Property
