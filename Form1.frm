@@ -1,7 +1,6 @@
 VERSION 5.00
 Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
 Begin VB.Form frmMain 
-   AutoRedraw      =   -1  'True
    Caption         =   "POP2OWA"
    ClientHeight    =   6765
    ClientLeft      =   60
@@ -128,7 +127,7 @@ Begin VB.Form frmMain
    End
    Begin VB.Timer Timer1 
       Enabled         =   0   'False
-      Interval        =   500
+      Interval        =   10000
       Left            =   1440
       Top             =   960
    End
@@ -169,7 +168,9 @@ Attribute VB_Exposed = False
 Option Explicit
 
 Dim oPOP3 As clsPOP3
-
+Private WithEvents m_frmSysTray As frmSysTray
+Attribute m_frmSysTray.VB_VarHelpID = -1
+Private bsysTray As Boolean
 
 ''
 'Enabe/Disable the SMTP features.
@@ -187,6 +188,7 @@ Private Sub cmdOk_Click()
     Reset
     Timer1.Enabled = True
 End Sub
+
 
 
 Private Sub Form_Load()
@@ -207,6 +209,7 @@ Dim intIndex As Integer
     'Get values from registry
     Call readRegistry
     Reset
+    SysTray
     Timer1.Enabled = True
 Exit Sub
 ErrHandler:
@@ -218,6 +221,20 @@ ErrHandler:
     Unload Me
 End Sub
 
+Private Sub Form_QueryUnload(Cancel As Integer, UnloadMode As Integer)
+If Not (m_frmSysTray Is Nothing) Then
+    Unload m_frmSysTray
+    Set m_frmSysTray = Nothing
+End If
+End Sub
+
+Private Sub Form_Resize()
+    If Me.WindowState = vbMinimized And Not bsysTray Then
+        Me.Hide
+        bsysTray = True
+        SysTray
+    End If
+End Sub
 
 Private Sub Form_Unload(Cancel As Integer)
 On Error Resume Next
@@ -237,9 +254,19 @@ End Sub
 Private Sub Timer1_Timer()
 On Error GoTo ErrHandler
     '
-    DoEvents
+    Timer1.Enabled = False
     oPOP3.Refresh
+    If oPOP3.isActive Then
+        Timer1.Interval = 1000
+    Else
+        If (Timer1.Interval <> 10000 And bsysTray) Then
+            Me.Hide
     Me.Refresh
+            DoEvents
+        End If
+        Timer1.Interval = 10000
+    End If
+    Timer1.Enabled = True
 Exit Sub
 ErrHandler:
     Timer1.Enabled = False
@@ -329,3 +356,53 @@ Private Sub Reset()
     End With
     strExchSvrName = Me.txtServer.Text
 End Sub
+
+
+Private Sub m_frmSysTray_MenuClick(ByVal lIndex As Long, ByVal sKey As String)
+   Select Case sKey
+   Case "open"
+        bsysTray = False
+        SysTray
+        Me.WindowState = vbNormal
+      Me.Show
+      Me.ZOrder
+   Case "close"
+      Unload Me
+   Case Else
+      MsgBox "Clicked item with key " & sKey, vbInformation
+   End Select
+    
+End Sub
+
+Private Sub m_frmSysTray_SysTrayDoubleClick(ByVal eButton As MouseButtonConstants)
+    m_frmSysTray_MenuClick 0, "open"
+End Sub
+
+Private Sub m_frmSysTray_SysTrayMouseDown(ByVal eButton As MouseButtonConstants)
+    If (eButton = vbRightButton) Then
+        m_frmSysTray.ShowMenu
+    End If
+End Sub
+
+Private Sub SetIcon()
+ 
+m_frmSysTray.IconHandle = Me.Icon
+
+End Sub
+
+Private Sub SysTray()
+    If bsysTray Then
+        Set m_frmSysTray = New frmSysTray
+        With m_frmSysTray
+            .AddMenuItem "&Open Pop2Owa", "open", True
+            .AddMenuItem "-"
+            .AddMenuItem "&Close", "close"
+            .ToolTip = "Pop2Owa!"
+        End With
+        SetIcon
+    ElseIf Not (m_frmSysTray Is Nothing) Then
+            Unload m_frmSysTray
+            Set m_frmSysTray = Nothing
+    End If
+End Sub
+
