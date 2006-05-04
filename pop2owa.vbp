@@ -11,6 +11,7 @@ Class=CProtocol; CProtocol.cls
 Class=cRegistry; cRegistry.cls
 Class=clsOWA; clsOWA.cls
 Module=modGlobal; modGlobal.bas
+Form=fSysTray.frm
 IconForm="frmMain"
 Startup="frmMain"
 HelpFile=""
