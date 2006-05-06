@@ -13,7 +13,7 @@ Class=clsOWA; clsOWA.cls
 Module=modGlobal; modGlobal.bas
 Form=fSysTray.frm
 IconForm="frmMain"
-Startup="frmMain"
+Startup="Sub Main"
 HelpFile=""
 Title="pop2owa"
 ExeName32="pop2owa.exe"
@@ -21,12 +21,14 @@ Command32=""
 Name="pop2owa"
 HelpContextID="0"
 CompatibleMode="0"
-MajorVer=0
-MinorVer=11
+MajorVer=1
+MinorVer=0
 RevisionVer=0
 AutoIncrementVer=0
 ServerSupportFiles=0
-VersionCompanyName="."
+VersionFileDescription="Pop2OWA. Pop3/SMTP proxy to Outlook Web Exchange"
+VersionLegalCopyright="Carlos Garces 2006. GNU General Public License (GPL)"
+VersionProductName="Pop2OWA"
 CondComp="DEBUG_MODE = 0"
 CompilationType=0
 OptimizationType=0
@@ -43,6 +45,7 @@ Unattended=0
 Retained=0
 ThreadPerObject=0
 MaxNumberOfThreads=1
+DebugStartupOption=0
 
 [MS Transaction Server]
 AutoRefresh=1
