@@ -201,9 +201,6 @@ Public Declare Function vbselect Lib "ws2_32.dll" Alias "select" (ByVal nfds As 
 '@param buflen Length of the array, in bytes
 '@param flags Not used
 '@return Return_value_or_object
-'@author Carlos B
-'@version 1.0
-'@date 2006/04/11
 Public Declare Function recv Lib "ws2_32.dll" (ByVal s As Long, ByRef buf As Byte, ByVal buflen As Long, ByVal flags As Long) As Long
                   
 
@@ -274,7 +271,7 @@ Public Enum AddressFamily
     AF_MAX = 26
     '
 End Enum
-'
+''
 'Socket types
 '
 Public Enum SocketType
