@@ -6,7 +6,7 @@
   ;General
 Var STARTMENU_FOLDER
 !define PRODUCT "pop2owa"
-!define VERSION "v0.11"
+!define VERSION "v1.0RC"
 Name "${PRODUCT} ${VERSION}"
 OutFile "${PRODUCT}_${VERSION}.exe"
 InstallDir "$PROGRAMFILES\${PRODUCT}"
