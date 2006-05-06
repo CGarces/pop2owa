@@ -5,6 +5,7 @@ Begin VB.Form frmSysTray
    ClientLeft      =   5610
    ClientTop       =   3360
    ClientWidth     =   4680
+   ClipControls    =   0   'False
    LinkTopic       =   "Form1"
    ScaleHeight     =   1920
    ScaleWidth      =   4680
