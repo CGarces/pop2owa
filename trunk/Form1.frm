@@ -6,12 +6,14 @@ Begin VB.Form frmMain
    ClientLeft      =   60
    ClientTop       =   345
    ClientWidth     =   2580
+   ClipControls    =   0   'False
    Icon            =   "Form1.frx":0000
    LinkTopic       =   "Form1"
    ScaleHeight     =   6765
    ScaleWidth      =   2580
    StartUpPosition =   3  'Windows Default
    Begin VB.Frame Frame1 
+      ClipControls    =   0   'False
       Height          =   2265
       Index           =   0
       Left            =   0
@@ -60,6 +62,7 @@ Begin VB.Form frmMain
       End
    End
    Begin VB.Frame Frame1 
+      ClipControls    =   0   'False
       Height          =   2265
       Index           =   1
       Left            =   0
@@ -167,7 +170,7 @@ Attribute VB_Exposed = False
 
 Option Explicit
 
-Dim oPOP3 As clsPOP3
+Private oPOP3 As clsPOP3
 Private WithEvents m_frmSysTray As frmSysTray
 Attribute m_frmSysTray.VB_VarHelpID = -1
 Private bsysTray As Boolean
@@ -188,28 +191,20 @@ Private Sub cmdOk_Click()
     Reset
     Timer1.Enabled = True
 End Sub
-
+Public Sub Init()
+    'Get values from registry
+    readRegistry
+    Reset
+End Sub
 
 
 Private Sub Form_Load()
 On Error GoTo ErrHandler
-Dim intIndex As Integer
-    Me.Caption = Me.Caption & " " & App.Major & "." & App.Minor
-    'Redraw controls
-    For intIndex = 0 To Me.Frame1.Count - 1
-    With Frame1(intIndex)
-        .Move TabStrip1.ClientLeft, _
-                TabStrip1.ClientTop, _
-                TabStrip1.ClientWidth, _
-                TabStrip1.ClientHeight
-    End With
-    Next
-    Me.Move Me.Left, Me.Top, 2700, 3150
     '
     'Get values from registry
-    Call readRegistry
-    Reset
-    SysTray
+'    readRegistry
+       
+'    Reset
     Timer1.Enabled = True
 Exit Sub
 ErrHandler:
@@ -278,7 +273,7 @@ ErrHandler:
 End Sub
 
 
-Private Sub readRegistry()
+Public Sub readRegistry()
 Dim c As cRegistry
 Set c = New cRegistry
 'Values are stored in (HKEY_CURRENT_USER\Software\pop2owa)
@@ -342,7 +337,11 @@ With c
 End With
 End Sub
 
-Private Sub Reset()
+Public Sub Reset()
+    If Not (oPOP3 Is Nothing) Then
+        oPOP3.Destroy
+        Set oPOP3 = Nothing
+    End If
     Set oPOP3 = New clsPOP3
     With oPOP3
         .IP = Me.txtIP.Text
@@ -364,8 +363,8 @@ Private Sub m_frmSysTray_MenuClick(ByVal lIndex As Long, ByVal sKey As String)
         bsysTray = False
         SysTray
         Me.WindowState = vbNormal
-      Me.Show
-      Me.ZOrder
+        Me.Show
+        Me.ZOrder
    Case "close"
       Unload Me
    Case Else
