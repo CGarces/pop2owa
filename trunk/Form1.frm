@@ -252,7 +252,7 @@ On Error GoTo ErrHandler
     Timer1.Enabled = False
     oPOP3.Refresh
     If oPOP3.isActive Then
-        Timer1.Interval = 1000
+        Timer1.Interval = 100
     Else
         If (Timer1.Interval <> 10000 And bsysTray) Then
             Me.Hide
