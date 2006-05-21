@@ -31,6 +31,8 @@ Private objOWA As clsOWA
 Private m_strIP As String
 Private strSMTPState As String
 Private strMailData As String
+Private vMailData() As String
+
 Private vPorts(0 To 1) As Integer
 
 Property Get isActive() As Boolean
@@ -438,7 +440,7 @@ ErrHandler:
     Debug.Assert False
 '    Call closesocket(lngPop3Write)
 '    lngPop3Write = 0
-    Err.Raise Err.Number, "SendPOP3", Err.Description
+    Err.Raise Err.Number, "SendPOP3: " & Err.Source, Err.Description
 End Sub
 
 ''
@@ -447,6 +449,7 @@ End Sub
 '@param strDataToSend Strings to send
 '@param lngSocket The descriptor that identifies a connected socket
 Private Sub SendMsg(ByVal strDataToSend As String, ByVal lngSocket As Long)
+On Error GoTo ErrHandler
     'Add CRLF if needed
     If Right$(strDataToSend, 2) <> vbCrLf Then
         strDataToSend = strDataToSend & vbCrLf
@@ -455,17 +458,15 @@ Private Sub SendMsg(ByVal strDataToSend As String, ByVal lngSocket As Long)
     'Call the vbSend function in order to send data
     If vbSend(lngSocket, strDataToSend) = SOCKET_ERROR Then
         '
-        'If the vbSend function has returned a value of
-        'SOCKET_ERROR, just display a message box with the
-        'error description
-        Call closesocket(lngSocket)
-       
-        Debug.Print GetErrorDescription(Err.LastDllError)
-'        Debug.Print vbSend(lngPop3Write, "-ERR " & Err.LastDllError)
-        'Debug.Assert False
+        Err.Raise vbObjectError + 1, "send data", GetErrorDescription(Err.LastDllError)
     End If
     Sleep 100
     DoEvents
+Exit Sub
+ErrHandler:
+    Debug.Assert False
+    Debug.Print GetErrorDescription(Err.LastDllError)
+    Err.Raise Err.Number, "SendMsg: " & Err.Source, Err.Description
 End Sub
 
 
@@ -542,14 +543,15 @@ On Error GoTo ErrHandler
         End If
         
     End If
-    If InStr(strContentType, "html") > 0 And Not (bHasAttachment) Then
-        'I have a problem with HTML without attachment
-        'try to emulate a multi part msg.
+    'I need to emulate a multi part msg if the
+    'message has a Attachment that not is multipart msg
+    intPos = InStr(LCase$(strContentType), "multipart")
+    If (bHasAttachment And intPos <= 0) Then
         strContentType = "Content-Type: multipart/related;boundary=""--------------" & Right$(String$(23, "0") & 1, 23) & """"
     End If
     SendMsg "+OK " & objDOMMsg.selectSingleNode(XMLPATH & "a:getcontentlength").Text & " octets", lngPop3Write
+    
     'Header
-    'Search the boundary strings
     intPos = InStr(LCase$(strContentType), "boundary")
     If intPos > 0 Then
         'It's a multi part msg.
@@ -566,7 +568,6 @@ On Error GoTo ErrHandler
         If objDOMMsg.selectSingleNode(XMLPATH & "f:outlookmessageclass").Text = "REPORT.IPM.Note.NDR" Then
         
             strDataToSend = vbCrLf & "This is a MIME-encapsulated message." & vbCrLf & _
-                        "--" & strBoundary & vbCrLf & _
                         "--" & strBoundary & vbCrLf & _
                         "Content-Type: text/html; charset=ISO-8859-1" & vbCrLf & _
                         "Content-Transfer-Encoding: 8bit " & vbCrLf & _
@@ -587,15 +588,14 @@ On Error GoTo ErrHandler
             SendAttachments strURL, strBoundary
         End If
         'End of multipart msg
-        getMsg = "--" & strBoundary & "--" & vbCrLf & "."
+        strDataToSend = "--" & strBoundary & "--"
     Else
         'NOT It's a multi-part msg.
         If Not Right$(strContentType, 1) = ";" Then strContentType = strContentType & ";"
         strDataToSend = objOWA.getMsgHeader() & _
                         strContentType & vbCrLf & vbCrLf
-        SendMsg strDataToSend, lngPop3Write
         If InStr(LCase$(strContentType), "html") > 0 Then
-            'HTML
+            'HTML without attachments
             If Not objDOMMsg.selectSingleNode(XMLPATH & "e:htmldescription") Is Nothing Then
                 strBody = objDOMMsg.selectSingleNode(XMLPATH & "e:htmldescription").Text
                 strBody = Replace(strBody, "onload=""initTemplate()""", Empty)
@@ -606,9 +606,10 @@ On Error GoTo ErrHandler
                 strBody = objDOMMsg.selectSingleNode(XMLPATH & "e:textdescription").Text
             End If
         End If
-        getMsg = vbCrLf & strBody & vbCrLf & "" & vbCrLf & "."
+        strDataToSend = strDataToSend & vbCrLf & strBody & vbCrLf
     End If
     Set objDOMMsg = Nothing
+    getMsg = strDataToSend & vbCrLf & "."
     'End of msg
 Exit Function
 ErrHandler:
@@ -637,7 +638,7 @@ On Error GoTo ErrHandler
     Dim oElements As IXMLDOMNodeList
     Dim strDataToSend As String
     Dim intMsg As Integer
-    Dim intTotal As Integer
+    Dim lngTotal As Long
     Dim bCloseSocket As Boolean
     '
     If Left$(strDataRecived, 4) <> "PASS" And strSMTPState <> "DATA" Then
@@ -715,17 +716,20 @@ On Error GoTo ErrHandler
     Case "DATA"
         strDataToSend = "354 Start mail input; end with <CRLF>.<CRLF>"
         strSMTPState = "DATA"
+        ReDim vMailData(1 To 1)
         strMailData = strMailData & vbCrLf
     Case "QUIT"
         strDataToSend = "221 " & m_strIP & " Service closing transmission channel"
         bCloseSocket = True
     Case Else
         If strSMTPState = "DATA" Then
-            strMailData = strMailData & strDataRecived
+            
             If Right$(strDataRecived, 3) = "." & vbCrLf Then
-                
-                'Encoding the subject in QP format
-                'strDataRecived = EncodeSubject(strDataRecived)
+                'strMailData = strMailData & Left$(strDataRecived, Len(strDataRecived) - 3)
+                lngTotal = UBound(vMailData)
+                vMailData(lngTotal) = Left$(strDataRecived, Len(strDataRecived) - 3)
+                strMailData = strMailData & Join(vMailData, Empty)
+                Erase vMailData
                 If objOWA.SendMail(strMailData) Then
                      strDataToSend = "250 OK"
                  Else
@@ -733,6 +737,11 @@ On Error GoTo ErrHandler
                 End If
                 strSMTPState = Empty
                 strMailData = Empty
+            Else
+                'strMailData = strMailData & strDataRecived
+                lngTotal = UBound(vMailData)
+                vMailData(lngTotal) = strDataRecived
+                ReDim Preserve vMailData(1 To lngTotal + 1)
             End If
         Else
             Debug.Assert False
@@ -776,8 +785,6 @@ For Each oElement In oElements
     strDataToSend = vbCrLf & "--" & strBoundary & vbCrLf & _
                     "Content-Transfer-Encoding: base64 " & vbCrLf
 
-    strURL = oElement.selectSingleNode("a:href").Text
-    
     strContentType = "application/octet-stream"
     If Not oElement.selectSingleNode("a:propstat/a:prop/d:x370e001f") Is Nothing Then
         strContentType = oElement.selectSingleNode("a:propstat/a:prop/d:x370e001f").Text
@@ -829,6 +836,7 @@ For Each oElement In oElements
     'Send attachment header
     SendMsg strDataToSend, lngPop3Write
     'Send attachment data
+    strURL = oElement.selectSingleNode("a:href").Text
     SendMsg objOWA.GetAttachment(strURL) & vbCrLf & vbCrLf, lngPop3Write
 Next
 Set oElement = Nothing
