@@ -868,6 +868,7 @@ Public Function vbSend(ByVal lngSocket As Long, strData As String) As Long
         '
     Else
         '
+        Debug.Assert False
         vbSend = SOCKET_ERROR
         '
     End If
