@@ -83,9 +83,12 @@ End Function
 '@return Binary content encoded in Base64
 Public Function GetAttachment(ByVal strURL As String) As String
 On Error GoTo ErrHandler
+'Dim oXMLHTTP    As XMLHTTP40
 Dim oXMLHTTP    As XMLHTTP
 Dim objMIME     As Base64
+'Set oXMLHTTP = New XMLHTTP40
 Set oXMLHTTP = New XMLHTTP
+
 With oXMLHTTP
     .open "GET", strURL, False, strUser, strPassWord
     If strCookies <> Empty Then
@@ -161,7 +164,7 @@ With oXMLHTTP
     If (.Status >= 200 And .Status < 300) Then
         Set objDOMMsg = .responseXML
         #If DEBUG_MODE = 1 Then
-            objDOMMsg.save "C:\mensaje.xml"
+            objDOMMsg.save App.Path & "\mensaje.xml"
         #End If
     Else
         Err.Raise vbObjectError + 1, "Reciving msg", .statusText
@@ -446,9 +449,10 @@ For Each Key In vKeys
         Case Else
             strDataToSend = strDataToSend & Key & ": " & strValue & vbCrLf
         End Select
-    ElseIf Key = "Content-Transfer-Encoding" Then
-        'If is missed in the mail, put a default value
-        strDataToSend = strDataToSend & "Content-Transfer-Encoding: 8bit " & vbCrLf
+'
+'    ElseIf Key = "Content-Transfer-Encoding" Then
+'        'If is missed in the mail, put a default value
+'        strDataToSend = strDataToSend & "Content-Transfer-Encoding: 8bit " & vbCrLf
     End If
 Next
 getMsgHeader = strDataToSend
