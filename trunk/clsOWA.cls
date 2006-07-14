@@ -64,6 +64,9 @@ With oXMLHTTP
     End If
     .Send
     If .Status = 207 Then
+        #If DEBUG_MODE = 1 Then
+            .responseXML.save App.Path & "\ATT.xml"
+        #End If
         Set GetAttachmentsList = .responseXML.selectNodes("a:multistatus/a:response")
     Else
         Err.Raise vbObjectError + 1, "GetAttachmentsList.Status", .statusText
@@ -98,7 +101,7 @@ With oXMLHTTP
     .Send
     If (.Status >= 200 And .Status < 300) Then
         Set objMIME = New Base64
-        GetAttachment = objMIME.EncodeArr(.responseBody)
+       GetAttachment = objMIME.EncodeArr(.responseBody)
         Set objMIME = Nothing
     Else
         Err.Raise vbObjectError + 1, "GetAttachment.Status", .statusText
@@ -191,7 +194,7 @@ With oXMLHTTP
     'GetAttachment = oXMLHTTP.responseText
     If .Status = 207 Then
         #If DEBUG_MODE = 1 Then
-            objDOMInbox.save "c:\ATT.xml"
+            objDOMInbox.save App.Path & "\ATT.xml"
         #End If
         GetAttachmentName = .responseXML.selectSingleNode("a:multistatus/a:response/a:propstat/a:prop/a:displayname").Text
     Else
@@ -245,7 +248,7 @@ With oXMLHTTP
         Set objDOMInbox = .responseXML
         intMsgCount = objDOMInbox.childNodes(1).childNodes.Length
         #If DEBUG_MODE = 1 Then
-            objDOMInbox.save "C:\listado.XML"
+            objDOMInbox.save App.Path & "\listado.XML"
         #End If
     Else
         Err.Raise vbObjectError + 1, "Reciving msg", .statusText
@@ -511,6 +514,8 @@ Private Sub initArrays()
     dicTags.Add "X-MAPI-Message-Class", "f:outlookmessageclass"
     dicTags.Add "Disposition-Notification-To", "d:disposition-notification-to"
     dicTags.Add "Content-Class", "a:contentclass"
+    dicTags.Add "Thread-Topic", "d:thread-topic"
+    dicTags.Add "thread-index", "d:thread-index"
 
     Set dicMapi = New Dictionary
     dicMapi.Add "Content-Location", "d:x3713001f"
@@ -560,6 +565,34 @@ ErrHandler:
     Set xmlReq = Nothing
     WriteLog "SendMail: " & Err.Number & vbTab & Err.Description
     SendMail = False
+End Function
+
+Public Function getNDRBody(ByVal strURL As String) As String
+Dim objMSHTML As New MSHTML.HTMLDocument
+Dim objDocument As MSHTML.HTMLDocument
+Dim strBody As String
+Dim objElement As IHTMLElement
+Dim intCounter As Integer
+Dim bExit As Boolean
+Const ndrTimeout As Long = 60000
+Set objDocument = New HTMLDocument
+Set objDocument = objMSHTML.createDocumentFromUrl(strURL & "?Cmd=open", vbNullString)
+Do
+    Sleep 10
+    intCounter = intCounter + 10
+    If intCounter > ndrTimeout Then
+        Debug.Assert True
+        bExit = True
+        Exit Do
+    End If
+    DoEvents
+Loop While objDocument.readyState <> "complete"
+Set objElement = objDocument.getElementById("msgBody")
+If Not objElement Is Nothing Then
+    strBody = objElement.innerHTML
+End If
+getNDRBody = strBody
+
 End Function
 
 Private Sub Class_Initialize()
