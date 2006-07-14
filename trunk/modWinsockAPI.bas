@@ -88,6 +88,26 @@ Public Const WSATRY_AGAIN = 11002
 Public Const WSANO_RECOVERY = 11003
 Public Const WSANO_DATA = 11004
 
+
+Public Const SOL_SOCKET         As Long = 65535
+Public Const SO_SNDBUF          As Long = &H1001&
+Public Const SO_RCVBUF          As Long = &H1002&
+Public Const SO_SNDLOWAT        As Long = &H1003&
+Public Const SO_RCVLOWAT        As Long = &H1004&
+Public Const SO_KEEPALIVE       As Long = &H8&
+Public Const SO_DONTROUTE       As Long = &H10&
+Public Const SO_MAX_MSG_SIZE    As Long = &H2003
+Public Const SO_PROTOCOL_INFO   As Long = &H2004
+Public Const SO_BROADCAST       As Long = &H20
+Public Const TCP_NODELAY        As Long = &H1&
+Public Const FIONREAD           As Long = &H4004667F
+''
+'Keep connections alive (OS default=-1)
+Public Const SKT_KEEPALIVE As Long = -1                                                     'Keep connections alive (OS default=-1)
+Public Const SKT_SNDBUF As Long = 32768
+
+
+
 Public Const FD_SETSIZE = 64
 
 Public Type WSAData
@@ -191,6 +211,10 @@ Public Declare Function getpeername Lib "ws2_32.dll" (ByVal s As Long, ByRef nam
 Public Declare Function bind Lib "ws2_32.dll" (ByVal s As Long, ByRef name As sockaddr_in, ByRef namelen As Long) As Long
                   
 Public Declare Function vbselect Lib "ws2_32.dll" Alias "select" (ByVal nfds As Long, ByRef readfds As fd_set, ByRef writefds As fd_set, ByRef exceptfds As fd_set, ByRef timeout As Long) As Long
+
+'Private Declare Function getsockopt Lib "ws2_32.dll" (ByVal s As Long, ByVal level As Long, ByVal optname As Long, ByRef optval As WSAPROTOCOL_INFO, ByRef optlen As Long) As Long
+Public Declare Function getsockopt Lib "ws2_32.dll" (ByVal s As Long, ByVal level As Long, ByVal optname As Long, ByRef optval As Any, ByRef optlen As Long) As Long
+Public Declare Function setsockopt Lib "ws2_32.dll" (ByVal s As Long, ByVal level As Long, ByVal optname As Long, ByRef optval As Any, ByVal optlen As Long) As Long
 
 
 ''
@@ -853,9 +877,12 @@ Public Function vbSend(ByVal lngSocket As Long, strData As String) As Long
     Dim arrBuffer()     As Byte
     Dim lngBytesSent    As Long
     Dim lngBufferLength As Long
+    Dim bExit           As Boolean
+    Dim lRetry          As Long
     '
     lngBufferLength = Len(strData)
     '
+    Do
     If IsConnected(lngSocket) And lngBufferLength > 0 Then
         '
         'Convert the data string to a byte array
@@ -865,13 +892,22 @@ Public Function vbSend(ByVal lngSocket As Long, strData As String) As Long
         lngBytesSent = Send(lngSocket, arrBuffer(0), lngBufferLength, 0&)
         '
         vbSend = lngBytesSent
+            bExit = True
         '
     Else
         '
+            lRetry = lRetry + 1
+            Debug.Print "Retry vbSend " & lRetry
+            If lRetry > 4 Then
+                bExit = True
+                vbSend = SOCKET_ERROR
         Debug.Assert False
-        vbSend = SOCKET_ERROR
+            Else
+                Sleep 100
+            End If
         '
     End If
+    Loop While Not bExit
     '
 End Function
 
