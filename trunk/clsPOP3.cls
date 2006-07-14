@@ -103,6 +103,12 @@ Private Function fncNewSokect(ByVal intPort As Integer) As Long
             '
         End If
     End If
+    'Set option for SO_SNDBUF
+    lngRetValue = setsockopt(lngSocket, SOL_SOCKET, SO_SNDBUF, SKT_SNDBUF, LenB(lngRetValue))
+    'Set option for SO_KEEPALIVE
+    lngRetValue = setsockopt(lngSocket, SOL_SOCKET, SO_KEEPALIVE, SKT_KEEPALIVE, LenB(lngRetValue))
+
+    
     fncNewSokect = lngSocket
 End Function
 
@@ -529,19 +535,26 @@ On Error GoTo ErrHandler
 '            bHasAttachment = (objDOMMsg.selectSingleNode(XMLPATH & "a:contentclass").Text = "urn:content-classes:calendarmessage")
 '        End If
     End If
-    If Not objDOMMsg.selectSingleNode(XMLPATH & "d:content-type") Is Nothing Then
-        strContentType = "Content-Type: " & objDOMMsg.selectSingleNode(XMLPATH & "d:content-type").Text
-    Else
-        'In some case the Content-Type not is correct.
-        '
+    
+    If objDOMMsg.selectSingleNode(XMLPATH & "d:content-type") Is Nothing Then
         If objDOMMsg.selectSingleNode(XMLPATH & "f:outlookmessageclass").Text = "REPORT.IPM.Note.NDR" Then
             strContentType = "Content-Type: multipart/report; report-type=delivery-status;boundary=""--------------" & Right$(String$(23, "0") & 1, 23) & """"
         Else
             'MSExchange sent text/plain instead text/html.
             'Force to read the HTML content to work OK in all cases
-            strContentType = "Content-Type: multipart/related;boundary=""--------------" & Right$(String$(23, "0") & 1, 23) & """"
+            If bHasAttachment Then
+                strContentType = "Content-Type: multipart/related;boundary=""--------------" & Right$(String$(23, "0") & 1, 23) & """"
+            Else
+                strContentType = "Content-Type: text/html; charset=ISO-8859-1"
+            End If
         End If
-        
+    Else
+        strContentType = "Content-Type: " & objDOMMsg.selectSingleNode(XMLPATH & "d:content-type").Text
+        'In some case the Content-Type not is correct.
+        If InStr(strContentType, "multipart/alternative") > 0 And InStr(strContentType, "multipart/related") > 0 Then
+            strContentType = "Content-Type: multipart/report; report-type=delivery-status;boundary=""--------------" & Right$(String$(23, "0") & 1, 23) & """"
+        End If
+        Debug.Print strContentType
     End If
     'I need to emulate a multi part msg if the
     'message has a Attachment that not is multipart msg
@@ -565,15 +578,23 @@ On Error GoTo ErrHandler
             strBody = objDOMMsg.selectSingleNode(XMLPATH & "e:htmldescription").Text
             strBody = Replace(strBody, "onload=""initTemplate()""", Empty)
         End If
-        If objDOMMsg.selectSingleNode(XMLPATH & "f:outlookmessageclass").Text = "REPORT.IPM.Note.NDR" Then
-        
+        Select Case objDOMMsg.selectSingleNode(XMLPATH & "f:outlookmessageclass").Text
+        Case "REPORT.IPM.Note.NDR"
+            strBody = objOWA.getNDRBody(strURL)
             strDataToSend = vbCrLf & "This is a MIME-encapsulated message." & vbCrLf & _
                         "--" & strBoundary & vbCrLf & _
                         "Content-Type: text/html; charset=ISO-8859-1" & vbCrLf & _
                         "Content-Transfer-Encoding: 8bit " & vbCrLf & _
                         vbCrLf & strBody & vbCrLf & _
                         "" & vbCrLf
-        Else
+        Case "IPM.Schedule.Meeting.Request"
+            strDataToSend = vbCrLf & "This is a multi-part message in MIME format." & vbCrLf & _
+                        "--" & strBoundary & vbCrLf & _
+                        "Content-Type: text/plain; charset=ISO-8859-1" & vbCrLf & _
+                        "Content-Transfer-Encoding: 8bit " & vbCrLf & _
+                        vbCrLf & strBody & vbCrLf & _
+                        "" & vbCrLf
+        Case Else
             strDataToSend = vbCrLf & "This is a multi-part message in MIME format." & vbCrLf & _
                         "--" & strBoundary & vbCrLf & _
                         "Content-Type: text/html; charset=ISO-8859-1" & vbCrLf & _
@@ -582,7 +603,7 @@ On Error GoTo ErrHandler
                         vbCrLf & _
                         strBody & vbCrLf & _
                         "" & vbCrLf
-        End If
+        End Select
         SendMsg strDataToSend, lngPop3Write
         If bHasAttachment Then
             SendAttachments strURL, strBoundary
@@ -785,8 +806,9 @@ For Each oElement In oElements
     strDataToSend = vbCrLf & "--" & strBoundary & vbCrLf & _
                     "Content-Transfer-Encoding: base64 " & vbCrLf
 
-    strContentType = "application/octet-stream"
-    If Not oElement.selectSingleNode("a:propstat/a:prop/d:x370e001f") Is Nothing Then
+    If oElement.selectSingleNode("a:propstat/a:prop/d:x370e001f") Is Nothing Then
+        strContentType = "application/octet-stream"
+    Else
         strContentType = oElement.selectSingleNode("a:propstat/a:prop/d:x370e001f").Text
     End If
    
@@ -812,26 +834,10 @@ For Each oElement In oElements
         strContentDisposition = oElement.selectSingleNode("a:propstat/a:prop/d:x3716001f").Text
     End If
     
-    'PR_ATTACH_CONTENT_ID
     strDataToSend = strDataToSend & objOWA.GetAttHeader(oElement)
     
     strDataToSend = strDataToSend & "Content-Type: " & strContentType & "; name=""" & strFilename & """" & vbCrLf & _
                 "Content-Disposition: " & strContentDisposition & "; filename=""" & strFilename & """" & vbCrLf & vbCrLf & vbCrLf
-    
-'
-'    'PR_ATTACH_CONTENT_ID
-'    strDataToSend = strDataToSend & objOWA.GetAttHeader(oElement)
-'    If oElement.selectSingleNode("a:propstat/a:prop/d:x3712001f") Is Nothing Then
-'        strDataToSend = strDataToSend & "Content-Type: " & strContentType & "; name=""" & strFilename & """" & vbCrLf & _
-'                    "Content-Disposition: " & strContentDisposition & "; fileName = """ & strFilename & """" & vbCrLf & vbCrLf & vbCrLf
-'    Else
-'        'If has PR_ATTACH_CONTENT_ID
-'        strDataToSend = strDataToSend & "Content-Type: IMAGE/JPEG; name=""" & strFilename & """" & vbCrLf & _
-'                    "Content-Disposition: " & strContentDisposition & "; fileName = """ & strFilename & """" & vbCrLf & _
-'                    "Content-ID: <" & oElement.selectSingleNode("a:propstat/a:prop/d:x3712001f").Text & ">" & vbCrLf & vbCrLf & vbCrLf
-'        'oElement.selectSingleNode("a:propstat/a:prop/d:x3716001f").Text
-'    End If
-    
     
     'Send attachment header
     SendMsg strDataToSend, lngPop3Write
