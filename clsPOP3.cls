@@ -524,9 +524,12 @@ On Error GoTo ErrHandler
     Dim bHasAttachment  As Boolean
     Dim strContentType  As String
     Dim intPos          As Integer
+    Dim strOutlookMsgClass  As String
+    
 
     'strUrl = objDOMInbox.childNodes(1).childNodes(intMsg - 1).selectSingleNode("a:propstat/a:prop/a:href").Text
     objOWA.LoadMsg strURL
+    strOutlookMsgClass = objDOMMsg.selectSingleNode(XMLPATH & "f:outlookmessageclass").Text
     If objDOMMsg.selectSingleNode(XMLPATH & "e:hasattachment") Is Nothing Then
         bHasAttachment = True
     Else
@@ -537,7 +540,7 @@ On Error GoTo ErrHandler
     End If
     
     If objDOMMsg.selectSingleNode(XMLPATH & "d:content-type") Is Nothing Then
-        If objDOMMsg.selectSingleNode(XMLPATH & "f:outlookmessageclass").Text = "REPORT.IPM.Note.NDR" Then
+        If strOutlookMsgClass = "REPORT.IPM.Note.NDR" Then
             strContentType = "Content-Type: multipart/report; report-type=delivery-status;boundary=""--------------" & Right$(String$(23, "0") & 1, 23) & """"
         Else
             'MSExchange sent text/plain instead text/html.
@@ -578,8 +581,8 @@ On Error GoTo ErrHandler
             strBody = objDOMMsg.selectSingleNode(XMLPATH & "e:htmldescription").Text
             strBody = Replace(strBody, "onload=""initTemplate()""", Empty)
         End If
-        Select Case objDOMMsg.selectSingleNode(XMLPATH & "f:outlookmessageclass").Text
-        Case "REPORT.IPM.Note.NDR"
+        Select Case strOutlookMsgClass
+        Case "REPORT.IPM.Note.NDR", "REPORT.IPM.Note.IPNRN"
             strBody = objOWA.getNDRBody(strURL)
             strDataToSend = vbCrLf & "This is a MIME-encapsulated message." & vbCrLf & _
                         "--" & strBoundary & vbCrLf & _
