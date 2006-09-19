@@ -256,7 +256,7 @@ On Error GoTo ErrHandler
     Else
         If (Timer1.Interval <> 10000 And bsysTray) Then
             Me.Hide
-    Me.Refresh
+            Me.Refresh
             DoEvents
         End If
         Timer1.Interval = 10000
@@ -368,7 +368,7 @@ Private Sub m_frmSysTray_MenuClick(ByVal lIndex As Long, ByVal sKey As String)
    Case "close"
       Unload Me
    Case Else
-      MsgBox "Clicked item with key " & sKey, vbInformation
+      'MsgBox "Clicked item with key " & sKey, vbInformation
    End Select
     
 End Sub
