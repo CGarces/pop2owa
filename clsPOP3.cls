@@ -572,7 +572,8 @@ On Error GoTo ErrHandler
     If intPos > 0 Then
         'It's a multi part msg.
         strBoundary = Mid$(strContentType, intPos + Len("boundary") + 2)
-        strBoundary = Left$(strBoundary, Len(strBoundary) - 1)
+        'strBoundary = Left$(strBoundary, Len(strBoundary) - 1)
+        strBoundary = Left$(strBoundary, InStr(strBoundary, """") - 1)
         strDataToSend = objOWA.getMsgHeader() & _
                        strContentType & vbCrLf & vbCrLf
         SendMsg strDataToSend, lngPop3Write
