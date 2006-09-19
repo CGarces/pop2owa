@@ -55,7 +55,7 @@ On Error GoTo ErrHandler
 Dim oXMLHTTP As XMLHTTP
 Set oXMLHTTP = New XMLHTTP
 With oXMLHTTP
-    .open "X-MS-ENUMATTS", strURL, False, strUser, strPassWord
+    .open "X-MS-ENUMATTS", strURL, True, strUser, strPassWord
     .setRequestHeader "Depth", "1"
     .setRequestHeader "Content-type", "xml"
     If strCookies <> Empty Then
@@ -63,6 +63,11 @@ With oXMLHTTP
         .setRequestHeader "Cookies", strCookies
     End If
     .Send
+    While Not .readyState = 4
+        Sleep 100
+        DoEvents
+    Wend
+
     If .Status = 207 Then
         #If DEBUG_MODE = 1 Then
             .responseXML.save App.Path & "\ATT.xml"
@@ -93,12 +98,17 @@ Dim objMIME     As Base64
 Set oXMLHTTP = New XMLHTTP
 
 With oXMLHTTP
-    .open "GET", strURL, False, strUser, strPassWord
+    .open "GET", strURL, True, strUser, strPassWord
     If strCookies <> Empty Then
         .setRequestHeader "Cookies", "Necessary according to Q234486"
         .setRequestHeader "Cookies", strCookies
     End If
     .Send
+    While Not .readyState = 4
+        Sleep 100
+        DoEvents
+    Wend
+
     If (.Status >= 200 And .Status < 300) Then
         Set objMIME = New Base64
        GetAttachment = objMIME.EncodeArr(.responseBody)
@@ -124,13 +134,18 @@ Dim oXMLHTTP    As XMLHTTP
     
     Set oXMLHTTP = New XMLHTTP
     With oXMLHTTP
-        .open "DELETE", GetURL(intMsg), False, strUser, strPassWord
+        .open "DELETE", GetURL(intMsg), True, strUser, strPassWord
         If strCookies <> Empty Then
             .setRequestHeader "Cookies", "Necessary according to Q234486"
             .setRequestHeader "Cookies", strCookies
         End If
         .setRequestHeader "Depth", "infinity"
         .Send
+        While Not .readyState = 4
+            Sleep 100
+            DoEvents
+        Wend
+
     '    Debug.Print .Status
     End With
     Delete = True
@@ -153,7 +168,7 @@ Dim oXMLHTTP As XMLHTTP
 Set oXMLHTTP = CreateObject("microsoft.xmlhttp")
 With oXMLHTTP
     ' Open a request to a particular url
-    .open "PROPFIND", strURL, False, strUser, strPassWord
+    .open "PROPFIND", strURL, True, strUser, strPassWord
     ' Set the header type
     .setRequestHeader "Content-type:", "text/xml"
     .setRequestHeader "Depth", "1"
@@ -164,6 +179,11 @@ With oXMLHTTP
 
     ' Send the request
     .Send
+    While Not .readyState = 4
+        Sleep 100
+        DoEvents
+    Wend
+
     If (.Status >= 200 And .Status < 300) Then
         Set objDOMMsg = .responseXML
         #If DEBUG_MODE = 1 Then
@@ -184,13 +204,18 @@ On Error GoTo ErrHandler
 Dim oXMLHTTP As XMLHTTP
 Set oXMLHTTP = New XMLHTTP
 With oXMLHTTP
-    .open "PROPFIND", strURL, False, strUser, strPassWord
+    .open "PROPFIND", strURL, True, strUser, strPassWord
     If strCookies <> Empty Then
         .setRequestHeader "Cookies", "Necessary according to Q234486"
         .setRequestHeader "Cookies", strCookies
     End If
 
     .Send
+    While Not .readyState = 4
+        Sleep 100
+        DoEvents
+    Wend
+
     'GetAttachment = oXMLHTTP.responseText
     If .Status = 207 Then
         #If DEBUG_MODE = 1 Then
@@ -222,7 +247,7 @@ strURL = objDOMFolders.selectSingleNode(XMLPATH & "d:inbox").Text & "/"
 Set oXMLHTTP = CreateObject("microsoft.xmlhttp")
 With oXMLHTTP
     ' Open a request to a particular url
-    .open "SEARCH", strURL, False, strUser, strPassWord
+    .open "SEARCH", strURL, True, strUser, strPassWord
     ' Set the header type - we want XML
     .setRequestHeader "Content-type:", "text/xml"
     .setRequestHeader "Depth", "1"
@@ -230,7 +255,6 @@ With oXMLHTTP
         .setRequestHeader "Cookies", "Necessary according to Q234486"
         .setRequestHeader "Cookies", strCookies
     End If
-
     ' Send the request
     Sleep 100
     Call .Send("<?xml version='1.0' ?>" & _
@@ -244,6 +268,10 @@ With oXMLHTTP
                 " WHERE ""DAV:ishidden""=False" & _
                 " AND ""DAV:isfolder""=False" & _
                 "</a:sql></a:searchrequest>")
+    While Not .readyState = 4
+        Sleep 100
+        DoEvents
+    Wend
     If .Status = 207 Then
         Set objDOMInbox = .responseXML
         intMsgCount = objDOMInbox.childNodes(1).childNodes.Length
@@ -289,7 +317,7 @@ query = query + "</a:propfind>"
 Set oXMLHTTP = New XMLHTTP
 strURL = strExchSvrName & "/exchange/" & strUser & "/"
 With oXMLHTTP
-    .open "PROPFIND", strURL, False, strUser, strPassWord
+    .open "PROPFIND", strURL, True, strUser, strPassWord
     .setRequestHeader "Content-Type", "text/xml"
     .setRequestHeader "Depth", "0"
     If strCookies <> Empty Then
@@ -297,7 +325,11 @@ With oXMLHTTP
         .setRequestHeader "Cookies", strCookies
     End If
     .Send query
-    
+    While Not .readyState = 4
+        Sleep 100
+        DoEvents
+    Wend
+
     ' process the result
     If (.Status >= 200 And .Status < 300) Then
        Set objDOMFolders = .responseXML
@@ -331,10 +363,14 @@ Dim oXMLHTTP    As XMLHTTP
 strURL = strExchSvrName & "/exchweb/bin/auth/owaauth.dll"
 Set oXMLHTTP = New XMLHTTP
 With oXMLHTTP
-    .open "POST", strURL, False
+    .open "POST", strURL, True
     .setRequestHeader "Content-type:", "application/x-www-form-urlencoded"
     'Generate the body for FBA login
     .Send "destination=" & strExchSvrName & "/exchange/&username=" & strUser & "&password=" & strPassWord
+    While Not .readyState = 4
+        Sleep 100
+        DoEvents
+    Wend
     vHeaders = Split(.getAllResponseHeaders(), vbNewLine)
 End With
 Set oXMLHTTP = Nothing
@@ -541,14 +577,17 @@ Dim xmlReq As XMLHTTP
      
      'Create the DAV PUT request.
     
-    xmlReq.open "PUT", strSubURL, False, strUser, strPassWord
+    xmlReq.open "PUT", strSubURL, True, strUser, strPassWord
     If strMailData <> "" Then
        xmlReq.setRequestHeader "Content-Type", "message/rfc821"
        If Not bSaveinsent Then
            xmlReq.setRequestHeader "Saveinsent", "f"
        End If
        xmlReq.Send strMailData
-    
+        While Not xmlReq.readyState = 4
+            Sleep 100
+            DoEvents
+        Wend
     End If
     
     'Process the results.
