@@ -324,10 +324,10 @@ With c
     .ValueType = REG_DWORD
     'POP3 Port
     .ValueKey = "POP3"
-    .Value = Me.txtPort(0).Text
+    .Value = CInt(Me.txtPort(0).Text)
     'SMTP Port
     .ValueKey = "SMTP"
-    .Value = Me.txtPort(1).Text
+    .Value = CInt(Me.txtPort(1).Text)
     'Leave a copy in send folder
     .ValueKey = "Saveinsent"
     .Value = chkSend.Value
