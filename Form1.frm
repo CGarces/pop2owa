@@ -1,10 +1,11 @@
 VERSION 5.00
 Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
 Begin VB.Form frmMain 
+   BorderStyle     =   1  'Fixed Single
    Caption         =   "POP2OWA"
    ClientHeight    =   6765
-   ClientLeft      =   60
-   ClientTop       =   345
+   ClientLeft      =   45
+   ClientTop       =   330
    ClientWidth     =   2580
    ClipControls    =   0   'False
    Icon            =   "Form1.frx":0000
@@ -12,19 +13,27 @@ Begin VB.Form frmMain
    ScaleHeight     =   6765
    ScaleWidth      =   2580
    StartUpPosition =   3  'Windows Default
+   Begin VB.CommandButton cmdOk 
+      Caption         =   "Apply"
+      Height          =   375
+      Left            =   960
+      TabIndex        =   13
+      Top             =   2280
+      Width           =   1575
+   End
    Begin VB.Frame Frame1 
       ClipControls    =   0   'False
-      Height          =   2265
+      Height          =   1900
       Index           =   0
       Left            =   0
       TabIndex        =   1
-      Top             =   2160
+      Top             =   2760
       Width           =   2415
       Begin VB.CheckBox chkFBA 
          Caption         =   "Form-Based-Auth"
          Height          =   375
          Left            =   120
-         TabIndex        =   13
+         TabIndex        =   12
          Top             =   1320
          Width           =   2055
       End
@@ -32,17 +41,9 @@ Begin VB.Form frmMain
          Caption         =   "Save sent messages"
          Height          =   495
          Left            =   120
-         TabIndex        =   12
+         TabIndex        =   11
          Top             =   960
          Width           =   2175
-      End
-      Begin VB.CommandButton cmdOk 
-         Caption         =   "Apply"
-         Height          =   375
-         Left            =   720
-         TabIndex        =   7
-         Top             =   1800
-         Width           =   1575
       End
       Begin VB.TextBox txtServer 
          Height          =   285
@@ -63,11 +64,11 @@ Begin VB.Form frmMain
    End
    Begin VB.Frame Frame1 
       ClipControls    =   0   'False
-      Height          =   2265
+      Height          =   1900
       Index           =   1
       Left            =   0
       TabIndex        =   2
-      Top             =   4560
+      Top             =   4800
       Visible         =   0   'False
       Width           =   2415
       Begin VB.TextBox txtPort 
@@ -75,7 +76,7 @@ Begin VB.Form frmMain
          Height          =   285
          Index           =   1
          Left            =   1080
-         TabIndex        =   10
+         TabIndex        =   9
          Text            =   "25"
          Top             =   1080
          Width           =   1215
@@ -84,7 +85,7 @@ Begin VB.Form frmMain
          Caption         =   "SMTP"
          Height          =   195
          Left            =   120
-         TabIndex        =   11
+         TabIndex        =   10
          Top             =   1080
          Value           =   1  'Checked
          Width           =   975
@@ -94,7 +95,7 @@ Begin VB.Form frmMain
          Height          =   285
          Index           =   0
          Left            =   1080
-         TabIndex        =   9
+         TabIndex        =   8
          Text            =   "110"
          Top             =   660
          Width           =   1215
@@ -103,7 +104,7 @@ Begin VB.Form frmMain
          Alignment       =   1  'Right Justify
          Height          =   285
          Left            =   1080
-         TabIndex        =   8
+         TabIndex        =   7
          Text            =   "127.0.0.1"
          Top             =   240
          Width           =   1215
@@ -135,13 +136,13 @@ Begin VB.Form frmMain
       Top             =   960
    End
    Begin MSComctlLib.TabStrip TabStrip1 
-      Height          =   2655
+      Height          =   2200
       Left            =   5
       TabIndex        =   0
       Top             =   5
       Width           =   2535
       _ExtentX        =   4471
-      _ExtentY        =   4683
+      _ExtentY        =   3889
       _Version        =   393216
       BeginProperty Tabs {1EFB6598-857C-11D1-B16A-00C0F0283628} 
          NumTabs         =   2
