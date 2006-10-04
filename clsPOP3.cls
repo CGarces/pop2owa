@@ -480,6 +480,7 @@ End Sub
 'Initialize Winsock code.
 '
 Public Sub Start()
+On Error GoTo ErrHandler
     'value returned by the InitializeWinsock function
     Dim lngRetValue As Long
     Call WSACleanup
@@ -509,6 +510,9 @@ Public Sub Start()
         'we have nothing to do with this application
         Err.Raise lngRetValue, "Start", GetErrorDescription(lngRetValue)
     End If
+Exit Sub
+ErrHandler:
+    Err.Raise Err.Number, "Start " & Err.Source, Err.Description
 End Sub
 
 ''
@@ -792,7 +796,8 @@ End Sub
 'Send a message attachment to the email client.
 '
 '@param strURL URL of the .EML file
-'@param string that identify the attachment in the message
+'@param strBoundary String that identify the attachment in the message
+
 Private Sub SendAttachments(ByVal strURL As String, ByVal strBoundary As String)
 On Error GoTo ErrHandler
 
