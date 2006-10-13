@@ -683,16 +683,8 @@ On Error GoTo ErrHandler
         strDataToSend = "250 " & m_strIP
     Case "EHLO"
         strDataToSend = "250-" & m_strIP
-'        strDataToSend = strDataToSend & vbNewLine & "250-8BITMIME"
-'       If strPassWord = Empty Or strUser = Empty Then
-'            strDataToSend = strDataToSend & vbNewLine & "250-AUTH=LOGIN PLAIN"
-            strDataToSend = strDataToSend & vbNewLine & "250-AUTH LOGIN PLAIN"
-            strDataToSend = strDataToSend & vbNewLine & "250 HELP"
-'        End If
-'        strDataToSend = strDataToSend & vbNewLine & "250 Size 51200000"
-        'strDataToSend = "500 Syntax error, command unrecognized"
-'         strDataToSend = strDataToSend & vbNewLine & "250 AUTH LOGIN PLAIN"
-    
+        strDataToSend = strDataToSend & vbNewLine & "250-AUTH LOGIN PLAIN"
+        strDataToSend = strDataToSend & vbNewLine & "250 HELP"
     Case "AUTH"
         Dim objBase As New Base64
         Dim strReply As String
@@ -852,7 +844,7 @@ For Each oElement In oElements
     SendMsg strDataToSend, lngPop3Write
     'Send attachment data
     strURL = oElement.selectSingleNode("a:href").Text
-    SendMsg objOWA.GetAttachment(strURL) & vbCrLf & vbCrLf, lngPop3Write
+    SendMsg objOWA.GetAttachment(strURL, lngPop3Write) & vbCrLf & vbCrLf, lngPop3Write
 Next
 Set oElement = Nothing
 Set oElements = Nothing
@@ -883,5 +875,3 @@ Private Function ValidateSMTPAUTH() As String
         ValidateSMTPAUTH = "533  Authentication required [AUTH]"
     End Select
 End Function
-
-

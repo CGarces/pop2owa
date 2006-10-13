@@ -89,11 +89,12 @@ End Function
 '
 '@param strUrl  Url of the .EML file
 '@return Binary content encoded in Base64
-Public Function GetAttachment(ByVal strURL As String) As String
+Public Function GetAttachment(ByVal strURL As String, ByVal lngSocket As Long) As String
 On Error GoTo ErrHandler
 'Dim oXMLHTTP    As XMLHTTP40
 Dim oXMLHTTP    As XMLHTTP
 Dim objMIME     As Base64
+Dim lngTimer As Long
 'Set oXMLHTTP = New XMLHTTP40
 Set oXMLHTTP = New XMLHTTP
 
@@ -104,11 +105,15 @@ With oXMLHTTP
         .setRequestHeader "Cookies", strCookies
     End If
     .Send
+    lngTimer = Timer
     While Not .readyState = 4
         Sleep 100
         DoEvents
+        If Timer - lngTimer > 30 Then
+            vbSend lngSocket, vbCrLf
+            lngTimer = Timer
+        End If
     Wend
-
     If (.Status >= 200 And .Status < 300) Then
         Set objMIME = New Base64
        GetAttachment = objMIME.EncodeArr(.responseBody)
