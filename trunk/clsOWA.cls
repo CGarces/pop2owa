@@ -88,6 +88,7 @@ End Function
 'Retrieve the attachment of a message.
 '
 '@param strUrl  Url of the .EML file
+'@param lngSocket Socket to send data
 '@return Binary content encoded in Base64
 Public Function GetAttachment(ByVal strURL As String, ByVal lngSocket As Long) As String
 On Error GoTo ErrHandler
@@ -611,13 +612,20 @@ ErrHandler:
     SendMail = False
 End Function
 
-Public Function getNDRBody(ByVal strURL As String) As String
-Dim objMSHTML As New MSHTML.HTMLDocument
-Dim objDocument As MSHTML.HTMLDocument
+''
+'Pase one HTML message to rfc822.<BR>
+'
+'@param strURL URL fo the EML msg
+'@return rfc822 msg
+'@bug Some headers can't be retrieved
+Public Function ParseHTMLMsg(ByVal strURL As String) As String
+Dim objMSHTML As New MSHTMl.HTMLDocument
+Dim objDocument As MSHTMl.HTMLDocument
 Dim strBody As String
 Dim objElement As IHTMLElement
 Dim intCounter As Integer
 Dim bExit As Boolean
+Dim strReturn As String
 Const ndrTimeout As Long = 60000
 Set objDocument = New HTMLDocument
 Set objDocument = objMSHTML.createDocumentFromUrl(strURL & "?Cmd=open", vbNullString)
@@ -632,10 +640,34 @@ Do
     DoEvents
 Loop While objDocument.readyState <> "complete"
 Set objElement = objDocument.getElementById("msgBody")
-If Not objElement Is Nothing Then
-    strBody = objElement.innerHTML
+If objElement Is Nothing Then
+    Set objElement = objDocument.getElementById("idBody")
+    If Not objElement Is Nothing Then
+        Set objElement = objDocument.getElementById("_trFromText")
+        strReturn = "From: " & objElement.innerText
+        Set objElement = objDocument.getElementById("_trToText")
+        strReturn = strReturn & vbCrLf & "To: " & objElement.innerText
+        Set objElement = objDocument.getElementById("_trCcText")
+        If Len(objElement.innerText) > 0 Then
+            strReturn = strReturn & vbCrLf & "Cc: " & objElement.innerText
+        End If
+        strReturn = strReturn & vbCrLf & _
+                "Content-Type: text/html; charset=ISO-8859-1" & vbCrLf & _
+                "Content-Transfer-Encoding: 8bit "
+        
+        Set objElement = objDocument.getElementById("idBody")
+        strBody = objElement.innerHTML
+        strBody = Replace(strBody, "&lt;", "<", , , vbTextCompare)
+        strBody = Replace(strBody, "&gt;", ">", , , vbTextCompare)
+        strBody = Replace(strBody, "&nbsp;", " ", , , vbTextCompare)
+        strBody = Replace(strBody, "&amp;", "&", , , vbTextCompare)
+        strReturn = strReturn & vbCrLf & vbCrLf & strBody
+    End If
+Else
+    'It's a NDR message
+    strReturn = objElement.innerHTML
 End If
-getNDRBody = strBody
+ParseHTMLMsg = strReturn
 
 End Function
 
