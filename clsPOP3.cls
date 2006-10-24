@@ -588,7 +588,7 @@ On Error GoTo ErrHandler
         End If
         Select Case strOutlookMsgClass
         Case "REPORT.IPM.Note.NDR", "REPORT.IPM.Note.IPNRN"
-            strBody = objOWA.getNDRBody(strURL)
+            strBody = objOWA.ParseHTMLMsg(strURL)
             strDataToSend = vbCrLf & "This is a MIME-encapsulated message." & vbCrLf & _
                         "--" & strBoundary & vbCrLf & _
                         "Content-Type: text/html; charset=ISO-8859-1" & vbCrLf & _
@@ -804,20 +804,29 @@ Dim strFilename As String
 'Attachment
 Set oElements = objOWA.GetAttachmentsList(strURL)
 For Each oElement In oElements
-    strDataToSend = vbCrLf & "--" & strBoundary & vbCrLf & _
-                    "Content-Transfer-Encoding: base64 " & vbCrLf
-
-    If oElement.selectSingleNode("a:propstat/a:prop/d:x370e001f") Is Nothing Then
-        strContentType = "application/octet-stream"
-    Else
-        strContentType = oElement.selectSingleNode("a:propstat/a:prop/d:x370e001f").Text
-    End If
-   
+    
+    'Identify the type of message, if is ATTACH_EMBEDDED_MSG headers are diferent
     'PR_ATTACH_METHOD
     If oElement.selectSingleNode("a:propstat/a:prop/d:x37050003").Text = 5 Then
         'ATTACH_EMBEDDED_MSG
         strFilename = oElement.selectSingleNode("a:propstat/a:prop/f:cn").Text
+        strURL = oElement.selectSingleNode("a:href").Text
+        'Build the rfc822 mesagge
+        strDataToSend = vbCrLf & "--" & strBoundary & vbCrLf & _
+            "Content-Type: message/rfc822" & vbCrLf & _
+            "Content-Transfer-Encoding: 8bit " & vbCrLf & _
+            "Content-Disposition: attachment " & vbCrLf & _
+            vbCrLf & _
+            "Subject: " & strFilename & " " & vbCrLf & _
+            objOWA.ParseHTMLMsg(strURL) & vbCrLf & _
+            "" & vbCrLf
+        'Send the embedded message
+        SendMsg strDataToSend, lngPop3Write
+        'Search for attachments in the embedded message
+        SendAttachments strURL, strBoundary
     Else
+        strDataToSend = vbCrLf & "--" & strBoundary & vbCrLf & _
+                        "Content-Transfer-Encoding: base64 " & vbCrLf
         'x3704001f  PR_ATTACH_FILENAME
         'x3707001f  PR_ATTACH_LONG_FILENAME
         If oElement.selectSingleNode("a:propstat/a:prop/e:attachmentfilename") Is Nothing Then
@@ -826,25 +835,31 @@ For Each oElement In oElements
         Else
             strFilename = oElement.selectSingleNode("a:propstat/a:prop/e:attachmentfilename").Text
         End If
+    
+        If oElement.selectSingleNode("a:propstat/a:prop/d:x370e001f") Is Nothing Then
+            strContentType = "application/octet-stream"
+        Else
+            strContentType = oElement.selectSingleNode("a:propstat/a:prop/d:x370e001f").Text
+        End If
+         
+        'x3716001f  PR_ATTACH_CONTENT_DISPOSITION
+        If oElement.selectSingleNode("a:propstat/a:prop/d:x3716001f") Is Nothing Then
+            strContentDisposition = "attachment"
+        Else
+            strContentDisposition = oElement.selectSingleNode("a:propstat/a:prop/d:x3716001f").Text
+        End If
+        
+        strDataToSend = strDataToSend & objOWA.GetAttHeader(oElement)
+        
+        strDataToSend = strDataToSend & "Content-Type: " & strContentType & "; name=""" & strFilename & """" & vbCrLf & _
+                    "Content-Disposition: " & strContentDisposition & "; filename=""" & strFilename & """" & vbCrLf & vbCrLf & vbCrLf
+    
+        'Send attachment header
+        SendMsg strDataToSend, lngPop3Write
+        strURL = oElement.selectSingleNode("a:href").Text
+        'Send attachment data
+        SendMsg objOWA.GetAttachment(strURL, lngPop3Write) & vbCrLf & vbCrLf, lngPop3Write
     End If
-    
-    'x3716001f  PR_ATTACH_CONTENT_DISPOSITION
-    If oElement.selectSingleNode("a:propstat/a:prop/d:x3716001f") Is Nothing Then
-        strContentDisposition = "attachment"
-    Else
-        strContentDisposition = oElement.selectSingleNode("a:propstat/a:prop/d:x3716001f").Text
-    End If
-    
-    strDataToSend = strDataToSend & objOWA.GetAttHeader(oElement)
-    
-    strDataToSend = strDataToSend & "Content-Type: " & strContentType & "; name=""" & strFilename & """" & vbCrLf & _
-                "Content-Disposition: " & strContentDisposition & "; filename=""" & strFilename & """" & vbCrLf & vbCrLf & vbCrLf
-    
-    'Send attachment header
-    SendMsg strDataToSend, lngPop3Write
-    'Send attachment data
-    strURL = oElement.selectSingleNode("a:href").Text
-    SendMsg objOWA.GetAttachment(strURL, lngPop3Write) & vbCrLf & vbCrLf, lngPop3Write
 Next
 Set oElement = Nothing
 Set oElements = Nothing
