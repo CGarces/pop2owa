@@ -64,8 +64,7 @@ With oXMLHTTP
     End If
     .Send
     While Not .readyState = 4
-        Sleep 100
-        DoEvents
+        MsgWaitObj 100
     Wend
 
     If .Status = 207 Then
@@ -108,8 +107,7 @@ With oXMLHTTP
     .Send
     lngTimer = Timer
     While Not .readyState = 4
-        Sleep 100
-        DoEvents
+        MsgWaitObj 100
         If Timer - lngTimer > 30 Then
             vbSend lngSocket, vbCrLf
             lngTimer = Timer
@@ -148,8 +146,7 @@ Dim oXMLHTTP    As XMLHTTP
         .setRequestHeader "Depth", "infinity"
         .Send
         While Not .readyState = 4
-            Sleep 100
-            DoEvents
+            MsgWaitObj 100
         Wend
 
     '    Debug.Print .Status
@@ -176,7 +173,7 @@ With oXMLHTTP
     ' Open a request to a particular url
     .open "PROPFIND", strURL, True, strUser, strPassWord
     ' Set the header type
-    .setRequestHeader "Content-type:", "text/xml"
+    .setRequestHeader "Content-type", "text/xml"
     .setRequestHeader "Depth", "1"
     If strCookies <> Empty Then
         .setRequestHeader "Cookies", "Necessary according to Q234486"
@@ -186,8 +183,7 @@ With oXMLHTTP
     ' Send the request
     .Send
     While Not .readyState = 4
-        Sleep 100
-        DoEvents
+        MsgWaitObj 100
     Wend
 
     If (.Status >= 200 And .Status < 300) Then
@@ -218,8 +214,7 @@ With oXMLHTTP
 
     .Send
     While Not .readyState = 4
-        Sleep 100
-        DoEvents
+        MsgWaitObj 100
     Wend
 
     'GetAttachment = oXMLHTTP.responseText
@@ -255,14 +250,14 @@ With oXMLHTTP
     ' Open a request to a particular url
     .open "SEARCH", strURL, True, strUser, strPassWord
     ' Set the header type - we want XML
-    .setRequestHeader "Content-type:", "text/xml"
+    .setRequestHeader "Content-type", "text/xml"
     .setRequestHeader "Depth", "1"
     If strCookies <> Empty Then
         .setRequestHeader "Cookies", "Necessary according to Q234486"
         .setRequestHeader "Cookies", strCookies
     End If
     ' Send the request
-    Sleep 100
+    MsgWaitObj 100
     Call .Send("<?xml version='1.0' ?>" & _
                 "<a:searchrequest xmlns:a='DAV:'><a:sql>" & _
                  "SELECT" & _
@@ -275,8 +270,7 @@ With oXMLHTTP
                 " AND ""DAV:isfolder""=False" & _
                 "</a:sql></a:searchrequest>")
     While Not .readyState = 4
-        Sleep 100
-        DoEvents
+        MsgWaitObj 100
     Wend
     If .Status = 207 Then
         Set objDOMInbox = .responseXML
@@ -332,8 +326,7 @@ With oXMLHTTP
     End If
     .Send query
     While Not .readyState = 4
-        Sleep 100
-        DoEvents
+        MsgWaitObj 100
     Wend
 
     ' process the result
@@ -369,13 +362,13 @@ Dim oXMLHTTP    As XMLHTTP
 strURL = strExchSvrName & "/exchweb/bin/auth/owaauth.dll"
 Set oXMLHTTP = New XMLHTTP
 With oXMLHTTP
+    .setOption 3, Empty
     .open "POST", strURL, True
-    .setRequestHeader "Content-type:", "application/x-www-form-urlencoded"
+    .setRequestHeader "Content-type", "application/x-www-form-urlencoded"
     'Generate the body for FBA login
     .Send "destination=" & strExchSvrName & "/exchange/&username=" & strUser & "&password=" & strPassWord
     While Not .readyState = 4
-        Sleep 100
-        DoEvents
+        MsgWaitObj 100
     Wend
     vHeaders = Split(.getAllResponseHeaders(), vbNewLine)
 End With
@@ -591,8 +584,7 @@ Dim xmlReq As XMLHTTP
        End If
        xmlReq.Send strMailData
         While Not xmlReq.readyState = 4
-            Sleep 100
-            DoEvents
+            MsgWaitObj 100
         Wend
     End If
     
@@ -630,14 +622,13 @@ Const ndrTimeout As Long = 60000
 Set objDocument = New HTMLDocument
 Set objDocument = objMSHTML.createDocumentFromUrl(strURL & "?Cmd=open", vbNullString)
 Do
-    Sleep 10
+    MsgWaitObj 10
     intCounter = intCounter + 10
     If intCounter > ndrTimeout Then
         Debug.Assert True
         bExit = True
         Exit Do
     End If
-    DoEvents
 Loop While objDocument.readyState <> "complete"
 Set objElement = objDocument.getElementById("msgBody")
 If objElement Is Nothing Then
