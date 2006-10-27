@@ -186,15 +186,14 @@ End Sub
 'Apply the changes and reset the program
 Private Sub cmdOk_Click()
     Timer1.Enabled = False
-    oPOP3.Destroy
-    Set oPOP3 = Nothing
     writeRegistry
     Reset
+    FillControls
     Timer1.Enabled = True
 End Sub
 Public Sub Init()
     'Get values from registry
-    readRegistry
+    Me.FillControls
     Reset
 End Sub
 
@@ -212,7 +211,6 @@ ErrHandler:
     Timer1.Enabled = False
     MsgBox Err.Description, vbCritical, "POP2OWA: " & Err.Source
     WriteLog Err.Source & vbTab & Err.Description
-    oPOP3.Destroy
     Set oPOP3 = Nothing
     Unload Me
 End Sub
@@ -234,7 +232,6 @@ End Sub
 
 Private Sub Form_Unload(Cancel As Integer)
 On Error Resume Next
-    oPOP3.Destroy
     Set oPOP3 = Nothing
 End Sub
 
@@ -268,13 +265,12 @@ ErrHandler:
     Timer1.Enabled = False
     MsgBox Err.Description, vbCritical, "POP2OWA: " & Err.Source
     WriteLog Err.Source & vbTab & Err.Description
-    oPOP3.Destroy
     Set oPOP3 = Nothing
     Unload Me
 End Sub
 
 
-Public Sub readRegistry()
+Public Sub FillControls()
 Dim c As cRegistry
 Set c = New cRegistry
 'Values are stored in (HKEY_CURRENT_USER\Software\pop2owa)
@@ -340,23 +336,10 @@ End Sub
 
 Public Sub Reset()
     If Not (oPOP3 Is Nothing) Then
-        oPOP3.Destroy
         Set oPOP3 = Nothing
     End If
     Set oPOP3 = New clsPOP3
-    With oPOP3
-        .IP = Me.txtIP.Text
-        .Port(0) = Me.txtPort(0).Text
-        If chkSMTP.Value = vbChecked Then
-            .Port(1) = Me.txtPort(1).Text
-        End If
-        .Saveinsent = (Me.chkSend.Value = vbChecked)
-        .FormBasedAuthentication = (Me.chkFBA.Value = vbChecked)
-        .Start
-    End With
-    strExchSvrName = Me.txtServer.Text
 End Sub
-
 
 Private Sub m_frmSysTray_MenuClick(ByVal lIndex As Long, ByVal sKey As String)
    Select Case sKey
@@ -405,4 +388,7 @@ Private Sub SysTray()
             Set m_frmSysTray = Nothing
     End If
 End Sub
+
+
+
 
