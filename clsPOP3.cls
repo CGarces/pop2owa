@@ -114,7 +114,7 @@ End Function
 
 ''
 'Close al sockets and call to WSACleanup API
-Public Sub Destroy()
+Public Sub Disconnect()
     If lngPop3Read <> 0 Then
         Call closesocket(lngPop3Read)
     End If
@@ -127,8 +127,8 @@ Public Sub Destroy()
     If lngSMTPWrite <> 0 Then
         Call closesocket(lngSMTPWrite)
     End If
-    Set objOWA = Nothing
     Call WSACleanup
+    Set objOWA = Nothing
 End Sub
 
 ''
@@ -417,7 +417,7 @@ On Error GoTo ErrHandler
         If objOWA.Delete(intMsg) Then
             strDataToSend = "+OK message " & intMsg & " deleted"
             'Additional Sleep, My Outlook 2000 fails if delete msg faster
-            Sleep 500
+            MsgWaitObj 500
         Else
             strDataToSend = "-ERR deleting message " & Mid$(strDataRecived, 6)
             bCloseSocket = True
@@ -466,8 +466,7 @@ On Error GoTo ErrHandler
         '
         Err.Raise vbObjectError + 1, "send data", GetErrorDescription(Err.LastDllError)
     End If
-    Sleep 100
-    DoEvents
+    MsgWaitObj 100
 Exit Sub
 ErrHandler:
     Debug.Assert False
@@ -481,8 +480,42 @@ End Sub
 '
 Public Sub Start()
 On Error GoTo ErrHandler
+
+Dim lngRetValue As Long
+Dim objXML As DOMDocument
+Dim c As cRegistry
+Set c = New cRegistry
+
+'Read values form registry
+    
+'Values are stored in (HKEY_CURRENT_USER\Software\pop2owa)
+With c
+    .ClassKey = HKEY_CURRENT_USER
+    .SectionKey = "Software\pop2owa"
+    .ValueType = REG_SZ
+    'Exchange server
+    .ValueKey = "ExchangeServer"
+    strExchSvrName = .Value
+    'IP to listen
+    .ValueKey = "IP"
+    Me.IP = .Value
+    
+    'Port values are integers
+    .ValueType = REG_DWORD
+    'POP3 Port
+    .ValueKey = "POP3"
+    vPorts(0) = .Value
+    'SMTP Port
+    .ValueKey = "SMTP"
+    vPorts(1) = .Value
+    'Leave a copy in send folder
+    .ValueKey = "Saveinsent"
+    bSaveinsent = .Value
+    'Form-Based-Authentication on/off
+    .ValueKey = "FormBasedAuth"
+    bAuthentication = .Value
+End With
     'value returned by the InitializeWinsock function
-    Dim lngRetValue As Long
     Call WSACleanup
     '
     'innitialize the Winsock service
@@ -498,7 +531,6 @@ On Error GoTo ErrHandler
             lngSMTPRead = fncNewSokect(vPorts(1))
         End If
         
-        
     Else
         '
         'if the Winsock service was not initialized
@@ -508,7 +540,7 @@ On Error GoTo ErrHandler
         '
         'as we cannot initialize the Winsock service
         'we have nothing to do with this application
-        Err.Raise lngRetValue, "Start", GetErrorDescription(lngRetValue)
+        Err.Raise lngRetValue, "Initialize Winsock", GetErrorDescription(lngRetValue)
     End If
 Exit Sub
 ErrHandler:
@@ -890,3 +922,13 @@ Private Function ValidateSMTPAUTH() As String
         ValidateSMTPAUTH = "533  Authentication required [AUTH]"
     End Select
 End Function
+
+Private Sub Class_Initialize()
+Me.Disconnect
+Me.Start
+End Sub
+
+Private Sub Class_Terminate()
+Me.Disconnect
+End Sub
+
