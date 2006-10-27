@@ -248,8 +248,6 @@ Public Declare Function lstrcpy Lib "kernel32" Alias "lstrcpyA" (ByVal lpString1
 
 Public Declare Function lstrlen Lib "kernel32" Alias "lstrlenA" (ByVal lpString As Any) As Long
 
-Public Declare Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
-
 '/*
 '* Address families.
 '*/
@@ -903,7 +901,7 @@ Public Function vbSend(ByVal lngSocket As Long, strData As String) As Long
                 vbSend = SOCKET_ERROR
         Debug.Assert False
             Else
-                Sleep 100
+                MsgWaitObj 100
             End If
         '
     End If
