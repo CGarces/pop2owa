@@ -3,9 +3,11 @@ Option Explicit
 
 '**************************************************
 '* NT Service module                              *
-'* © 2000-2001 Sergey Merzlikin                   *
-'* http://smsoft@chat.ru                          *
-'* e-mail: smsoft@chat.ru                         *
+'* © 2000-2004 Sergey Merzlikin                   *
+'* http://www.smsoft.ru                           *
+'* e-mail: sm@smsoft.ru                           *
+'* The code is freeware. It may be used           *
+'* in programs of any kind without permission     *
 '**************************************************
 
 Private Declare Function CreateThread Lib "kernel32" (ByVal lpThreadAttributes As Long, ByVal dwStackSize As Long, ByVal lpStartAddress As Long, ByVal lpParameter As Long, ByVal dwCreationFlags As Long, lpThreadId As Long) As Long
@@ -30,7 +32,7 @@ Private Sub ServiceThread(ByVal dummy As Long)
     Dim ServiceTableEntry As SERVICE_TABLE
     ServiceTableEntry.lpServiceName = ServiceNamePtr
     ServiceTableEntry.lpServiceProc = FncPtr(AddressOf ServiceMain)
-    StartServiceCtrlDispatcher ServiceTableEntry
+    StartServiceCtrlDispatcherW ServiceTableEntry
 End Sub
 
 ' The ServiceMain sub - main service sub.
@@ -45,7 +47,7 @@ Private Sub ServiceMain(ByVal dwArgc As Long, ByVal lpszArgv As Long)
     ServiceStatus.dwServiceSpecificExitCode = 0&
     ServiceStatus.dwCheckPoint = 0&
     ServiceStatus.dwWaitHint = 0&
-    hServiceStatus = RegisterServiceCtrlHandler(Service_Name, _
+    hServiceStatus = RegisterServiceCtrlHandlerW(ServiceNamePtr, _
                            AddressOf Handler)
     SetServiceState SERVICE_START_PENDING
     ' Set hStartEvent. It unlocks main application thread
@@ -74,3 +76,5 @@ Public Sub SetServiceState(Optional ByVal NewState As SERVICE_STATE = 0&)
     If NewState <> 0& Then ServiceStatus.dwCurrentState = NewState
     SetServiceStatus hServiceStatus, ServiceStatus
 End Sub
+
+
