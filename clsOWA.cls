@@ -20,15 +20,6 @@ Attribute VB_Exposed = False
 
 Option Explicit
 
-''
-'Translations between XML tags of OWA and valid headers of a POP3 message
-'@see #initArrays
-Private dicTags         As Dictionary
-''
-'Translations between XML tags of OWA and valid headers of a SMTP message
-'@see #initArrays
-Private dicMapi         As Dictionary
-
 Private objDOMFolders   As DOMDocument
 
 Private strCookies As String
@@ -45,87 +36,56 @@ Private Function GetURL(ByVal intMsg As Integer) As String
 End Function
 
 
-''
-'Get all files asociated to a message.
-'
-'@param strUrl  Url of the .EML file
-'@return Node list with Attachments properties
-Public Function GetAttachmentsList(ByVal strURL As String) As IXMLDOMNodeList
-On Error GoTo ErrHandler
-Dim oXMLHTTP As XMLHTTP
-Set oXMLHTTP = New XMLHTTP
-With oXMLHTTP
-    .open "X-MS-ENUMATTS", strURL, True, strUser, strPassWord
-    .setRequestHeader "Depth", "1"
-    .setRequestHeader "Content-type", "xml"
-    If strCookies <> Empty Then
-        .setRequestHeader "Cookies", "Necessary according to Q234486"
-        .setRequestHeader "Cookies", strCookies
-    End If
-    .Send
-    While Not .readyState = 4
-        MsgWaitObj 100
-    Wend
-
-    If .Status = 207 Then
-        #If DEBUG_MODE = 1 Then
-            .responseXML.save App.Path & "\ATT.xml"
-        #End If
-        Set GetAttachmentsList = .responseXML.selectNodes("a:multistatus/a:response")
-    Else
-        Err.Raise vbObjectError + 1, "GetAttachmentsList.Status", .statusText
-    End If
-End With
-Set oXMLHTTP = Nothing
-Exit Function
-ErrHandler:
-    Err.Raise Err.Number, "clsOWA.GetAttachmentsList: " & Err.Source, Err.Description
-End Function
-
 
 ''
-'Retrieve the attachment of a message.
+'Retrieve message in RFC 821 format and send it to the client.
 '
 '@param strUrl  Url of the .EML file
 '@param lngSocket Socket to send data
-'@return Binary content encoded in Base64
-Public Function GetAttachment(ByVal strURL As String, ByVal lngSocket As Long) As String
+'@return True if sucess.
+Public Function GetMsg(ByVal strURL As String, ByVal lngSocket As Long) As Boolean
 On Error GoTo ErrHandler
-'Dim oXMLHTTP    As XMLHTTP40
 Dim oXMLHTTP    As XMLHTTP
-Dim objMIME     As Base64
 Dim lngTimer As Long
-'Set oXMLHTTP = New XMLHTTP40
 Set oXMLHTTP = New XMLHTTP
 
 With oXMLHTTP
     .open "GET", strURL, True, strUser, strPassWord
+    .setRequestHeader "Content-type", "text/xml"
+    .setRequestHeader "Depth", "infinity"
+    .setRequestHeader "Translate", "f"
     If strCookies <> Empty Then
         .setRequestHeader "Cookies", "Necessary according to Q234486"
         .setRequestHeader "Cookies", strCookies
     End If
+    WriteLog "Getting " & vbTab & strURL, Information
     .Send
     lngTimer = Timer
     While Not .readyState = 4
         MsgWaitObj 100
         If Timer - lngTimer > 30 Then
-            vbSend lngSocket, vbCrLf
+            WriteLog "Donwloading readyState  " & .readyState & vbTab & strURL, Warning
+            vbSend lngSocket, "X-POP2OWA-Header: Header to avoid timeout" & vbCrLf
             lngTimer = Timer
+'            Debug.Assert False
         End If
     Wend
+    WriteLog "Donwloaded Status " & .Status & vbTab & strURL, Information
     If (.Status >= 200 And .Status < 300) Then
-        Set objMIME = New Base64
-       GetAttachment = objMIME.EncodeArr(.responseBody)
-        Set objMIME = Nothing
+        vbSend lngSocket, .responseText
+        GetMsg = True
     Else
-        Err.Raise vbObjectError + 1, "GetAttachment.Status", .statusText
+        WriteLog "GetMsg.Status " & .statusText, Warning
+        vbSend lngSocket, "-ERR " & .statusText
+        GetMsg = False
     End If
 End With
 Set oXMLHTTP = Nothing
 Exit Function
 ErrHandler:
-    Debug.Assert False
-    Err.Raise Err.Number, "clsOWA.GetAttachment: " & Err.Source, Err.Description
+    WriteLog "GetMsg " & Err.Description, Error
+    vbSend lngSocket, "-ERR "
+    GetMsg = False
 End Function
 
 ''
@@ -158,82 +118,6 @@ ErrHandler:
     Delete = False
     Set oXMLHTTP = Nothing
 End Function
-
-''
-'Load an OWA mesagge into a XML object.
-'
-'@param strUrl Url of the .EML file
-'@see clsOWA.objDOMMsg
-Public Sub LoadMsg(ByVal strURL As String)
-On Error GoTo ErrHandler
-Dim oXMLHTTP As XMLHTTP
-' Create an instance of the xmlHTTP object
-Set oXMLHTTP = CreateObject("microsoft.xmlhttp")
-With oXMLHTTP
-    ' Open a request to a particular url
-    .open "PROPFIND", strURL, True, strUser, strPassWord
-    ' Set the header type
-    .setRequestHeader "Content-type", "text/xml"
-    .setRequestHeader "Depth", "1"
-    If strCookies <> Empty Then
-        .setRequestHeader "Cookies", "Necessary according to Q234486"
-        .setRequestHeader "Cookies", strCookies
-    End If
-
-    ' Send the request
-    .Send
-    While Not .readyState = 4
-        MsgWaitObj 100
-    Wend
-
-    If (.Status >= 200 And .Status < 300) Then
-        Set objDOMMsg = .responseXML
-        #If DEBUG_MODE = 1 Then
-            objDOMMsg.save App.Path & "\mensaje.xml"
-        #End If
-    Else
-        Err.Raise vbObjectError + 1, "Reciving msg", .statusText
-    End If
-End With
-Set oXMLHTTP = Nothing
-Exit Sub
-ErrHandler:
-    Err.Raise Err.Number, "Loadmsg: " & Err.Source, Err.Description
-End Sub
-
-Private Function GetAttachmentName(ByVal strURL As String) As String
-On Error GoTo ErrHandler
-Dim oXMLHTTP As XMLHTTP
-Set oXMLHTTP = New XMLHTTP
-With oXMLHTTP
-    .open "PROPFIND", strURL, True, strUser, strPassWord
-    If strCookies <> Empty Then
-        .setRequestHeader "Cookies", "Necessary according to Q234486"
-        .setRequestHeader "Cookies", strCookies
-    End If
-
-    .Send
-    While Not .readyState = 4
-        MsgWaitObj 100
-    Wend
-
-    'GetAttachment = oXMLHTTP.responseText
-    If .Status = 207 Then
-        #If DEBUG_MODE = 1 Then
-            objDOMInbox.save App.Path & "\ATT.xml"
-        #End If
-        GetAttachmentName = .responseXML.selectSingleNode("a:multistatus/a:response/a:propstat/a:prop/a:displayname").Text
-    Else
-        Err.Raise vbObjectError + 1, "Reciving Attachment", .statusText
-    End If
-End With
-Set oXMLHTTP = Nothing
-Exit Function
-ErrHandler:
-    Err.Raise Err.Number, "GetAttachmentName: " & Err.Source, Err.Description
-
-End Function
-
 ''
 'Get the list of al messages in the inbox folder.
 '
@@ -258,27 +142,31 @@ With oXMLHTTP
     End If
     ' Send the request
     MsgWaitObj 100
+    WriteLog "Geting msg list ", Information
     Call .Send("<?xml version='1.0' ?>" & _
                 "<a:searchrequest xmlns:a='DAV:'><a:sql>" & _
                  "SELECT" & _
                  " ""DAV:href""" & _
-                 ",""urn:schemas:httpmail:subject""" & _
                  ",""DAV:id""" & _
                  ",""DAV:getcontentlength""" & _
                  " FROM scope('shallow traversal of """ & strURL & """')" & _
                 " WHERE ""DAV:ishidden""=False" & _
                 " AND ""DAV:isfolder""=False" & _
                 "</a:sql></a:searchrequest>")
+
     While Not .readyState = 4
         MsgWaitObj 100
     Wend
+    
     If .Status = 207 Then
         Set objDOMInbox = .responseXML
         intMsgCount = objDOMInbox.childNodes(1).childNodes.Length
+        WriteLog "msg list fetch " & intMsgCount & " messages", Information
         #If DEBUG_MODE = 1 Then
             objDOMInbox.save App.Path & "\listado.XML"
         #End If
     Else
+        WriteLog "Reciving msg list " & .statusText, Warning
         Err.Raise vbObjectError + 1, "Reciving msg", .statusText
     End If
 End With
@@ -317,6 +205,8 @@ query = query + "</a:propfind>"
 Set oXMLHTTP = New XMLHTTP
 strURL = strExchSvrName & "/exchange/" & strUser & "/"
 With oXMLHTTP
+    WriteLog "Getting Folders : " & strURL
+    WriteLog "FBA loging : " & bAuthentication
     .open "PROPFIND", strURL, True, strUser, strPassWord
     .setRequestHeader "Content-Type", "text/xml"
     .setRequestHeader "Depth", "0"
@@ -333,15 +223,17 @@ With oXMLHTTP
     If (.Status >= 200 And .Status < 300) Then
        Set objDOMFolders = .responseXML
     Else
-        WriteLog "GetFoldersURL: " & .Status & vbTab & .statusText
+        Debug.Assert False
+        WriteLog "GetFoldersURL: " & .Status & vbTab & .statusText, Warning
     End If
     GetFoldersURL = .Status
 End With
 Set oXMLHTTP = Nothing
 Exit Function
 ErrHandler:
-    WriteLog "GetFoldersURL: " & Err.Number & vbTab & Err.Description
+    WriteLog "GetFoldersURL: " & Err.Number & vbTab & Err.Description, Error
     GetFoldersURL = -1
+    Debug.Assert False
 End Function
 
 ''
@@ -382,182 +274,10 @@ Next
 LogingFBA = (intCounter = 2)
 Exit Function
 ErrHandler:
-    WriteLog "GetFoldersURL: " & Err.Number & vbTab & Err.Description
+    WriteLog "GetFoldersURL: " & Err.Number & vbTab & Err.Description, Error
     Set oXMLHTTP = Nothing
     LogingFBA = False
 End Function
-
-''
-'Get the date of a message, converting OWA format in a standar date (rfc1939).
-'
-'@param strDate Date in OWA format
-'@return Standar date (rfc1939)
-Private Function GetPOPDate(ByVal strDate As String) As String
-Dim vDate() As String
-Dim vDays(1 To 7) As String
-Dim vMonths(1 To 12) As String
-Dim strReturn As String
-vDays(1) = "Mon"
-vDays(2) = "Tue"
-vDays(3) = "Wed"
-vDays(4) = "Thu"
-vDays(5) = "Fri"
-vDays(6) = "Sat"
-vDays(7) = "Sun"
-
-vMonths(1) = "Jan"
-vMonths(2) = "Feb"
-vMonths(3) = "Mar"
-vMonths(4) = "Apr"
-vMonths(5) = "May"
-vMonths(6) = "Jun"
-vMonths(7) = "Jul"
-vMonths(8) = "Aug"
-vMonths(9) = "Sep"
-vMonths(10) = "Oct"
-vMonths(11) = "Nov"
-vMonths(12) = "Dec"
-    vDate = Split(strDate, "T")
-    strReturn = vDays(DatePart("w", vDate(0)))
-    strReturn = strReturn & ", " & DatePart("d", vDate(0))
-    strReturn = strReturn & " " & vMonths(DatePart("m", vDate(0)))
-    strReturn = strReturn & " " & DatePart("yyyy", vDate(0))
-    GetPOPDate = strReturn & " " & FormatDateTime(Left$(vDate(1), 8), vbLongTime) & " UT"
-End Function
-
-''
-'Get the headers of a message.
-'
-'@return Header of the mail
-Public Function getMsgHeader() As String
-Dim strDataToSend   As String
-Dim vKeys           As Variant
-Dim Key             As Variant
-Dim strValue        As String
-Dim intPos1         As Integer
-Dim intPos2         As Integer
-Dim strEmail        As String
-Dim strName         As String
-Dim strReturn       As String
-
-vKeys = dicTags.Keys
-For Each Key In vKeys
-    If Not objDOMMsg.selectSingleNode(XMLPATH & dicTags.Item(Key)) Is Nothing Then
-        strValue = objDOMMsg.selectSingleNode(XMLPATH & dicTags.Item(Key)).Text
-        Select Case Key
-        Case "Importance"
-            Select Case strValue
-            Case 0
-                strDataToSend = strDataToSend & "Importance: Low" & vbCrLf
-                strDataToSend = strDataToSend & "X-MSMail-Priority: Low" & vbCrLf
-                strDataToSend = strDataToSend & "X-Priority: 5" & vbCrLf
-'Default values are omited
-'            Case 1
-'                strDataToSend = strDataToSend & "Importance: Normal" & vbCrLf
-'                strDataToSend = strDataToSend & "X-MSMail-Priority: Normal" & vbCrLf
-'                strDataToSend = strDataToSend & "X-Priority: 3" & vbCrLf
-            Case 2
-                strDataToSend = strDataToSend & "Importance: High" & vbCrLf
-                strDataToSend = strDataToSend & "X-MSMail-Priority: High" & vbCrLf
-                strDataToSend = strDataToSend & "X-Priority: 1" & vbCrLf
-            End Select
-        Case "Date"
-            strValue = GetPOPDate(strValue)
-            strDataToSend = strDataToSend & Key & ": " & strValue & vbCrLf
-        Case "Content-Transfer-Encoding"
-            'OWA has unencoded the mail. I owerwite this tag
-            strDataToSend = strDataToSend & Key & ": 8bit " & vbCrLf
-        Case "To", "Cc", "Bcc", "From", "Disposition-Notification-To"
-            strReturn = Empty
-            Do
-                strValue = strValue & "  "
-                intPos1 = InStr(strValue, ">")
-                If intPos1 > 0 Then
-                    intPos2 = InStr(strValue, "<")
-                    strName = Trim$(Mid$(strValue, 1, intPos2 - 1))
-                    strEmail = Mid$(strValue, intPos2, intPos1 - intPos2 + 1)
-                    If Left$(strName, 1) <> """" Then
-                        strName = """" & strName & """"
-                    End If
-                    strReturn = strReturn & strName & " " & strEmail & ", "
-                    strValue = Mid$(strValue, intPos1 + 2)
-                End If
-            Loop While intPos1 <> 0
-            strDataToSend = strDataToSend & Key & ": " & Mid$(strReturn, 1, Len(strReturn) - 2) & vbCrLf
-        Case Else
-            strDataToSend = strDataToSend & Key & ": " & strValue & vbCrLf
-        End Select
-'
-'    ElseIf Key = "Content-Transfer-Encoding" Then
-'        'If is missed in the mail, put a default value
-'        strDataToSend = strDataToSend & "Content-Transfer-Encoding: 8bit " & vbCrLf
-    End If
-Next
-getMsgHeader = strDataToSend
-End Function
-Public Function GetAttHeader(ByRef oElement As IXMLDOMElement) As String
-
-
-Dim strDataToSend   As String
-Dim vKeys           As Variant
-Dim Key             As Variant
-Dim strValue        As String
-
-vKeys = dicMapi.Keys
-For Each Key In vKeys
-    If Not oElement.selectSingleNode("a:propstat/a:prop/" & dicMapi.Item(Key)) Is Nothing Then
-        strValue = oElement.selectSingleNode("a:propstat/a:prop/" & dicMapi.Item(Key)).Text
-        Select Case Key
-        Case "Content-ID"
-            strDataToSend = strDataToSend & Key & ": <" & strValue & ">" & vbCrLf
-        Case Else
-            strDataToSend = strDataToSend & Key & ": " & strValue & vbCrLf
-        End Select
-    'Defaulf values
-    Else
-        Select Case Key
-        Case "d:x370e001f"
-        strDataToSend = strDataToSend & "Content-Transfer-Encoding: 8bit " & vbCrLf
-        End Select
-    End If
-Next
-GetAttHeader = strDataToSend
-End Function
-
-
-
-''
-'Init a public dictionary with the trlanslation of XML tags of OWA
-' and valid headers of a POP3 message
-'@see #dicTags
-Private Sub initArrays()
-    Set dicTags = New Dictionary
-    dicTags.Add "Date", "e:date"
-    dicTags.Add "From", "e:from"
-    dicTags.Add "To", "e:to"
-    dicTags.Add "Cc", "e:cc"
-    dicTags.Add "Bcc", "e:bcc"
-    dicTags.Add "Subject", "e:subject"
-    dicTags.Add "Importance", "e:importance"
-    'dicTags.Add "Received", "d:received"
-    'dicTags.Add "Content-Type", "d:content-type"
-    dicTags.Add "Content-Transfer-Encoding", "d:content-transfer-encoding"
-    dicTags.Add "Content-Disposition", "d:content-disposition"
-    dicTags.Add "MIME-Version", "d:mime-version"
-    dicTags.Add "Message-ID", "d:message-id"
-    dicTags.Add "X-Mailer", "d:x-mailer"
-    dicTags.Add "X-MAPI-Message-Class", "f:outlookmessageclass"
-    dicTags.Add "Disposition-Notification-To", "d:disposition-notification-to"
-    dicTags.Add "Content-Class", "a:contentclass"
-    dicTags.Add "Thread-Topic", "d:thread-topic"
-    dicTags.Add "thread-index", "d:thread-index"
-
-    Set dicMapi = New Dictionary
-    dicMapi.Add "Content-Location", "d:x3713001f"
-    dicMapi.Add "Content-ID", "d:x3712001f"
-    'dicMapi.Add "Content-Disposition", "d:x3716001f"
-End Sub
-
 
 ''
 'Send one email in standar rfc821 format.
@@ -592,7 +312,7 @@ Dim xmlReq As XMLHTTP
     If (xmlReq.Status >= 200 And xmlReq.Status < 300) Then
        SendMail = True
     Else
-       WriteLog "SendMail: " & xmlReq.Status & vbTab & xmlReq.statusText
+       WriteLog "SendMail: " & xmlReq.Status & vbTab & xmlReq.statusText, Warning
        SendMail = False
     End If
     Set xmlReq = Nothing
@@ -600,68 +320,7 @@ Dim xmlReq As XMLHTTP
 Exit Function
 ErrHandler:
     Set xmlReq = Nothing
-    WriteLog "SendMail: " & Err.Number & vbTab & Err.Description
+    WriteLog "SendMail: " & Err.Number & vbTab & Err.Description, Error
     SendMail = False
 End Function
 
-''
-'Pase one HTML message to rfc822.<BR>
-'
-'@param strURL URL fo the EML msg
-'@return rfc822 msg
-'@bug Some headers can't be retrieved
-Public Function ParseHTMLMsg(ByVal strURL As String) As String
-Dim objMSHTML As New MSHTMl.HTMLDocument
-Dim objDocument As MSHTMl.HTMLDocument
-Dim strBody As String
-Dim objElement As IHTMLElement
-Dim intCounter As Integer
-Dim bExit As Boolean
-Dim strReturn As String
-Const ndrTimeout As Long = 60000
-Set objDocument = New HTMLDocument
-Set objDocument = objMSHTML.createDocumentFromUrl(strURL & "?Cmd=open", vbNullString)
-Do
-    MsgWaitObj 10
-    intCounter = intCounter + 10
-    If intCounter > ndrTimeout Then
-        Debug.Assert True
-        bExit = True
-        Exit Do
-    End If
-Loop While objDocument.readyState <> "complete"
-Set objElement = objDocument.getElementById("msgBody")
-If objElement Is Nothing Then
-    Set objElement = objDocument.getElementById("idBody")
-    If Not objElement Is Nothing Then
-        Set objElement = objDocument.getElementById("_trFromText")
-        strReturn = "From: " & objElement.innerText
-        Set objElement = objDocument.getElementById("_trToText")
-        strReturn = strReturn & vbCrLf & "To: " & objElement.innerText
-        Set objElement = objDocument.getElementById("_trCcText")
-        If Len(objElement.innerText) > 0 Then
-            strReturn = strReturn & vbCrLf & "Cc: " & objElement.innerText
-        End If
-        strReturn = strReturn & vbCrLf & _
-                "Content-Type: text/html; charset=ISO-8859-1" & vbCrLf & _
-                "Content-Transfer-Encoding: 8bit "
-        
-        Set objElement = objDocument.getElementById("idBody")
-        strBody = objElement.innerHTML
-        strBody = Replace(strBody, "&lt;", "<", , , vbTextCompare)
-        strBody = Replace(strBody, "&gt;", ">", , , vbTextCompare)
-        strBody = Replace(strBody, "&nbsp;", " ", , , vbTextCompare)
-        strBody = Replace(strBody, "&amp;", "&", , , vbTextCompare)
-        strReturn = strReturn & vbCrLf & vbCrLf & strBody
-    End If
-Else
-    'It's a NDR message
-    strReturn = objElement.innerHTML
-End If
-ParseHTMLMsg = strReturn
-
-End Function
-
-Private Sub Class_Initialize()
-    initArrays
-End Sub
