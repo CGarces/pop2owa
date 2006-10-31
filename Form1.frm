@@ -179,7 +179,7 @@ Private bsysTray As Boolean
 ''
 'Enabe/Disable the SMTP features.
 Private Sub chkSMTP_Click()
-    Me.txtPort(1).Enabled = (chkSMTP.Value = vbChecked)
+    Me.txtPort(1).Enabled = (chkSMTP.value = vbChecked)
 End Sub
 
 ''
@@ -192,9 +192,22 @@ Private Sub cmdOk_Click()
     Timer1.Enabled = True
 End Sub
 Public Sub Init()
+Dim objFrame As Frame
+
+    Me.Caption = App.EXEName & " " & App.Major & "." & App.Minor
+    'Redraw controls
+    For Each objFrame In Me.Frame1
+        objFrame.Move Me.TabStrip1.ClientLeft, _
+                    Me.TabStrip1.ClientTop, _
+                    Me.TabStrip1.ClientWidth, _
+                    Me.TabStrip1.ClientHeight
+    Next
+    Me.Move Me.Left, Me.Top, 2700, 3150
+    Set objFrame = Nothing
     'Get values from registry
     Me.FillControls
     Reset
+    Me.Show
 End Sub
 
 
@@ -210,7 +223,7 @@ Exit Sub
 ErrHandler:
     Timer1.Enabled = False
     MsgBox Err.Description, vbCritical, "POP2OWA: " & Err.Source
-    WriteLog Err.Source & vbTab & Err.Description
+    WriteLog Err.Source & vbTab & Err.Description, Error
     Set oPOP3 = Nothing
     Unload Me
 End Sub
@@ -252,6 +265,7 @@ On Error GoTo ErrHandler
     If oPOP3.isActive Then
         Timer1.Interval = 100
     Else
+        WriteLog "Pop2owa inactive", Paranoid
         If (Timer1.Interval <> 10000 And bsysTray) Then
             Me.Hide
             Me.Refresh
@@ -264,7 +278,7 @@ Exit Sub
 ErrHandler:
     Timer1.Enabled = False
     MsgBox Err.Description, vbCritical, "POP2OWA: " & Err.Source
-    WriteLog Err.Source & vbTab & Err.Description
+    WriteLog Err.Source & vbTab & Err.Description, Error
     Set oPOP3 = Nothing
     Unload Me
 End Sub
@@ -280,25 +294,25 @@ With c
     .ValueType = REG_SZ
     'Exchange server
     .ValueKey = "ExchangeServer"
-    Me.txtServer.Text = .Value
+    Me.txtServer.Text = .value
     'IP to listen
     .ValueKey = "IP"
-    Me.txtIP.Text = .Value
+    Me.txtIP.Text = .value
     
     'Port values are integers
     .ValueType = REG_DWORD
     'POP3 Port
     .ValueKey = "POP3"
-    Me.txtPort(0).Text = .Value
+    Me.txtPort(0).Text = .value
     'SMTP Port
     .ValueKey = "SMTP"
-    Me.txtPort(1).Text = .Value
+    Me.txtPort(1).Text = .value
     'Leave a copy in send folder
     .ValueKey = "Saveinsent"
-    Me.chkSend.Value = .Value
+    Me.chkSend.value = .value
     'Form-Based-Authentication on/off
     .ValueKey = "FormBasedAuth"
-    Me.chkFBA.Value = .Value
+    Me.chkFBA.value = .value
 End With
 End Sub
 
@@ -312,25 +326,25 @@ With c
     .ValueType = REG_SZ
     'Exchange server
     .ValueKey = "ExchangeServer"
-    .Value = Me.txtServer.Text
+    .value = Me.txtServer.Text
     'IP to listen
     .ValueKey = "IP"
-    .Value = Me.txtIP.Text
+    .value = Me.txtIP.Text
     
     'Port values are integers
     .ValueType = REG_DWORD
     'POP3 Port
     .ValueKey = "POP3"
-    .Value = CInt(Me.txtPort(0).Text)
+    .value = CInt(Me.txtPort(0).Text)
     'SMTP Port
     .ValueKey = "SMTP"
-    .Value = CInt(Me.txtPort(1).Text)
+    .value = CInt(Me.txtPort(1).Text)
     'Leave a copy in send folder
     .ValueKey = "Saveinsent"
-    .Value = chkSend.Value
+    .value = chkSend.value
     'Form-Based-Authentication on/off
     .ValueKey = "FormBasedAuth"
-    .Value = Me.chkFBA.Value
+    .value = Me.chkFBA.value
 End With
 End Sub
 
