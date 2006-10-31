@@ -367,8 +367,13 @@ On Error GoTo ErrHandler
             strDataToSend = "-ERR Unable to conect with mailbox "
         End If
     Case "RETR"
-        strDataToSend = getMsg(objDOMInbox.childNodes(1).childNodes(CInt(Mid$(strDataRecived, 6)) - 1).selectSingleNode("a:propstat/a:prop/a:href").Text)
-        bCloseSocket = (Left$(strDataToSend, 4) = "-ERR")
+        'strDataToSend = GetMsg(objDOMInbox.childNodes(1).childNodes(CInt(Mid$(strDataRecived, 6)) - 1).selectSingleNode("a:propstat/a:prop/a:href").Text)
+        intMsg = CInt(Mid$(strDataRecived, 6))
+        With objDOMInbox.childNodes(1).childNodes(intMsg - 1)
+            SendMsg "+OK " & .selectSingleNode("a:propstat/a:prop/a:getcontentlength").Text & " octets", lngPop3Write
+            bCloseSocket = Not (objOWA.GetMsg(.selectSingleNode("a:propstat/a:prop/a:href").Text, lngPop3Write))
+        End With
+        strDataToSend = vbCrLf & "."
     Case "QUIT"
         strDataToSend = "+OK " & m_strIP & " server signing off, 0 messages deleted"
         bCloseSocket = True
@@ -431,7 +436,6 @@ On Error GoTo ErrHandler
     End Select
     SendMsg strDataToSend, lngPop3Write
     If bCloseSocket Then
-        Set objDOMMsg = Nothing
         Set objDOMInbox = Nothing
         'Call the closesocket Winsock API function
         'in order to close the socket
@@ -546,140 +550,6 @@ Exit Sub
 ErrHandler:
     Err.Raise Err.Number, "Start " & Err.Source, Err.Description
 End Sub
-
-''
-'Retrieve a OWA message and convert it into valid POP3 reply
-'
-'@param strUrl URL of the .EML file
-'@return Strig to send to e-mail client (rfc1939).
-Private Function getMsg(ByVal strURL As String) As String
-On Error GoTo ErrHandler
-    Dim strDataToSend   As String
-    Dim strBoundary     As String
-    Dim strBody         As String
-    Dim bHasAttachment  As Boolean
-    Dim strContentType  As String
-    Dim intPos          As Integer
-    Dim strOutlookMsgClass  As String
-    
-
-    'strUrl = objDOMInbox.childNodes(1).childNodes(intMsg - 1).selectSingleNode("a:propstat/a:prop/a:href").Text
-    objOWA.LoadMsg strURL
-    strOutlookMsgClass = objDOMMsg.selectSingleNode(XMLPATH & "f:outlookmessageclass").Text
-    If objDOMMsg.selectSingleNode(XMLPATH & "e:hasattachment") Is Nothing Then
-        bHasAttachment = True
-    Else
-        bHasAttachment = (objDOMMsg.selectSingleNode(XMLPATH & "e:hasattachment").Text = 1)
-'        If Not (bHasAttachment Or objDOMMsg.selectSingleNode(XMLPATH & "a:contentclass") Is Nothing) Then
-'            bHasAttachment = (objDOMMsg.selectSingleNode(XMLPATH & "a:contentclass").Text = "urn:content-classes:calendarmessage")
-'        End If
-    End If
-    
-    If objDOMMsg.selectSingleNode(XMLPATH & "d:content-type") Is Nothing Then
-        If strOutlookMsgClass = "REPORT.IPM.Note.NDR" Then
-            strContentType = "Content-Type: multipart/report; report-type=delivery-status;boundary=""--------------" & Right$(String$(23, "0") & 1, 23) & """"
-        Else
-            'MSExchange sent text/plain instead text/html.
-            'Force to read the HTML content to work OK in all cases
-            If bHasAttachment Then
-                strContentType = "Content-Type: multipart/related;boundary=""--------------" & Right$(String$(23, "0") & 1, 23) & """"
-            Else
-                strContentType = "Content-Type: text/html; charset=ISO-8859-1"
-            End If
-        End If
-    Else
-        strContentType = "Content-Type: " & objDOMMsg.selectSingleNode(XMLPATH & "d:content-type").Text
-        'In some case the Content-Type not is correct.
-        If InStr(strContentType, "multipart/alternative") > 0 And InStr(strContentType, "multipart/related") > 0 Then
-            strContentType = "Content-Type: multipart/report; report-type=delivery-status;boundary=""--------------" & Right$(String$(23, "0") & 1, 23) & """"
-        End If
-        Debug.Print strContentType
-    End If
-    'I need to emulate a multi part msg if the
-    'message has a Attachment that not is multipart msg
-    intPos = InStr(LCase$(strContentType), "multipart")
-    If (bHasAttachment And intPos <= 0) Then
-        strContentType = "Content-Type: multipart/related;boundary=""--------------" & Right$(String$(23, "0") & 1, 23) & """"
-    End If
-    SendMsg "+OK " & objDOMMsg.selectSingleNode(XMLPATH & "a:getcontentlength").Text & " octets", lngPop3Write
-    
-    'Header
-    intPos = InStr(LCase$(strContentType), "boundary")
-    If intPos > 0 Then
-        'It's a multi part msg.
-        strBoundary = Mid$(strContentType, intPos + Len("boundary") + 2)
-        'strBoundary = Left$(strBoundary, Len(strBoundary) - 1)
-        strBoundary = Left$(strBoundary, InStr(strBoundary, """") - 1)
-        strDataToSend = objOWA.getMsgHeader() & _
-                       strContentType & vbCrLf & vbCrLf
-        SendMsg strDataToSend, lngPop3Write
-        'Msg Body (HTML data)
-        If Not objDOMMsg.selectSingleNode(XMLPATH & "e:htmldescription") Is Nothing Then
-            strBody = objDOMMsg.selectSingleNode(XMLPATH & "e:htmldescription").Text
-            strBody = Replace(strBody, "onload=""initTemplate()""", Empty)
-        End If
-        Select Case strOutlookMsgClass
-        Case "REPORT.IPM.Note.NDR", "REPORT.IPM.Note.IPNRN"
-            strBody = objOWA.ParseHTMLMsg(strURL)
-            strDataToSend = vbCrLf & "This is a MIME-encapsulated message." & vbCrLf & _
-                        "--" & strBoundary & vbCrLf & _
-                        "Content-Type: text/html; charset=ISO-8859-1" & vbCrLf & _
-                        "Content-Transfer-Encoding: 8bit " & vbCrLf & _
-                        vbCrLf & strBody & vbCrLf & _
-                        "" & vbCrLf
-        Case "IPM.Schedule.Meeting.Request"
-            strDataToSend = vbCrLf & "This is a multi-part message in MIME format." & vbCrLf & _
-                        "--" & strBoundary & vbCrLf & _
-                        "Content-Type: text/plain; charset=ISO-8859-1" & vbCrLf & _
-                        "Content-Transfer-Encoding: 8bit " & vbCrLf & _
-                        vbCrLf & strBody & vbCrLf & _
-                        "" & vbCrLf
-        Case Else
-            strDataToSend = vbCrLf & "This is a multi-part message in MIME format." & vbCrLf & _
-                        "--" & strBoundary & vbCrLf & _
-                        "Content-Type: text/html; charset=ISO-8859-1" & vbCrLf & _
-                        "Content-Transfer-Encoding: 8bit " & vbCrLf & _
-                        "Content-Disposition: inline" & vbCrLf & _
-                        vbCrLf & _
-                        strBody & vbCrLf & _
-                        "" & vbCrLf
-        End Select
-        SendMsg strDataToSend, lngPop3Write
-        If bHasAttachment Then
-            SendAttachments strURL, strBoundary
-        End If
-        'End of multipart msg
-        strDataToSend = "--" & strBoundary & "--"
-    Else
-        'NOT It's a multi-part msg.
-        If Not Right$(strContentType, 1) = ";" Then strContentType = strContentType & ";"
-        strDataToSend = objOWA.getMsgHeader() & _
-                        strContentType & vbCrLf & vbCrLf
-        If InStr(LCase$(strContentType), "html") > 0 Then
-            'HTML without attachments
-            If Not objDOMMsg.selectSingleNode(XMLPATH & "e:htmldescription") Is Nothing Then
-                strBody = objDOMMsg.selectSingleNode(XMLPATH & "e:htmldescription").Text
-                strBody = Replace(strBody, "onload=""initTemplate()""", Empty)
-            End If
-        Else
-            'Plain text without attachments
-            If Not objDOMMsg.selectSingleNode(XMLPATH & "e:textdescription") Is Nothing Then
-                strBody = objDOMMsg.selectSingleNode(XMLPATH & "e:textdescription").Text
-            End If
-        End If
-        strDataToSend = strDataToSend & vbCrLf & strBody & vbCrLf
-    End If
-    Set objDOMMsg = Nothing
-    getMsg = strDataToSend & vbCrLf & "."
-    'End of msg
-Exit Function
-ErrHandler:
-    Debug.Assert False
-    WriteLog Err.Source & vbTab & Err.Description
-    Set objDOMMsg = Nothing
-    getMsg = "-ERR Unable to conect with mailbox "
-End Function
-
 
 ''
 'Evaluate a STMP command and
@@ -815,94 +685,6 @@ ErrHandler:
     Call closesocket(lngSMTPWrite)
     lngPop3Write = 0
 End Sub
-
-''
-'Send a message attachment to the email client.
-'
-'@param strURL URL of the .EML file
-'@param strBoundary String that identify the attachment in the message
-
-Private Sub SendAttachments(ByVal strURL As String, ByVal strBoundary As String)
-On Error GoTo ErrHandler
-
-Dim strDataToSend   As String
-Dim oElements       As IXMLDOMNodeList
-Dim oElement        As IXMLDOMElement
-Dim strContentType          As String
-Dim strContentDisposition   As String
-Dim strFilename As String
-
-'Send mail Attachments
-'Attachment
-Set oElements = objOWA.GetAttachmentsList(strURL)
-For Each oElement In oElements
-    
-    'Identify the type of message, if is ATTACH_EMBEDDED_MSG headers are diferent
-    'PR_ATTACH_METHOD
-    If oElement.selectSingleNode("a:propstat/a:prop/d:x37050003").Text = 5 Then
-        'ATTACH_EMBEDDED_MSG
-        strFilename = oElement.selectSingleNode("a:propstat/a:prop/f:cn").Text
-        strURL = oElement.selectSingleNode("a:href").Text
-        'Build the rfc822 mesagge
-        strDataToSend = vbCrLf & "--" & strBoundary & vbCrLf & _
-            "Content-Type: message/rfc822" & vbCrLf & _
-            "Content-Transfer-Encoding: 8bit " & vbCrLf & _
-            "Content-Disposition: attachment " & vbCrLf & _
-            vbCrLf & _
-            "Subject: " & strFilename & " " & vbCrLf & _
-            objOWA.ParseHTMLMsg(strURL) & vbCrLf & _
-            "" & vbCrLf
-        'Send the embedded message
-        SendMsg strDataToSend, lngPop3Write
-        'Search for attachments in the embedded message
-        SendAttachments strURL, strBoundary
-    Else
-        strDataToSend = vbCrLf & "--" & strBoundary & vbCrLf & _
-                        "Content-Transfer-Encoding: base64 " & vbCrLf
-        'x3704001f  PR_ATTACH_FILENAME
-        'x3707001f  PR_ATTACH_LONG_FILENAME
-        If oElement.selectSingleNode("a:propstat/a:prop/e:attachmentfilename") Is Nothing Then
-            Debug.Assert False
-            strFilename = oElement.selectSingleNode("a:propstat/a:prop/d:x3704001f").Text
-        Else
-            strFilename = oElement.selectSingleNode("a:propstat/a:prop/e:attachmentfilename").Text
-        End If
-    
-        If oElement.selectSingleNode("a:propstat/a:prop/d:x370e001f") Is Nothing Then
-            strContentType = "application/octet-stream"
-        Else
-            strContentType = oElement.selectSingleNode("a:propstat/a:prop/d:x370e001f").Text
-        End If
-         
-        'x3716001f  PR_ATTACH_CONTENT_DISPOSITION
-        If oElement.selectSingleNode("a:propstat/a:prop/d:x3716001f") Is Nothing Then
-            strContentDisposition = "attachment"
-        Else
-            strContentDisposition = oElement.selectSingleNode("a:propstat/a:prop/d:x3716001f").Text
-        End If
-        
-        strDataToSend = strDataToSend & objOWA.GetAttHeader(oElement)
-        
-        strDataToSend = strDataToSend & "Content-Type: " & strContentType & "; name=""" & strFilename & """" & vbCrLf & _
-                    "Content-Disposition: " & strContentDisposition & "; filename=""" & strFilename & """" & vbCrLf & vbCrLf & vbCrLf
-    
-        'Send attachment header
-        SendMsg strDataToSend, lngPop3Write
-        strURL = oElement.selectSingleNode("a:href").Text
-        'Send attachment data
-        SendMsg objOWA.GetAttachment(strURL, lngPop3Write) & vbCrLf & vbCrLf, lngPop3Write
-    End If
-Next
-Set oElement = Nothing
-Set oElements = Nothing
-Exit Sub
-ErrHandler:
-    Debug.Assert False
-    Set oElement = Nothing
-    Set oElements = Nothing
-    Err.Raise Err.Number, Err.Source, Err.Description
-End Sub
-
 ''
 'Validate the current user & password, using GetFoldersURL
 '
