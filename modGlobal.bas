@@ -5,9 +5,16 @@ Attribute VB_Name = "modGlobal"
 Option Explicit
 Public strUser          As String
 Public strPassWord      As String
-Public objDOMMsg        As DOMDocument
 Public objDOMInbox      As DOMDocument
 Public strExchSvrName   As String
+
+Private intVerbosity As Integer
+Public Enum Verbosity
+    Error = 0
+    Warning = 1
+    Information = 2
+    Paranoid = 3
+End Enum
 
 Public bSaveinsent      As Boolean
 Public bAuthentication  As Boolean
@@ -49,12 +56,6 @@ Public Const Service_Name  As String = "POP2OWA"
 
 Private Declare Function GetVersionEx Lib "kernel32" Alias "GetVersionExA" (lpVersionInformation As OSVERSIONINFO) As Long
 Private Declare Function MessageBox Lib "user32" Alias "MessageBoxA" (ByVal hwnd As Long, ByVal lpText As String, ByVal lpCaption As String, ByVal wType As Long) As Long
-Private Declare Function OpenProcess Lib "kernel32" (ByVal dwDesiredAccess As Long, ByVal bInheritHandle As Long, ByVal dwProcessId As Long) As Long
-Private Declare Function GetExitCodeProcess Lib "kernel32" (ByVal hProcess As Long, lpExitCode As Long) As Long
-
-Private Declare Function SetTimer Lib "user32" (ByVal hwnd As Long, ByVal nIDEvent As Long, ByVal uElapse As Long, ByVal lpTimerFunc As Long) As Long
-Private Declare Function KillTimer Lib "user32" (ByVal hwnd As Long, ByVal nIDEvent As Long) As Long
-
 Private Declare Function GetTickCount Lib "kernel32" () As Long
 
 Private Declare Function MsgWaitForMultipleObjects Lib "user32" _
@@ -75,12 +76,16 @@ Public ServiceName() As Byte, ServiceNamePtr As Long
 'Write a pop2owa.err file with errors.
 '
 '@param strText Test to write in the log
-Public Sub WriteLog(ByVal strText As String)
+'@param intVerbose Versosity
+Public Sub WriteLog(ByVal strText As String, Optional ByVal intVerbose As Verbosity = Error)
 Dim intFile As Integer
-intFile = FreeFile
-Open App.Path & "\pop2owa.log" For Append As #intFile
-    Print #intFile, Now & vbTab & strText
-Close #intFile
+If intVerbose <= intVerbosity Then
+    intFile = FreeFile
+    Open App.Path & "\pop2owa.log" For Append As #intFile
+        Print #intFile, Now & vbTab & strText
+    Close #intFile
+    Debug.Print Now & "-> " & strText
+End If
 End Sub
 
 Public Sub Main()
@@ -90,11 +95,14 @@ Dim h(0 To 1) As Long
 Dim strParametro As String
 Dim hProcess As Long
 Dim RetVal As Long
-Dim objFrame As Frame
 Dim lngInterval As Long
 Dim oPOP3 As clsPOP3
 
-    'Check OS
+'Check OS
+intVerbosity = 0
+Call ParseCommandLine(Command$)
+WriteLog "Inicio", Information
+If IsNTService Then
     If CheckIsNT() Then
     
         'Events for NT Service
@@ -105,77 +113,67 @@ Dim oPOP3 As clsPOP3
         ServiceName = StrConv(Service_Name, vbFromUnicode)
         ServiceNamePtr = StrPtr(Service_Name)
         'ServiceNamePtr = VarPtr(ServiceName(LBound(ServiceName)))
-
+    
         'Create the service
         hnd = StartAsService
         h(0) = hnd
         h(1) = hStartEvent
         'Waiting for one of two events: sucsessful service start (1) or Terminaton of service thread (0)
         IsNTService = MsgWaitObj(INFINITE, h(0), 2&) = 1&
-        
+        CloseHandle hnd
+        MessageBox 0&, "This program must be started as a service.", App.Title, vbInformation Or vbOKOnly Or vbMsgBoxSetForeground
     Else
-        IsNTService = False
+        MessageBox 0&, "This program is only for Windows NT/2000/XP/2003.", App.Title, vbInformation Or vbOKOnly Or vbMsgBoxSetForeground
     End If
     
-If IsNTService Then
-    App.LogEvent "Starting: " & Service_Name
-    Set oPOP3 = New clsPOP3
-    
-    'Run the NT Service
-    SetServiceState SERVICE_RUNNING
-    App.LogEvent "Running Service: " & Service_Name
-    lngInterval = 10000
-    Do
-        oPOP3.Refresh
-        If oPOP3.isActive Then
-            lngInterval = 100
-        Else
-            lngInterval = 10000
-        End If
-        DoEvents
-    Loop While MsgWaitObj(lngInterval, hStopPendingEvent, 1&) = WAIT_TIMEOUT
-    WriteLog "Fin bucle"
-    Set oPOP3 = Nothing
-    WriteLog "Objeto destruido"
-    SetServiceState SERVICE_STOPPED
-    WriteLog "Peticion de parada de servicio"
-    App.LogEvent "Stoping Service: " & Service_Name
-    SetEvent hStopEvent
-    ' Waiting for service thread termination
-    MsgWaitObj INFINITE, hnd, 1&
-    CloseHandle hnd
-    WriteLog "Servicio parado"
-Else
-    hStopPendingEvent = 0
-    With frmMain
-        .Caption = .Caption & " " & App.Major & "." & App.Minor
-        'Redraw controls
-        For Each objFrame In .Frame1
-            objFrame.Move .TabStrip1.clientLeft, _
-                        .TabStrip1.clientTop, _
-                        .TabStrip1.clientWidth, _
-                        .TabStrip1.clientHeight
-        Next
-        .Move .Left, .Top, 2700, 3150
-        Set objFrame = Nothing
-        .Init
-        .Show
-    End With
-End If
-CloseHandle hStopEvent
-CloseHandle hStartEvent
-CloseHandle hStopPendingEvent
-Exit Sub
-ErrHandler:
     If IsNTService Then
-        WriteLog Err.Source & vbTab & Err.Description
-    Else
-        MsgBox Err.Description, vbCritical, "POP2OWA: " & Err.Source
-        Unload frmMain
+        App.LogEvent "Starting: " & Service_Name
+        Set oPOP3 = New clsPOP3
+        'Run the NT Service
+        SetServiceState SERVICE_RUNNING
+        App.LogEvent "Running Service: " & Service_Name
+        lngInterval = 10000
+        Do
+            oPOP3.Refresh
+            If oPOP3.isActive Then
+                lngInterval = 100
+            Else
+                lngInterval = 10000
+            End If
+            DoEvents
+        Loop While MsgWaitObj(lngInterval, hStopPendingEvent, 1&) = WAIT_TIMEOUT
+        WriteLog "Fin bucle", Information
+        Set oPOP3 = Nothing
+        WriteLog "Objeto destruido", Information
+        SetServiceState SERVICE_STOPPED
+        WriteLog "Peticion de parada de servicio", Information
+        App.LogEvent "Stoping Service: " & Service_Name
+        SetEvent hStopEvent
+        ' Waiting for service thread termination
+        MsgWaitObj INFINITE, hnd, 1&
+        CloseHandle hnd
+        WriteLog "Servicio parado", Information
     End If
     CloseHandle hStopEvent
     CloseHandle hStartEvent
     CloseHandle hStopPendingEvent
+Else
+    WriteLog "Init", Information
+    hStopPendingEvent = 0
+    frmMain.Init
+End If
+Exit Sub
+ErrHandler:
+    WriteLog Err.Source & vbTab & Err.Description, Error
+    If IsNTService Then
+        CloseHandle hStopEvent
+        CloseHandle hStartEvent
+        CloseHandle hStopPendingEvent
+    Else
+        'MsgBox Err.Description, vbCritical, "POP2OWA: " & Err.Source
+        MessageBox 0&, Err.Description, App.Title & " " & Err.Source, vbInformation Or vbOKOnly Or vbMsgBoxSetForeground
+        Unload frmMain
+    End If
 End Sub
 
 
@@ -266,7 +264,45 @@ Public Function MsgWaitObj(Interval As Long, _
     Loop
 End Function
 
+Public Function ParseCommandLine(ByVal cmdline As String) As Long
+    Dim c As String
+    c = Trim(cmdline)
 
+    Dim nextParam, SqlServer
 
+    Dim s As String
+    Do Until c = ""
+        s = GetNextBlock(c)
+        Select Case s
+        Case "-v", "/v"
+            intVerbosity = GetNextBlock(c)
+        Case "-NT", "/NT"
+            IsNTService = True
+        End Select
+    Loop
 
+End Function
+
+Private Function GetNextBlock(ByRef c As String) As String
+    Dim ret As String
+    c = LTrim(c)
+    ret = ""
+    If Left(c, 1) = """" Then
+        c = Right(c, Len(c) - 1)
+        Do Until Left(c, 1) = """" Or c = ""
+            ret = ret & Left(c, 1)
+            c = Right(c, Len(c) - 1)
+        Loop
+        If c <> "" Then c = Right(c, Len(c) - 1)    '   in case the user didn't enter ending quote
+        c = LTrim(c)
+
+    Else
+        Do Until Left(c, 1) = " " Or c = ""
+            ret = ret & Left(c, 1)
+            c = Right(c, Len(c) - 1)
+        Loop
+        c = LTrim(c)
+    End If
+    GetNextBlock = ret
+End Function    '   GetNextBlock
 
