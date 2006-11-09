@@ -50,6 +50,7 @@ Dim lngTimer As Long
 Set oXMLHTTP = New XMLHTTP
 
 With oXMLHTTP
+    '.setOption 3, ""
     .open "GET", strURL, True, strUser, strPassWord
     .setRequestHeader "Content-type", "text/xml"
     .setRequestHeader "Depth", "infinity"
@@ -98,6 +99,7 @@ Dim oXMLHTTP    As XMLHTTP
     
     Set oXMLHTTP = New XMLHTTP
     With oXMLHTTP
+        '.setOption 3, ""
         .open "DELETE", GetURL(intMsg), True, strUser, strPassWord
         If strCookies <> Empty Then
             .setRequestHeader "Cookies", "Necessary according to Q234486"
@@ -126,10 +128,9 @@ Public Function GetMsgList() As Boolean
 On Error GoTo ErrHandler
 Dim strURL As String
 Dim oXMLHTTP As XMLHTTP
-    
 strURL = objDOMFolders.selectSingleNode(XMLPATH & "d:inbox").Text & "/"
 ' Create an instance of the xmlHTTP object
-Set oXMLHTTP = CreateObject("microsoft.xmlhttp")
+Set oXMLHTTP = New XMLHTTP
 With oXMLHTTP
     ' Open a request to a particular url
     .open "SEARCH", strURL, True, strUser, strPassWord
@@ -159,7 +160,10 @@ With oXMLHTTP
     Wend
     
     If .Status = 207 Then
+
         Set objDOMInbox = .responseXML
+        objDOMInbox.setProperty "SelectionLanguage", "XPath"
+        objDOMInbox.setProperty "SelectionNamespaces", "xmlns:a='DAV:'"
         intMsgCount = objDOMInbox.childNodes(1).childNodes.Length
         WriteLog "msg list fetch " & intMsgCount & " messages", Information
         #If DEBUG_MODE = 1 Then
@@ -204,9 +208,11 @@ query = query + "</a:propfind>"
 
 Set oXMLHTTP = New XMLHTTP
 strURL = strExchSvrName & "/exchange/" & strUser & "/"
+
 With oXMLHTTP
     WriteLog "Getting Folders : " & strURL
     WriteLog "FBA loging : " & bAuthentication
+    '.setOption 3, ""
     .open "PROPFIND", strURL, True, strUser, strPassWord
     .setRequestHeader "Content-Type", "text/xml"
     .setRequestHeader "Depth", "0"
@@ -221,7 +227,12 @@ With oXMLHTTP
 
     ' process the result
     If (.Status >= 200 And .Status < 300) Then
+
        Set objDOMFolders = .responseXML
+        objDOMFolders.setProperty "SelectionLanguage", "XPath"
+        objDOMFolders.setProperty "SelectionNamespaces", "xmlns:a='DAV:'"
+        objDOMFolders.setProperty "SelectionNamespaces", "xmlns:a='DAV:' xmlns:d='urn:schemas:httpmail:'"
+    
     Else
         Debug.Assert False
         WriteLog "GetFoldersURL: " & .Status & vbTab & .statusText, Warning
@@ -254,11 +265,11 @@ Dim oXMLHTTP    As XMLHTTP
 strURL = strExchSvrName & "/exchweb/bin/auth/owaauth.dll"
 Set oXMLHTTP = New XMLHTTP
 With oXMLHTTP
-    .setOption 3, Empty
+    '.setOption 3, ""
     .open "POST", strURL, True
     .setRequestHeader "Content-type", "application/x-www-form-urlencoded"
     'Generate the body for FBA login
-    .Send "destination=" & strExchSvrName & "/exchange/&username=" & strUser & "&password=" & strPassWord
+    .Send "destination=" & strExchSvrName & "/exchange&username=" & strUser & "&password=" & strPassWord
     While Not .readyState = 4
         MsgWaitObj 100
     Wend
@@ -295,7 +306,7 @@ Dim xmlReq As XMLHTTP
     strSubURL = objDOMFolders.selectSingleNode(XMLPATH & "d:sendmsg").Text
      
      'Create the DAV PUT request.
-    
+    'xmlReq.setOption 3, ""
     xmlReq.open "PUT", strSubURL, True, strUser, strPassWord
     If strMailData <> "" Then
        xmlReq.setRequestHeader "Content-Type", "message/rfc821"
@@ -319,8 +330,8 @@ Dim xmlReq As XMLHTTP
 
 Exit Function
 ErrHandler:
-    Set xmlReq = Nothing
     WriteLog "SendMail: " & Err.Number & vbTab & Err.Description, Error
+    Set xmlReq = Nothing
     SendMail = False
 End Function
 

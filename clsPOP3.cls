@@ -338,6 +338,9 @@ On Error GoTo ErrHandler
         strUser = Mid$(strDataRecived, 6, Len(strDataRecived) - 7)
         strDataToSend = "+OK Password required for " & strUser
     Case "PASS"
+        If objOWA Is Nothing Then
+            Set objOWA = New clsOWA
+        End If
         strPassWord = Mid$(strDataRecived, 6, Len(strDataRecived) - 7)
         If bAuthentication Then
             If Not objOWA.LogingFBA Then
@@ -437,6 +440,7 @@ On Error GoTo ErrHandler
     SendMsg strDataToSend, lngPop3Write
     If bCloseSocket Then
         Set objDOMInbox = Nothing
+        Set objOWA = Nothing
         'Call the closesocket Winsock API function
         'in order to close the socket
          Call closesocket(lngPop3Write)
@@ -529,7 +533,7 @@ End With
         '
         'if the Winsock service was initialized
         'successfully, initialize the controls
-        Set objOWA = New clsOWA
+'        Set objOWA = New clsOWA
         lngPop3Read = fncNewSokect(vPorts(0))
         If vPorts(1) <> 0 Then
             lngSMTPRead = fncNewSokect(vPorts(1))
@@ -590,6 +594,9 @@ On Error GoTo ErrHandler
     Case "AUTH"
         Dim objBase As New Base64
         Dim strReply As String
+        If objOWA Is Nothing Then
+            Set objOWA = New clsOWA
+        End If
         If strDataRecived = "AUTH LOGIN" & vbCrLf Then
             'cDataToSend.Add "334 " & objBase.Encode(strUser & "@" & Mid(strExchSvrName, InStr(strExchSvrName, "//") + 2))
             strDataToSend = "334 " & objBase.Encode("Username:")
@@ -676,11 +683,13 @@ On Error GoTo ErrHandler
     If bCloseSocket Then
         'Call the closesocket Winsock API function
         'in order to close the socket
+        Set objOWA = Nothing
         Call closesocket(lngSMTPWrite)
         lngSMTPWrite = 0
     End If
 Exit Sub
 ErrHandler:
+    WriteLog "SendSMTP " & Err.Description, Error
     Debug.Assert False
     Call closesocket(lngSMTPWrite)
     lngPop3Write = 0

@@ -101,7 +101,7 @@ Dim oPOP3 As clsPOP3
 'Check OS
 intVerbosity = 0
 Call ParseCommandLine(Command$)
-WriteLog "Inicio", Information
+WriteLog "Inicio v " & intVerbosity & " NT " & IsNTService, Information
 If IsNTService Then
     If CheckIsNT() Then
     
@@ -120,8 +120,10 @@ If IsNTService Then
         h(1) = hStartEvent
         'Waiting for one of two events: sucsessful service start (1) or Terminaton of service thread (0)
         IsNTService = MsgWaitObj(INFINITE, h(0), 2&) = 1&
-        CloseHandle hnd
-        MessageBox 0&, "This program must be started as a service.", App.Title, vbInformation Or vbOKOnly Or vbMsgBoxSetForeground
+        If Not IsNTService Then
+            CloseHandle hnd
+            MessageBox 0&, "This program must be started as a service.", App.Title, vbInformation Or vbOKOnly Or vbMsgBoxSetForeground
+        End If
     Else
         MessageBox 0&, "This program is only for Windows NT/2000/XP/2003.", App.Title, vbInformation Or vbOKOnly Or vbMsgBoxSetForeground
     End If
@@ -142,9 +144,7 @@ If IsNTService Then
             End If
             DoEvents
         Loop While MsgWaitObj(lngInterval, hStopPendingEvent, 1&) = WAIT_TIMEOUT
-        WriteLog "Fin bucle", Information
         Set oPOP3 = Nothing
-        WriteLog "Objeto destruido", Information
         SetServiceState SERVICE_STOPPED
         WriteLog "Peticion de parada de servicio", Information
         App.LogEvent "Stoping Service: " & Service_Name

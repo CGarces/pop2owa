@@ -179,7 +179,7 @@ Private bsysTray As Boolean
 ''
 'Enabe/Disable the SMTP features.
 Private Sub chkSMTP_Click()
-    Me.txtPort(1).Enabled = (chkSMTP.value = vbChecked)
+    Me.txtPort(1).Enabled = (chkSMTP.Value = vbChecked)
 End Sub
 
 ''
@@ -194,7 +194,7 @@ End Sub
 Public Sub Init()
 Dim objFrame As Frame
 
-    Me.Caption = App.EXEName & " " & App.Major & "." & App.Minor
+    Me.Caption = App.EXEName & " " & App.Major & "." & App.Minor & "." & App.Revision
     'Redraw controls
     For Each objFrame In Me.Frame1
         objFrame.Move Me.TabStrip1.ClientLeft, _
@@ -266,13 +266,14 @@ On Error GoTo ErrHandler
         Timer1.Interval = 100
     Else
         WriteLog "Pop2owa inactive", Paranoid
-        If (Timer1.Interval <> 10000 And bsysTray) Then
+        If (Timer1.Interval <> 1000 And bsysTray) Then
             Me.Hide
             Me.Refresh
             DoEvents
         End If
-        Timer1.Interval = 10000
+        Timer1.Interval = 1000
     End If
+    DoEvents
     Timer1.Enabled = True
 Exit Sub
 ErrHandler:
@@ -294,25 +295,25 @@ With c
     .ValueType = REG_SZ
     'Exchange server
     .ValueKey = "ExchangeServer"
-    Me.txtServer.Text = .value
+    Me.txtServer.Text = .Value
     'IP to listen
     .ValueKey = "IP"
-    Me.txtIP.Text = .value
+    Me.txtIP.Text = .Value
     
     'Port values are integers
     .ValueType = REG_DWORD
     'POP3 Port
     .ValueKey = "POP3"
-    Me.txtPort(0).Text = .value
+    Me.txtPort(0).Text = .Value
     'SMTP Port
     .ValueKey = "SMTP"
-    Me.txtPort(1).Text = .value
+    Me.txtPort(1).Text = .Value
     'Leave a copy in send folder
     .ValueKey = "Saveinsent"
-    Me.chkSend.value = .value
+    Me.chkSend.Value = .Value
     'Form-Based-Authentication on/off
     .ValueKey = "FormBasedAuth"
-    Me.chkFBA.value = .value
+    Me.chkFBA.Value = .Value
 End With
 End Sub
 
@@ -326,25 +327,25 @@ With c
     .ValueType = REG_SZ
     'Exchange server
     .ValueKey = "ExchangeServer"
-    .value = Me.txtServer.Text
+    .Value = Me.txtServer.Text
     'IP to listen
     .ValueKey = "IP"
-    .value = Me.txtIP.Text
+    .Value = Me.txtIP.Text
     
     'Port values are integers
     .ValueType = REG_DWORD
     'POP3 Port
     .ValueKey = "POP3"
-    .value = CInt(Me.txtPort(0).Text)
+    .Value = CInt(Me.txtPort(0).Text)
     'SMTP Port
     .ValueKey = "SMTP"
-    .value = CInt(Me.txtPort(1).Text)
+    .Value = CInt(Me.txtPort(1).Text)
     'Leave a copy in send folder
     .ValueKey = "Saveinsent"
-    .value = chkSend.value
+    .Value = chkSend.Value
     'Form-Based-Authentication on/off
     .ValueKey = "FormBasedAuth"
-    .value = Me.chkFBA.value
+    .Value = Me.chkFBA.Value
 End With
 End Sub
 
