@@ -21,11 +21,6 @@ Attribute VB_Exposed = False
 
 Option Explicit
 
-Private lngPop3Read As Long
-Private lngPop3Write As Long
-Private lngSMTPRead As Long
-Private lngSMTPWrite As Long
-
 Private objOWA As clsOWA
 
 Private m_strIP As String
@@ -33,10 +28,16 @@ Private strSMTPState As String
 Private strMailData As String
 Private vMailData() As String
 
-Private vPorts(0 To 1) As Integer
+Private vPorts(0 To 1) As Long
+Dim WithEvents skSMTP As CSocketMaster
+Attribute skSMTP.VB_VarHelpID = -1
+Dim WithEvents skPOP3 As CSocketMaster
+Attribute skPOP3.VB_VarHelpID = -1
+
 
 Property Get isActive() As Boolean
-    isActive = Not (lngSMTPWrite = 0 And lngPop3Write = 0)
+    'isActive = Not (lngSMTPWrite = 0 And lngPop3Write = 0)
+    isActive = True
 End Property
 
 
@@ -56,268 +57,121 @@ Property Let FormBasedAuthentication(ByVal bAuth As Boolean)
     bAuthentication = bAuth
 End Property
 
-''
-'Creates a new socket.
-'
-'@param intPort por lo lisen
-'@return The number of the socket
-Private Function fncNewSokect(ByVal intPort As Integer) As Long
-    Dim lngAddressFamily    As Long
-    Dim lngRetValue         As Long
-    Dim lngSocket           As Long
-    Dim lngSocketType       As Long
-    Dim lngProtocol         As Long
-    '
-
-    '
-    'Get values for arguments to pass to the vbSocket function
-    lngAddressFamily = CLng(AF_INET)
-    lngSocketType = CLng(SOCK_STREAM)
-    lngProtocol = CLng(IPPROTO_TCP)
-    '
-    'Call the vbSocket function in order to create a new socket
-    lngSocket = modWinsockAPI.vbSocket(lngAddressFamily, lngSocketType, lngProtocol)
-    '
-    If lngSocket = INVALID_SOCKET Then
-        '
-        'If the function has returned the INVALID_SOCKET
-        'value the socket was not created.
-        Err.Raise Err.LastDllError, GetErrorDescription(Err.LastDllError)
-        '
-    Else
-        'Call the vbBind function to bind the socket to a new address
-        lngRetValue = vbBind(lngSocket, m_strIP, intPort)
-        
-        If lngRetValue = SOCKET_ERROR Then
-            '
-            'If an error was occurred, raise an error message box
-            Err.Raise Err.LastDllError, , GetErrorDescription(Err.LastDllError)
-        Else
-            'Call the vbListen function
-            lngRetValue = vbListen(lngSocket)
-            'Check a value returned by the vbListen function
-            If lngRetValue = SOCKET_ERROR Then
-                'An error was occurred - raise the error message
-                Err.Raise Err.LastDllError, GetErrorDescription(Err.LastDllError)
-            End If
-            '
-        End If
-    End If
-    'Set option for SO_SNDBUF
-    lngRetValue = setsockopt(lngSocket, SOL_SOCKET, SO_SNDBUF, SKT_SNDBUF, LenB(lngRetValue))
-    'Set option for SO_KEEPALIVE
-    lngRetValue = setsockopt(lngSocket, SOL_SOCKET, SO_KEEPALIVE, SKT_KEEPALIVE, LenB(lngRetValue))
-
-    
-    fncNewSokect = lngSocket
-End Function
 
 ''
 'Close al sockets and call to WSACleanup API
 Public Sub Disconnect()
-    If lngPop3Read <> 0 Then
-        Call closesocket(lngPop3Read)
-    End If
-    If lngPop3Write <> 0 Then
-        Call closesocket(lngPop3Write)
-    End If
-    If lngSMTPRead <> 0 Then
-        Call closesocket(lngSMTPRead)
-    End If
-    If lngSMTPWrite <> 0 Then
-        Call closesocket(lngSMTPWrite)
-    End If
-    Call WSACleanup
-    Set objOWA = Nothing
 End Sub
 
 ''
 'Sub to search incomings calls
 Public Sub Refresh()
 
-    Dim lngRetValue     As Long
-    Dim udtRead_fds     As fd_set
-    Dim udtWrite_fds    As fd_set
-    Dim udtError_fds    As fd_set
-    Dim lngSocketCount  As Long
-    Dim lngSocket       As Long
-    Dim i               As Integer
-        '
-        'Prepare sockets arrays to pass to
-        'the select Winsock API function
-        '
-            '
-            'Get socket's handle
-            '
-        'Put that handle into each array
-    If lngPop3Read <> 0 Then
-        lngSocketCount = lngSocketCount + 1
-        udtRead_fds.fd_array(lngSocketCount) = lngPop3Read
-        udtWrite_fds.fd_array(lngSocketCount) = lngPop3Read
-        udtError_fds.fd_array(lngSocketCount) = lngPop3Read
-    End If
+End Sub
+
+
+
+''
+'Initialize Winsock code.
+'
+Public Sub Start()
+On Error GoTo ErrHandler
+
+Dim lngRetValue As Long
+Dim objXML As DOMDocument
+Dim c As cRegistry
+Set c = New cRegistry
+
+'Read values form registry
     
-    If lngPop3Write <> 0 Then
-        lngSocketCount = lngSocketCount + 1
-        udtRead_fds.fd_array(lngSocketCount) = lngPop3Write
-        udtWrite_fds.fd_array(lngSocketCount) = lngPop3Write
-        udtError_fds.fd_array(lngSocketCount) = lngPop3Write
-    End If
-    If lngSMTPRead <> 0 Then
-        lngSocketCount = lngSocketCount + 1
-        udtRead_fds.fd_array(lngSocketCount) = lngSMTPRead
-        udtWrite_fds.fd_array(lngSocketCount) = lngSMTPRead
-        udtError_fds.fd_array(lngSocketCount) = lngSMTPRead
-    End If
-    If lngSMTPWrite <> 0 Then
-        lngSocketCount = lngSocketCount + 1
-        udtRead_fds.fd_array(lngSocketCount) = lngSMTPWrite
-        udtWrite_fds.fd_array(lngSocketCount) = lngSMTPWrite
-        udtError_fds.fd_array(lngSocketCount) = lngSMTPWrite
-    End If
-      
-    'Initialize the fd_count member of the
-    'fd_set structure for each set of sockets
-    udtRead_fds.fd_count = lngSocketCount
-    udtWrite_fds.fd_count = lngSocketCount
-    udtError_fds.fd_count = lngSocketCount
-    '
-    'Call the select function
-    lngRetValue = vbselect(0&, udtRead_fds, udtWrite_fds, udtError_fds, 0&)
-    '
-        If lngRetValue = SOCKET_ERROR Then
-            '
-            'If the function returned value of SOCKET_ERROR
-            'just show a message box with error description
-            '
-            'Call ShowErrorMessage(Err.LastDllError)
-            Err.Raise Err.LastDllError, , GetErrorDescription(Err.LastDllError)
-            '
-        ElseIf lngRetValue > 0 Then
-            '
-            'If returned value grater than 0 that means that
-            'the select function has found some sockets that
-            'can be writable, readable or in error state
-            '
-            'Check for writable sockets
-            If udtWrite_fds.fd_count > 0 Then
-                '
-                For i = 1 To udtWrite_fds.fd_count
-                    '
-                    'Get the socket handle
-                    lngSocket = udtWrite_fds.fd_array(i)
-                    'Call recv(lngSocket)
-                    '
-                    If lngSocket = lngSMTPRead Then
-                        Received lngSocket
-                    End If
-                Next i
-                '
-            End If
-            '
-            'Check for readable sockets
-            If udtRead_fds.fd_count > 0 Then
-                '
-                For i = 1 To udtRead_fds.fd_count
-                    '
-                    'Get the socket handle
-                    lngSocket = udtRead_fds.fd_array(i)
-                    If lngSocket = lngPop3Read And lngPop3Write = 0 Then
-                        lngPop3Write = Accept(lngPop3Read)
-                        SendPOP3 Empty
-                    End If
-                    If lngSocket = lngSMTPRead And lngSMTPWrite = 0 Then
-                        lngSMTPWrite = Accept(lngSMTPRead)
-                        SendSMTP Empty
-                    End If
-                    If lngSocket = lngPop3Write Then
-                        Received lngSocket
-                    End If
-                    If lngSocket = lngSMTPWrite Then
-                        Received lngSocket
-                    End If
-                Next i
-                '
-            End If
-            '
-            'Check for sockets in error state
-'            If udtError_fds.fd_count > 0 Then
-'                '
-'                For i = 1 To udtError_fds.fd_count
-'                    '
-'                    'Get the socket handle
-'                    lngSocket = udtError_fds.fd_array(i)
-'                    '
-''                    'Mark the corresponding listview item with red color
-''                    lvSockets.ListItems("S" & lngSocket).ForeColor = vbRed
-'                    '
-'                Next i
-'                '
-'            End If
-            '
+'Values are stored in (HKEY_CURRENT_USER\Software\pop2owa)
+With c
+    .ClassKey = HKEY_CURRENT_USER
+    .SectionKey = "Software\pop2owa"
+    .ValueType = REG_SZ
+    'Exchange server
+    .ValueKey = "ExchangeServer"
+    strExchSvrName = .Value
+    'IP to listen
+    .ValueKey = "IP"
+    Me.IP = .Value
+    
+    'Port values are integers
+    .ValueType = REG_DWORD
+    'POP3 Port
+    .ValueKey = "POP3"
+    vPorts(0) = .Value
+    'SMTP Port
+    .ValueKey = "SMTP"
+    vPorts(1) = .Value
+    'Leave a copy in send folder
+    .ValueKey = "Saveinsent"
+    bSaveinsent = .Value
+    'Form-Based-Authentication on/off
+    .ValueKey = "FormBasedAuth"
+    bAuthentication = .Value
+End With
+        Set skPOP3 = New CSocketMaster
+        skPOP3.Bind vPorts(0), m_strIP
+        skPOP3.Listen
+'        lngPop3Read = fncNewSokect(vPorts(0))
+        If vPorts(1) <> 0 Then
+            Set skSMTP = New CSocketMaster
+            skSMTP.Bind vPorts(1), m_strIP
+            skSMTP.Listen
+
+'           lngSMTPRead = fncNewSokect(vPorts(1))
         End If
+Exit Sub
+ErrHandler:
+    If Err.Number = WSAEADDRINUSE Then
+        skPOP3.CloseSck
+    End If
+    Err.Raise Err.Number, "Start " & Err.Source, Err.Description
+    
+    
 End Sub
 
-
 ''
-'Handle received data in a socket.
+'Validate the current user & password, using GetFoldersURL
 '
-'@param lngSocket The descriptor that identifies a connected socket.
-Private Sub Received(ByVal lngSocket As Long)
-    '
-    Dim strData             As String
-    Dim lngBytesReceived    As Long
-        '
-    'Call the vbRecv function to read data
-    lngBytesReceived = vbRecv(lngSocket, strData)
-    '
-    If lngBytesReceived > 0 Then
-        '
-        If lngSocket = lngPop3Write Then
-            SendPOP3 strData
-        Else
-            SendSMTP strData
-        End If
-    ElseIf lngBytesReceived = SOCKET_ERROR Then
-        '
-        'An error was occurred
-        Err.Raise Err.LastDllError, "clsPOP3.Received", GetErrorDescription(Err.LastDllError)
-    End If
-End Sub
-
-
-''
-'Accept a call of email client.
+'@return SMTP comand with the result of the operation
 '
-'@param lngSocketRead The descriptor that identifies a connected socket.
-'
-'@return The descriptor that identifies a connected socket, 0 if not is acepted
-Private Function Accept(ByVal lngSocketRead As Long) As Long
-Dim lngSocket As Long
-    '
-    'Call the vbAccept function in order to accept the
-    'connection request and create a new socket
-    lngSocket = vbAccept(lngSocketRead)
-    '
-    If lngSocket = INVALID_SOCKET Then
-        '
-        'An error was occurred - raise the error message
-        Err.Raise Err.LastDllError, , GetErrorDescription(Err.LastDllError)
-        Accept = 0
-    Else
-        '
-        'Accept the connection request
-        Accept = lngSocket
-    End If  '--> If lngRetValue = INVALID_SOCKET Then
-    '
+'@see clsOWA.GetFoldersURL
+'@date 2006/03/31
+Private Function ValidateSMTPAUTH() As String
+    Select Case objOWA.GetFoldersURL
+    Case 200 To 299
+        ValidateSMTPAUTH = "235 AUTHENTICATION SUCCESSFUL"
+    Case 401
+        'Wrong password
+        ValidateSMTPAUTH = "535 5.7.0 authentication failed"
+    Case Else
+        'Unknow error
+        ValidateSMTPAUTH = "533  Authentication required [AUTH]"
+    End Select
 End Function
 
+Private Sub Class_Initialize()
+Me.Disconnect
+Me.Start
+End Sub
+
+Private Sub Class_Terminate()
+Me.Disconnect
+End Sub
+
+Private Sub skPOP3_ConnectionRequest(ByVal requestID As Long)
+    skPOP3.CloseSck
+    skPOP3.Accept requestID
+    skPOP3.SendData "+OK POP3 server ready"
+End Sub
 ''
-'Evaluate a POP3 command and
+'Evaluate a POP3 command  ((<A HREF='http://www.hunnysoft.com/rfc/rfc.html' target='_blank'>RFC1939</A>))
 'and send a reply to the email client
 '
-'@param strDataRecived A valid POP3 command ((<A HREF='http://www.hunnysoft.com/rfc/rfc.html' target='_blank'>RFC1939</A>))
-Private Sub SendPOP3(ByVal strDataRecived As String)
+'@param bytesTotal bytes recived
+Private Sub skPOP3_DataArrival(ByVal bytesTotal As Long)
 On Error GoTo ErrHandler
       
     Dim oElement As IXMLDOMElement
@@ -327,6 +181,9 @@ On Error GoTo ErrHandler
     Dim intTotal As Integer
     Dim bCloseSocket As Boolean
     Dim lngSize As Long
+    Dim strDataRecived As String
+    
+    skPOP3.GetData strDataRecived
     '
     If Left$(strDataRecived, 4) <> "PASS" Then
         Debug.Print strDataRecived
@@ -373,8 +230,9 @@ On Error GoTo ErrHandler
         'strDataToSend = GetMsg(objDOMInbox.childNodes(1).childNodes(CInt(Mid$(strDataRecived, 6)) - 1).selectSingleNode("a:propstat/a:prop/a:href").Text)
         intMsg = CInt(Mid$(strDataRecived, 6))
         With objDOMInbox.childNodes(1).childNodes(intMsg - 1)
-            SendMsg "+OK " & .selectSingleNode("a:propstat/a:prop/a:getcontentlength").Text & " octets", lngPop3Write
-            bCloseSocket = Not (objOWA.GetMsg(.selectSingleNode("a:propstat/a:prop/a:href").Text, lngPop3Write))
+            skPOP3.SendData "+OK " & .selectSingleNode("a:propstat/a:prop/a:getcontentlength").Text & " octets"
+            
+            bCloseSocket = Not (objOWA.GetMsg(.selectSingleNode("a:propstat/a:prop/a:href").Text, skPOP3))
         End With
         strDataToSend = vbCrLf & "."
     Case "QUIT"
@@ -395,9 +253,9 @@ On Error GoTo ErrHandler
                 lngSize = lngSize + oElement.Text
                 strDataToSend = strDataToSend & intMsg & " " & oElement.Text & vbCrLf
             Next
-            SendMsg "+OK " & intTotal & " messages (" & lngSize & ") octets", lngPop3Write
+            skPOP3.SendData "+OK " & intTotal & " messages (" & lngSize & ") octets"
             Debug.Assert intTotal = oElements.Length
-            SendMsg strDataToSend, lngPop3Write
+            skPOP3.SendData strDataToSend
             strDataToSend = "."
         End If
     Case "NOOP"
@@ -437,14 +295,15 @@ On Error GoTo ErrHandler
         Debug.Assert False
         strDataToSend = "-ERR Syntax error"
     End Select
-    SendMsg strDataToSend, lngPop3Write
+    skPOP3.SendData strDataToSend
     If bCloseSocket Then
         Set objDOMInbox = Nothing
         Set objOWA = Nothing
         'Call the closesocket Winsock API function
         'in order to close the socket
-         Call closesocket(lngPop3Write)
-        lngPop3Write = 0
+        skPOP3.CloseSck
+        skPOP3.Bind vPorts(0), m_strIP
+        skPOP3.Listen
     End If
     
 Set oElement = Nothing
@@ -455,112 +314,24 @@ ErrHandler:
 '    Call closesocket(lngPop3Write)
 '    lngPop3Write = 0
     Err.Raise Err.Number, "SendPOP3: " & Err.Source, Err.Description
+
 End Sub
 
-''
-'Send a reply to the email client.
-'
-'@param strDataToSend Strings to send
-'@param lngSocket The descriptor that identifies a connected socket
-Private Sub SendMsg(ByVal strDataToSend As String, ByVal lngSocket As Long)
-On Error GoTo ErrHandler
-    'Add CRLF if needed
-    If Right$(strDataToSend, 2) <> vbCrLf Then
-        strDataToSend = strDataToSend & vbCrLf
-    End If
-    '
-    'Call the vbSend function in order to send data
-    If vbSend(lngSocket, strDataToSend) = SOCKET_ERROR Then
-        '
-        Err.Raise vbObjectError + 1, "send data", GetErrorDescription(Err.LastDllError)
-    End If
-    MsgWaitObj 100
-Exit Sub
-ErrHandler:
-    Debug.Assert False
-    Debug.Print GetErrorDescription(Err.LastDllError)
-    Err.Raise Err.Number, "SendMsg: " & Err.Source, Err.Description
+Private Sub skPOP3_Error(ByVal Number As Integer, Description As String, ByVal sCode As Long, ByVal Source As String, ByVal HelpFile As String, ByVal HelpContext As Long, CancelDisplay As Boolean)
+    Debug.Print Description
 End Sub
 
-
-''
-'Initialize Winsock code.
-'
-Public Sub Start()
-On Error GoTo ErrHandler
-
-Dim lngRetValue As Long
-Dim objXML As DOMDocument
-Dim c As cRegistry
-Set c = New cRegistry
-
-'Read values form registry
-    
-'Values are stored in (HKEY_CURRENT_USER\Software\pop2owa)
-With c
-    .ClassKey = HKEY_CURRENT_USER
-    .SectionKey = "Software\pop2owa"
-    .ValueType = REG_SZ
-    'Exchange server
-    .ValueKey = "ExchangeServer"
-    strExchSvrName = .Value
-    'IP to listen
-    .ValueKey = "IP"
-    Me.IP = .Value
-    
-    'Port values are integers
-    .ValueType = REG_DWORD
-    'POP3 Port
-    .ValueKey = "POP3"
-    vPorts(0) = .Value
-    'SMTP Port
-    .ValueKey = "SMTP"
-    vPorts(1) = .Value
-    'Leave a copy in send folder
-    .ValueKey = "Saveinsent"
-    bSaveinsent = .Value
-    'Form-Based-Authentication on/off
-    .ValueKey = "FormBasedAuth"
-    bAuthentication = .Value
-End With
-    'value returned by the InitializeWinsock function
-    Call WSACleanup
-    '
-    'innitialize the Winsock service
-    lngRetValue = modWinsockAPI.InitializeWinsock(SOCKET_VERSION_22)
-    '
-    If lngRetValue = 0 Then
-        '
-        'if the Winsock service was initialized
-        'successfully, initialize the controls
-'        Set objOWA = New clsOWA
-        lngPop3Read = fncNewSokect(vPorts(0))
-        If vPorts(1) <> 0 Then
-            lngSMTPRead = fncNewSokect(vPorts(1))
-        End If
-        
-    Else
-        '
-        'if the Winsock service was not initialized
-        'successfully, show message box with the
-        'error description
-        
-        '
-        'as we cannot initialize the Winsock service
-        'we have nothing to do with this application
-        Err.Raise lngRetValue, "Initialize Winsock", GetErrorDescription(lngRetValue)
-    End If
-Exit Sub
-ErrHandler:
-    Err.Raise Err.Number, "Start " & Err.Source, Err.Description
+Private Sub skSMTP_ConnectionRequest(ByVal requestID As Long)
+    skSMTP.CloseSck
+    skSMTP.Accept requestID
+    skSMTP.SendData "220 " & m_strIP & " Simple Mail Transfer Service Ready"
 End Sub
-
 ''
-'Evaluate a STMP command and
+'Evaluate a STMP command (<A HREF='http://www.faqs.org/rfcs/rfc822.html' target='_blank'>RFC822</A>)
 'and send a reply to the email client
 '
-'@param strDataRecived A valid SMTP command (<A HREF='http://www.faqs.org/rfcs/rfc822.html' target='_blank'>RFC822</A>)
-Private Sub SendSMTP(ByVal strDataRecived As String)
+'@param bytesTotal Bytes recived
+Private Sub skSMTP_DataArrival(ByVal bytesTotal As Long)
 On Error GoTo ErrHandler
     Dim strSubURL As String
     Dim strAlias As String
@@ -575,6 +346,8 @@ On Error GoTo ErrHandler
     Dim intMsg As Integer
     Dim lngTotal As Long
     Dim bCloseSocket As Boolean
+    Dim strDataRecived As String
+    skSMTP.GetData strDataRecived
     '
     If Left$(strDataRecived, 4) <> "PASS" And strSMTPState <> "DATA" Then
         Debug.Print strDataRecived
@@ -678,48 +451,26 @@ On Error GoTo ErrHandler
         End If
     End Select
     If strDataToSend <> Empty Then
-        SendMsg strDataToSend, lngSMTPWrite
+        skSMTP.SendData strDataToSend
     End If
     If bCloseSocket Then
         'Call the closesocket Winsock API function
         'in order to close the socket
         Set objOWA = Nothing
-        Call closesocket(lngSMTPWrite)
-        lngSMTPWrite = 0
+        skSMTP.CloseSck
+        skSMTP.Bind vPorts(1), m_strIP
+        skSMTP.Listen
+    
+    
     End If
 Exit Sub
 ErrHandler:
     WriteLog "SendSMTP " & Err.Description, Error
     Debug.Assert False
-    Call closesocket(lngSMTPWrite)
-    lngPop3Write = 0
-End Sub
-''
-'Validate the current user & password, using GetFoldersURL
-'
-'@return SMTP comand with the result of the operation
-'
-'@see clsOWA.GetFoldersURL
-'@date 2006/03/31
-Private Function ValidateSMTPAUTH() As String
-    Select Case objOWA.GetFoldersURL
-    Case 200 To 299
-        ValidateSMTPAUTH = "235 AUTHENTICATION SUCCESSFUL"
-    Case 401
-        'Wrong password
-        ValidateSMTPAUTH = "535 5.7.0 authentication failed"
-    Case Else
-        'Unknow error
-        ValidateSMTPAUTH = "533  Authentication required [AUTH]"
-    End Select
-End Function
-
-Private Sub Class_Initialize()
-Me.Disconnect
-Me.Start
+    skSMTP.CloseSck
+    'lngPop3Write = 0
 End Sub
 
-Private Sub Class_Terminate()
-Me.Disconnect
+Private Sub skSMTP_Error(ByVal Number As Integer, Description As String, ByVal sCode As Long, ByVal Source As String, ByVal HelpFile As String, ByVal HelpContext As Long, CancelDisplay As Boolean)
+Debug.Print Description
 End Sub
-
