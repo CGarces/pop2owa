@@ -24,8 +24,6 @@ Public Const RETARDO_BUCLE = 30000
 
 Public Const INFINITE = -1&      '  Timeout infinito
 Private Const WAIT_TIMEOUT = 258&
-Private Const STILL_ACTIVE = &H103
-Private Const PROCESS_QUERY_INFORMATION = &H400
 
 Public Const VER_PLATFORM_WIN32_NT = 2&
 Private Const STATUS_TIMEOUT = &H102&
@@ -53,8 +51,9 @@ Public Type OSVERSIONINFO
 End Type
 
 Public Const Service_Name  As String = "POP2OWA"
-
-Private Declare Function GetVersionEx Lib "kernel32" Alias "GetVersionExA" (lpVersionInformation As OSVERSIONINFO) As Long
+''
+' API go get the OS version
+Private Declare Function GetVersion Lib "kernel32" () As Long
 Private Declare Function MessageBox Lib "user32" Alias "MessageBoxA" (ByVal hwnd As Long, ByVal lpText As String, ByVal lpCaption As String, ByVal wType As Long) As Long
 Private Declare Function GetTickCount Lib "kernel32" () As Long
 
@@ -68,12 +67,12 @@ Private Declare Function MsgWaitForMultipleObjects Lib "user32" _
 Public Declare Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
 
 Public hStopEvent As Long, hStartEvent As Long, hStopPendingEvent As Long
-Public IsNT As Boolean, IsNTService As Boolean
+Public IsNTService As Boolean
 Public ServiceName() As Byte, ServiceNamePtr As Long
 
 
 ''
-'Write a pop2owa.err file with errors.
+'Write a pop2owa.log file with errors, warnings and log messages.
 '
 '@param strText Test to write in the log
 '@param intVerbose Versosity
@@ -97,13 +96,14 @@ Dim hProcess As Long
 Dim RetVal As Long
 Dim lngInterval As Long
 Dim oPOP3 As clsPOP3
-
+Dim bIsNT As Boolean
 'Check OS
 intVerbosity = 0
 Call ParseCommandLine(Command$)
 WriteLog "Inicio v " & intVerbosity & " NT " & IsNTService, Information
 If IsNTService Then
-    If CheckIsNT() Then
+    GetWindowsVersion 0, 0, 0, 0, bIsNT
+    If bIsNT Then
     
         'Events for NT Service
         hStopEvent = CreateEventW(0&, 1&, 0&, 0&)
@@ -134,14 +134,14 @@ If IsNTService Then
         'Run the NT Service
         SetServiceState SERVICE_RUNNING
         App.LogEvent "Running Service: " & Service_Name
-        lngInterval = 10000
+        lngInterval = 100
         Do
-            oPOP3.Refresh
-            If oPOP3.isActive Then
-                lngInterval = 100
-            Else
-                lngInterval = 10000
-            End If
+'            oPOP3.Refresh
+'            If oPOP3.isActive Then
+'                lngInterval = 100
+'            Else
+'                lngInterval = 10000
+'            End If
             DoEvents
         Loop While MsgWaitObj(lngInterval, hStopPendingEvent, 1&) = WAIT_TIMEOUT
         Set oPOP3 = Nothing
@@ -177,15 +177,22 @@ ErrHandler:
 End Sub
 
 
-''
-' Check if O.S. is NT compatible
-'
-Public Function CheckIsNT() As Boolean
-    Dim OSVer As OSVERSIONINFO
-    OSVer.dwOSVersionInfoSize = LenB(OSVer)
-    GetVersionEx OSVer
-    CheckIsNT = OSVer.dwPlatformId = VER_PLATFORM_WIN32_NT
-End Function
+Public Sub GetWindowsVersion( _
+      Optional ByRef lMajor As Integer = 0, _
+      Optional ByRef lMinor As Integer = 0, _
+      Optional ByRef lRevision As Integer = 0, _
+      Optional ByRef lBuildNumber As Integer = 0, _
+      Optional ByRef bIsNT As Boolean = False _
+   )
+Dim lR As Long
+   lR = GetVersion()
+   lBuildNumber = (lR And &H7F000000) \ &H1000000
+   If (lR And &H80000000) Then lBuildNumber = lBuildNumber Or &H80
+   lRevision = (lR And &HFF0000) \ &H10000
+   lMinor = (lR And &HFF00&) \ &H100
+   lMajor = (lR And &HFF)
+   bIsNT = ((lR And &H80000000) = 0)
+End Sub
 
 
 ' The MsgWaitObj function replaces Sleep,
@@ -266,9 +273,7 @@ End Function
 
 Public Function ParseCommandLine(ByVal cmdline As String) As Long
     Dim c As String
-    c = Trim(cmdline)
-
-    Dim nextParam, SqlServer
+    c = Trim$(cmdline)
 
     Dim s As String
     Do Until c = ""
@@ -285,23 +290,23 @@ End Function
 
 Private Function GetNextBlock(ByRef c As String) As String
     Dim ret As String
-    c = LTrim(c)
+    c = LTrim$(c)
     ret = ""
-    If Left(c, 1) = """" Then
-        c = Right(c, Len(c) - 1)
-        Do Until Left(c, 1) = """" Or c = ""
-            ret = ret & Left(c, 1)
-            c = Right(c, Len(c) - 1)
+    If Left$(c, 1) = """" Then
+        c = Right$(c, Len(c) - 1)
+        Do Until Left$(c, 1) = """" Or c = ""
+            ret = ret & Left$(c, 1)
+            c = Right$(c, Len(c) - 1)
         Loop
-        If c <> "" Then c = Right(c, Len(c) - 1)    '   in case the user didn't enter ending quote
-        c = LTrim(c)
+        If c <> "" Then c = Right$(c, Len(c) - 1)    '   in case the user didn't enter ending quote
+        c = LTrim$(c)
 
     Else
-        Do Until Left(c, 1) = " " Or c = ""
-            ret = ret & Left(c, 1)
-            c = Right(c, Len(c) - 1)
+        Do Until Left$(c, 1) = " " Or c = ""
+            ret = ret & Left$(c, 1)
+            c = Right$(c, Len(c) - 1)
         Loop
-        c = LTrim(c)
+        c = LTrim$(c)
     End If
     GetNextBlock = ret
 End Function    '   GetNextBlock
