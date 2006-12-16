@@ -43,10 +43,13 @@ End Function
 '@param strUrl  Url of the .EML file
 '@param lngSocket Socket to send data
 '@return True if sucess.
-Public Function GetMsg(ByVal strURL As String, ByVal lngSocket As Long) As Boolean
+Public Function GetMsg(ByVal strURL As String, ByRef objPOP3 As CSocketMaster) As Boolean
 On Error GoTo ErrHandler
 Dim oXMLHTTP    As XMLHTTP
-Dim lngTimer As Long
+Dim lngTimer    As Long
+Dim strMsg      As String
+
+
 Set oXMLHTTP = New XMLHTTP
 
 With oXMLHTTP
@@ -60,24 +63,29 @@ With oXMLHTTP
         .setRequestHeader "Cookies", strCookies
     End If
     WriteLog "Getting " & vbTab & strURL, Information
-    .Send
+    .send
     lngTimer = Timer
     While Not .readyState = 4
         MsgWaitObj 100
         If Timer - lngTimer > 30 Then
             WriteLog "Donwloading readyState  " & .readyState & vbTab & strURL, Warning
-            vbSend lngSocket, "X-POP2OWA-Header: Header to avoid timeout" & vbCrLf
+            objPOP3.SendData "X-POP2OWA-Header: Header to avoid timeout" & vbCrLf
             lngTimer = Timer
 '            Debug.Assert False
         End If
     Wend
     WriteLog "Donwloaded Status " & .Status & vbTab & strURL, Information
     If (.Status >= 200 And .Status < 300) Then
-        vbSend lngSocket, .responseText
+        strMsg = .responseText
+        'Fix OWA errors in recived messages
+        If InStr(strMsg, "X-MimeOLE: Produced By Microsoft Exchange") > 0 Then
+            strMsg = ParseMsg(strMsg)
+        End If
+        objPOP3.SendData strMsg
         GetMsg = True
     Else
         WriteLog "GetMsg.Status " & .statusText, Warning
-        vbSend lngSocket, "-ERR " & .statusText
+        objPOP3.SendData "-ERR " & .statusText
         GetMsg = False
     End If
 End With
@@ -85,7 +93,7 @@ Set oXMLHTTP = Nothing
 Exit Function
 ErrHandler:
     WriteLog "GetMsg " & Err.Description, Error
-    vbSend lngSocket, "-ERR "
+    objPOP3.SendData "-ERR "
     GetMsg = False
 End Function
 
@@ -106,7 +114,7 @@ Dim oXMLHTTP    As XMLHTTP
             .setRequestHeader "Cookies", strCookies
         End If
         .setRequestHeader "Depth", "infinity"
-        .Send
+        .send
         While Not .readyState = 4
             MsgWaitObj 100
         Wend
@@ -144,7 +152,7 @@ With oXMLHTTP
     ' Send the request
     MsgWaitObj 100
     WriteLog "Geting msg list ", Information
-    Call .Send("<?xml version='1.0' ?>" & _
+    Call .send("<?xml version='1.0' ?>" & _
                 "<a:searchrequest xmlns:a='DAV:'><a:sql>" & _
                  "SELECT" & _
                  " ""DAV:href""" & _
@@ -220,7 +228,7 @@ With oXMLHTTP
         .setRequestHeader "Cookies", "Necessary according to Q234486"
         .setRequestHeader "Cookies", strCookies
     End If
-    .Send query
+    .send query
     While Not .readyState = 4
         MsgWaitObj 100
     Wend
@@ -269,7 +277,7 @@ With oXMLHTTP
     .open "POST", strURL, True
     .setRequestHeader "Content-type", "application/x-www-form-urlencoded"
     'Generate the body for FBA login
-    .Send "destination=" & strExchSvrName & "/exchange&username=" & strUser & "&password=" & strPassWord
+    .send "destination=" & strExchSvrName & "/exchange&username=" & strUser & "&password=" & strPassWord
     While Not .readyState = 4
         MsgWaitObj 100
     Wend
@@ -313,7 +321,7 @@ Dim xmlReq As XMLHTTP
        If Not bSaveinsent Then
            xmlReq.setRequestHeader "Saveinsent", "f"
        End If
-       xmlReq.Send strMailData
+       xmlReq.send strMailData
         While Not xmlReq.readyState = 4
             MsgWaitObj 100
         Wend
@@ -334,4 +342,35 @@ ErrHandler:
     Set xmlReq = Nothing
     SendMail = False
 End Function
+
+Private Function ParseMsg(ByVal strMsg As String) As String
+Dim strHeader As String
+Dim intPosFin As Integer
+intPosFin = InStr(1, strMsg, vbCrLf & vbCrLf)
+If intPosFin > 0 Then
+ '   intPosFin = InStr(intPosIni + 1, strMsg, vbCrLf & vbCrLf, vbTextCompare)
+    strHeader = Left$(strMsg, intPosFin)
+    ParseHeader strHeader
+    ParseMsg = strHeader & Mid$(strMsg, intPosFin)
+Else
+    ParseMsg = strMsg
+End If
+
+End Function
+Private Sub ParseHeader(ByRef strHeader As String)
+Dim intPos As Integer
+Dim intPosEnd As Integer
+'=2C
+intPos = InStr(1, strHeader, "?Q", vbTextCompare)
+While intPos > 0
+    If Not Mid$(strHeader, intPos + 3, 3) = "=22" Then
+        intPosEnd = InStr(intPos + 3, strHeader, "?=", vbTextCompare)
+        If InStr(1, Mid$(strHeader, intPos + 3, intPosEnd - intPos - 3), "=2C", vbTextCompare) > 0 Then
+            strHeader = Left$(strHeader, intPos + 2) & "=22" & Mid$(strHeader, intPos + 3, intPosEnd - intPos - 3) & "=22" & Mid$(strHeader, intPosEnd)
+        End If
+    End If
+    intPos = InStr(intPosEnd + 1, strHeader, "?Q", vbTextCompare)
+Wend
+End Sub
+
 
