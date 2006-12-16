@@ -129,12 +129,6 @@ Begin VB.Form frmMain
          Width           =   480
       End
    End
-   Begin VB.Timer Timer1 
-      Enabled         =   0   'False
-      Interval        =   10000
-      Left            =   1440
-      Top             =   960
-   End
    Begin MSComctlLib.TabStrip TabStrip1 
       Height          =   2200
       Left            =   5
@@ -185,11 +179,9 @@ End Sub
 ''
 'Apply the changes and reset the program
 Private Sub cmdOk_Click()
-    Timer1.Enabled = False
     writeRegistry
     Reset
     FillControls
-    Timer1.Enabled = True
 End Sub
 Public Sub Init()
 Dim objFrame As Frame
@@ -208,24 +200,6 @@ Dim objFrame As Frame
     Me.FillControls
     Reset
     Me.Show
-End Sub
-
-
-Private Sub Form_Load()
-On Error GoTo ErrHandler
-    '
-    'Get values from registry
-'    readRegistry
-       
-'    Reset
-    Timer1.Enabled = True
-Exit Sub
-ErrHandler:
-    Timer1.Enabled = False
-    MsgBox Err.Description, vbCritical, "POP2OWA: " & Err.Source
-    WriteLog Err.Source & vbTab & Err.Description, Error
-    Set oPOP3 = Nothing
-    Unload Me
 End Sub
 
 Private Sub Form_QueryUnload(Cancel As Integer, UnloadMode As Integer)
@@ -249,41 +223,11 @@ On Error Resume Next
 End Sub
 
 Private Sub TabStrip1_Click()
-    Timer1.Enabled = False
     Frame1(2 - TabStrip1.SelectedItem.Index).Visible = False
     Frame1(TabStrip1.SelectedItem.Index - 1).Visible = True
     Frame1(TabStrip1.SelectedItem.Index - 1).ZOrder 0
     Frame1(TabStrip1.SelectedItem.Index - 1).Refresh
-    Timer1.Enabled = True
 End Sub
-
-Private Sub Timer1_Timer()
-On Error GoTo ErrHandler
-    '
-    Timer1.Enabled = False
-    oPOP3.Refresh
-    If oPOP3.isActive Then
-        Timer1.Interval = 100
-    Else
-        WriteLog "Pop2owa inactive", Paranoid
-        If (Timer1.Interval <> 1000 And bsysTray) Then
-            Me.Hide
-            Me.Refresh
-            DoEvents
-        End If
-        Timer1.Interval = 1000
-    End If
-    DoEvents
-    Timer1.Enabled = True
-Exit Sub
-ErrHandler:
-    Timer1.Enabled = False
-    MsgBox Err.Description, vbCritical, "POP2OWA: " & Err.Source
-    WriteLog Err.Source & vbTab & Err.Description, Error
-    Set oPOP3 = Nothing
-    Unload Me
-End Sub
-
 
 Public Sub FillControls()
 Dim c As cRegistry
