@@ -125,9 +125,6 @@ Private Const NIN_BALLOONHIDE = (WM_USER + 3)
 Private Const NIN_BALLOONTIMEOUT = (WM_USER + 4)
 Private Const NIN_BALLOONUSERCLICK = (WM_USER + 5)
 
-' Version detection:
-Private Declare Function GetVersion Lib "kernel32" () As Long
-
 Public Event SysTrayMouseDown(ByVal eButton As MouseButtonConstants)
 Public Event SysTrayMouseUp(ByVal eButton As MouseButtonConstants)
 Public Event SysTrayMouseMove()
@@ -156,7 +153,7 @@ Public Sub ShowBalloonTip( _
       ByVal sMessage As String, _
       Optional ByVal sTitle As String, _
       Optional ByVal eIcon As EBalloonIconTypes, _
-      Optional ByVal lTimeOutMs = 30000 _
+      Optional ByVal lTimeOutMs As Long = 30000 _
    )
 Dim lR As Long
    If (m_bSupportsNewVersion) Then
@@ -279,23 +276,23 @@ Public Property Let DefaultMenuIndex(ByVal lIndex As Long)
    End If
 End Property
 
-Public Function ShowMenu()
+Public Sub ShowMenu()
    SetForegroundWindow Me.hwnd
    If (m_iDefaultIndex > -1) Then
       Me.PopupMenu mnuPopup, 0, , , mnuSysTray(m_iDefaultIndex)
    Else
       Me.PopupMenu mnuPopup, 0
    End If
-End Function
+End Sub
 
 Private Sub Form_Load()
    ' Get version:
-   Dim lMajor As Long
-   Dim lMinor As Long
-   Dim bIsNt As Long
-   GetWindowsVersion lMajor, lMinor, , , bIsNt
+   Dim lMajor As Integer
+   Dim lMinor As Integer
+   Dim bIsNT As Boolean
+   GetWindowsVersion lMajor, lMinor, , , bIsNT
 
-   If (bIsNt) Then
+   If (bIsNT) Then
       m_bUseUnicode = True
       If (lMajor >= 5) Then
          ' 2000 or XP
@@ -438,21 +435,5 @@ Private Sub mnuSysTray_Click(Index As Integer)
    RaiseEvent MenuClick(Index, mnuSysTray(Index).Tag)
 End Sub
 
-Private Sub GetWindowsVersion( _
-      Optional ByRef lMajor = 0, _
-      Optional ByRef lMinor = 0, _
-      Optional ByRef lRevision = 0, _
-      Optional ByRef lBuildNumber = 0, _
-      Optional ByRef bIsNt = False _
-   )
-Dim lR As Long
-   lR = GetVersion()
-   lBuildNumber = (lR And &H7F000000) \ &H1000000
-   If (lR And &H80000000) Then lBuildNumber = lBuildNumber Or &H80
-   lRevision = (lR And &HFF0000) \ &H10000
-   lMinor = (lR And &HFF00&) \ &H100
-   lMajor = (lR And &HFF)
-   bIsNt = ((lR And &H80000000) = 0)
-End Sub
 
 
