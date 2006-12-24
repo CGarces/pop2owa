@@ -76,7 +76,7 @@ With oXMLHTTP
     Wend
     WriteLog "Donwloaded Status " & .Status & vbTab & strURL, Information
     If (.Status >= 200 And .Status < 300) Then
-        strMsg = .responseText
+        strMsg = StrConv(.responseBody, vbUnicode)
         'Fix OWA errors in recived messages
         If InStr(strMsg, "X-MimeOLE: Produced By Microsoft Exchange") > 0 Then
             strMsg = ParseMsg(strMsg)
@@ -269,7 +269,11 @@ Dim intCounter  As Integer
 Dim intIndex    As Integer
 Dim strURL As String
 Dim oXMLHTTP    As XMLHTTP
-
+Dim strUsername As String
+strUsername = strUser
+If InStr(strUser, "@") > 0 Then
+    strUsername = Left(strUsername, InStr(strUser, "@") - 1)
+End If
 strURL = strExchSvrName & "/exchweb/bin/auth/owaauth.dll"
 Set oXMLHTTP = New XMLHTTP
 With oXMLHTTP
@@ -277,7 +281,7 @@ With oXMLHTTP
     .open "POST", strURL, True
     .setRequestHeader "Content-type", "application/x-www-form-urlencoded"
     'Generate the body for FBA login
-    .send "destination=" & strExchSvrName & "/exchange&username=" & strUser & "&password=" & strPassWord
+    .send "destination=" & strExchSvrName & "/exchange&username=" & strUsername & "&password=" & strPassWord
     While Not .readyState = 4
         MsgWaitObj 100
     Wend
@@ -345,31 +349,31 @@ End Function
 
 Private Function ParseMsg(ByVal strMsg As String) As String
 Dim strHeader As String
-Dim intPosFin As Integer
-intPosFin = InStr(1, strMsg, vbCrLf & vbCrLf)
-If intPosFin > 0 Then
+Dim lngPosFin As Long
+lngPosFin = InStr(1, strMsg, vbCrLf & vbCrLf)
+If lngPosFin > 0 Then
  '   intPosFin = InStr(intPosIni + 1, strMsg, vbCrLf & vbCrLf, vbTextCompare)
-    strHeader = Left$(strMsg, intPosFin)
+    strHeader = Left$(strMsg, lngPosFin)
     ParseHeader strHeader
-    ParseMsg = strHeader & Mid$(strMsg, intPosFin)
+    ParseMsg = strHeader & Mid$(strMsg, lngPosFin)
 Else
     ParseMsg = strMsg
 End If
 
 End Function
 Private Sub ParseHeader(ByRef strHeader As String)
-Dim intPos As Integer
-Dim intPosEnd As Integer
+Dim lngPos As Long
+Dim lngPosEnd As Long
 '=2C
-intPos = InStr(1, strHeader, "?Q", vbTextCompare)
-While intPos > 0
-    If Not Mid$(strHeader, intPos + 3, 3) = "=22" Then
-        intPosEnd = InStr(intPos + 3, strHeader, "?=", vbTextCompare)
-        If InStr(1, Mid$(strHeader, intPos + 3, intPosEnd - intPos - 3), "=2C", vbTextCompare) > 0 Then
-            strHeader = Left$(strHeader, intPos + 2) & "=22" & Mid$(strHeader, intPos + 3, intPosEnd - intPos - 3) & "=22" & Mid$(strHeader, intPosEnd)
+lngPos = InStr(1, strHeader, "?Q", vbTextCompare)
+While lngPos > 0
+    If Not Mid$(strHeader, lngPos + 3, 3) = "=22" Then
+        lngPosEnd = InStr(lngPos + 3, strHeader, "?=", vbTextCompare)
+        If InStr(1, Mid$(strHeader, lngPos + 3, lngPosEnd - lngPos - 3), "=2C", vbTextCompare) > 0 Then
+            strHeader = Left$(strHeader, lngPos + 2) & "=22" & Mid$(strHeader, lngPos + 3, lngPosEnd - lngPos - 3) & "=22" & Mid$(strHeader, lngPosEnd)
         End If
     End If
-    intPos = InStr(intPosEnd + 1, strHeader, "?Q", vbTextCompare)
+    lngPos = InStr(lngPosEnd + 1, strHeader, "?Q", vbTextCompare)
 Wend
 End Sub
 
