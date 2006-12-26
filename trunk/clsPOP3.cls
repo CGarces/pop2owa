@@ -21,6 +21,17 @@ Attribute VB_Exposed = False
 
 Option Explicit
 
+''
+'STMP Socket object
+Dim WithEvents skSMTP As CSocketMaster
+Attribute skSMTP.VB_VarHelpID = -1
+''
+'POP3 Socket object
+Dim WithEvents skPOP3 As CSocketMaster
+Attribute skPOP3.VB_VarHelpID = -1
+
+''
+'Handle WEBDAW command with OWA server
 Private objOWA As clsOWA
 
 Private m_strIP As String
@@ -29,45 +40,29 @@ Private strMailData As String
 Private vMailData() As String
 
 Private vPorts(0 To 1) As Long
-Dim WithEvents skSMTP As CSocketMaster
-Attribute skSMTP.VB_VarHelpID = -1
-Dim WithEvents skPOP3 As CSocketMaster
-Attribute skPOP3.VB_VarHelpID = -1
 
 
+''
+'Check for email client conection
+'
+'@return True if any socket is connected
 Property Get isActive() As Boolean
     'isActive = Not (lngSMTPWrite = 0 And lngPop3Write = 0)
     isActive = True
 End Property
 
-
-Property Let IP(ByVal strIP As String)
-    m_strIP = strIP
-End Property
-
-
-Property Let Port(ByVal intPort As Integer, ByVal intValue As Integer)
-    vPorts(intPort) = intValue
-End Property
-
-Property Let Saveinsent(ByVal bSave As Boolean)
-    bSaveinsent = bSave
-End Property
-Property Let FormBasedAuthentication(ByVal bAuth As Boolean)
-    bAuthentication = bAuth
-End Property
-
-
 ''
 'Close al sockets and call to WSACleanup API
 Public Sub Disconnect()
+If Not (skPOP3 Is Nothing) Then
+    skPOP3.CloseSck
+End If
+If Not (skSMTP Is Nothing) Then
+    skSMTP.CloseSck
+End If
+
 End Sub
 
-''
-'Sub to search incomings calls
-Public Sub Refresh()
-
-End Sub
 
 
 
@@ -94,7 +89,7 @@ With c
     strExchSvrName = .Value
     'IP to listen
     .ValueKey = "IP"
-    Me.IP = .Value
+    m_strIP = .Value
     
     'Port values are integers
     .ValueType = REG_DWORD
@@ -111,25 +106,22 @@ With c
     .ValueKey = "FormBasedAuth"
     bAuthentication = .Value
 End With
-        Set skPOP3 = New CSocketMaster
-        skPOP3.Bind vPorts(0), m_strIP
-        skPOP3.Listen
-'        lngPop3Read = fncNewSokect(vPorts(0))
-        If vPorts(1) <> 0 Then
-            Set skSMTP = New CSocketMaster
-            skSMTP.Bind vPorts(1), m_strIP
-            skSMTP.Listen
 
-'           lngSMTPRead = fncNewSokect(vPorts(1))
-        End If
+Set skPOP3 = New CSocketMaster
+skPOP3.Bind vPorts(0), m_strIP
+skPOP3.Listen
+If vPorts(1) <> 0 Then
+    Set skSMTP = New CSocketMaster
+    skSMTP.Bind vPorts(1), m_strIP
+    skSMTP.Listen
+End If
+
+Set c = Nothing
+
 Exit Sub
 ErrHandler:
-    If Err.Number = WSAEADDRINUSE Then
-        skPOP3.CloseSck
-    End If
+    Me.Disconnect
     Err.Raise Err.Number, "Start " & Err.Source, Err.Description
-    
-    
 End Sub
 
 ''
@@ -153,12 +145,12 @@ Private Function ValidateSMTPAUTH() As String
 End Function
 
 Private Sub Class_Initialize()
-Me.Disconnect
-Me.Start
+    Me.Disconnect
+    Me.Start
 End Sub
 
 Private Sub Class_Terminate()
-Me.Disconnect
+    Me.Disconnect
 End Sub
 
 Private Sub skPOP3_ConnectionRequest(ByVal requestID As Long)
@@ -182,6 +174,7 @@ On Error GoTo ErrHandler
     Dim bCloseSocket As Boolean
     Dim lngSize As Long
     Dim strDataRecived As String
+    Dim bFBALoginFail As Boolean
     
     skPOP3.GetData strDataRecived
     '
@@ -200,21 +193,25 @@ On Error GoTo ErrHandler
         End If
         strPassWord = Mid$(strDataRecived, 6, Len(strDataRecived) - 7)
         If bAuthentication Then
-            If Not objOWA.LogingFBA Then
-                strDataToSend = "-ERR Unable to autenticate"
-            End If
+            bFBALoginFail = Not (objOWA.LogingFBA)
         End If
-        'If objOWA.GetFoldersURL Then
-        Select Case objOWA.GetFoldersURL
-        Case 200 To 299
-            strDataToSend = "+OK mailbox for " & strUser & " ready"
-        Case 401
-            strDataToSend = "-ERR Invalid Password for " & strUser
+        If bFBALoginFail Then
+            strDataToSend = "-ERR Unable to autenticate"
             bCloseSocket = True
-        Case Else
-            strDataToSend = "-ERR Unable to conect with mailbox "
-            bCloseSocket = True
-        End Select
+        Else
+            Select Case objOWA.GetFoldersURL
+            Case 200 To 299
+                strDataToSend = "+OK mailbox for " & strUser & " ready"
+            Case 401
+                strDataToSend = "-ERR Invalid Password for " & strUser
+                bCloseSocket = True
+            Case Else
+                strDataToSend = "-ERR Unable to conect with mailbox "
+                bCloseSocket = True
+            End Select
+        
+        End If
+        
     Case "STAT"
         If objOWA.GetMsgList Then
             Set oElements = objDOMInbox.selectNodes(XMLPATH & "a:getcontentlength")
@@ -299,8 +296,8 @@ On Error GoTo ErrHandler
     If bCloseSocket Then
         Set objDOMInbox = Nothing
         Set objOWA = Nothing
-        'Call the closesocket Winsock API function
-        'in order to close the socket
+        'Reopen the socket to put it in listen mode
+        'Maybe I nned to find other way
         skPOP3.CloseSck
         skPOP3.Bind vPorts(0), m_strIP
         skPOP3.Listen
@@ -311,14 +308,13 @@ Set oElements = Nothing
 Exit Sub
 ErrHandler:
     Debug.Assert False
-'    Call closesocket(lngPop3Write)
-'    lngPop3Write = 0
+    skPOP3.CloseSck
     Err.Raise Err.Number, "SendPOP3: " & Err.Source, Err.Description
 
 End Sub
 
 Private Sub skPOP3_Error(ByVal Number As Integer, Description As String, ByVal sCode As Long, ByVal Source As String, ByVal HelpFile As String, ByVal HelpContext As Long, CancelDisplay As Boolean)
-    Debug.Print Description
+    WriteLog "skPOP3_Error " & Number & "->" & Description, Error
 End Sub
 
 Private Sub skSMTP_ConnectionRequest(ByVal requestID As Long)
@@ -454,14 +450,12 @@ On Error GoTo ErrHandler
         skSMTP.SendData strDataToSend
     End If
     If bCloseSocket Then
-        'Call the closesocket Winsock API function
-        'in order to close the socket
+        'Reopen the socket to put it in listen mode
+        'Maybe I nned to find other way
         Set objOWA = Nothing
         skSMTP.CloseSck
         skSMTP.Bind vPorts(1), m_strIP
         skSMTP.Listen
-    
-    
     End If
 Exit Sub
 ErrHandler:
@@ -472,5 +466,5 @@ ErrHandler:
 End Sub
 
 Private Sub skSMTP_Error(ByVal Number As Integer, Description As String, ByVal sCode As Long, ByVal Source As String, ByVal HelpFile As String, ByVal HelpContext As Long, CancelDisplay As Boolean)
-Debug.Print Description
+    WriteLog "skPOP3_Error " & Number & "->" & Description, Error
 End Sub
