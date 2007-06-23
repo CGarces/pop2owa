@@ -20,8 +20,6 @@ Public bSaveinsent      As Boolean
 Public bAuthentication  As Boolean
 Public Const XMLPATH As String = "a:multistatus/a:response/a:propstat/a:prop/"
 
-Public Const RETARDO_BUCLE = 30000
-
 Public Const INFINITE = -1&      '  Timeout infinito
 Private Const WAIT_TIMEOUT = 258&
 
