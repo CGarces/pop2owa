@@ -43,15 +43,6 @@ Private vPorts(0 To 1) As Long
 
 
 ''
-'Check for email client conection
-'
-'@return True if any socket is connected
-Property Get isActive() As Boolean
-    'isActive = Not (lngSMTPWrite = 0 And lngPop3Write = 0)
-    isActive = True
-End Property
-
-''
 'Close al sockets and call to WSACleanup API
 Public Sub Disconnect()
 If Not (skPOP3 Is Nothing) Then
@@ -87,6 +78,9 @@ With c
     'Exchange server
     .ValueKey = "ExchangeServer"
     strExchSvrName = .Value
+    If Right$(strExchSvrName, 1) = "/" Then
+        strExchSvrName = Left$(strExchSvrName, Len(strExchSvrName) - 1)
+    End If
     'IP to listen
     .ValueKey = "IP"
     m_strIP = .Value
@@ -159,22 +153,22 @@ Private Sub skPOP3_ConnectionRequest(ByVal requestID As Long)
     skPOP3.SendData "+OK POP3 server ready"
 End Sub
 ''
-'Evaluate a POP3 command  ((<A HREF='http://www.hunnysoft.com/rfc/rfc.html' target='_blank'>RFC1939</A>))
+'Evaluate a POP3 command  ((<A HREF='http://www.faqs.org/rfcs/rfc1939.html' target='_blank'>RFC1939</A>))
 'and send a reply to the email client
 '
 '@param bytesTotal bytes recived
 Private Sub skPOP3_DataArrival(ByVal bytesTotal As Long)
 On Error GoTo ErrHandler
       
-    Dim oElement As IXMLDOMElement
-    Dim oElements As IXMLDOMNodeList
-    Dim strDataToSend As String
-    Dim intMsg As Integer
-    Dim intTotal As Integer
-    Dim bCloseSocket As Boolean
-    Dim lngSize As Long
-    Dim strDataRecived As String
-    Dim bFBALoginFail As Boolean
+    Dim oElement        As IXMLDOMElement
+    Dim oElements       As IXMLDOMNodeList
+    Dim strDataToSend   As String
+    Dim intMsg          As Integer
+    Dim intTotal        As Integer
+    Dim bCloseSocket    As Boolean
+    Dim lngSize         As Long
+    Dim strDataRecived  As String
+    Dim bFBALoginFail   As Boolean
     
     skPOP3.GetData strDataRecived
     '
@@ -192,25 +186,17 @@ On Error GoTo ErrHandler
             Set objOWA = New clsOWA
         End If
         strPassWord = Mid$(strDataRecived, 6, Len(strDataRecived) - 7)
-        If bAuthentication Then
-            bFBALoginFail = Not (objOWA.LogingFBA)
-        End If
-        If bFBALoginFail Then
-            strDataToSend = "-ERR Unable to autenticate"
+        Select Case objOWA.GetFoldersURL
+        Case 200 To 299
+            strDataToSend = "+OK mailbox for " & strUser & " ready"
+        Case 401
+            strDataToSend = "-ERR Invalid Password for " & strUser
             bCloseSocket = True
-        Else
-            Select Case objOWA.GetFoldersURL
-            Case 200 To 299
-                strDataToSend = "+OK mailbox for " & strUser & " ready"
-            Case 401
-                strDataToSend = "-ERR Invalid Password for " & strUser
-                bCloseSocket = True
-            Case Else
-                strDataToSend = "-ERR Unable to conect with mailbox "
-                bCloseSocket = True
-            End Select
+        Case Else
+            strDataToSend = "-ERR Unable to conect with mailbox "
+            bCloseSocket = True
+        End Select
         
-        End If
         
     Case "STAT"
         If objOWA.GetMsgList Then
@@ -223,9 +209,13 @@ On Error GoTo ErrHandler
         Else
             strDataToSend = "-ERR Unable to conect with mailbox "
         End If
-    Case "RETR"
+    Case "RETR", "TOP "
         'strDataToSend = GetMsg(objDOMInbox.childNodes(1).childNodes(CInt(Mid$(strDataRecived, 6)) - 1).selectSingleNode("a:propstat/a:prop/a:href").Text)
-        intMsg = CInt(Mid$(strDataRecived, 6))
+        If Left$(strDataRecived, 4) = "RETR" Then
+            intMsg = CInt(Mid$(strDataRecived, 6))
+        Else
+            intMsg = CInt(Mid$(strDataRecived, 5, InStr(5, strDataRecived, " ") - 5))
+        End If
         With objDOMInbox.childNodes(1).childNodes(intMsg - 1)
             skPOP3.SendData "+OK " & .selectSingleNode("a:propstat/a:prop/a:getcontentlength").Text & " octets"
             
@@ -375,11 +365,6 @@ On Error GoTo ErrHandler
             If Len(strReply) > 1 Then
                 strUser = Mid$(strReply, 2, InStr(2, strReply, Chr(0)) - 2)
                 strPassWord = Mid$(strReply, InStr(2, strReply, Chr(0)) + 1)
-                If bAuthentication Then
-                    If Not objOWA.LogingFBA Then
-                        strDataToSend = "533  Authentication required [AUTH]"
-                    End If
-                End If
                 strDataToSend = ValidateSMTPAUTH
             Else
                 strDataToSend = "533  Authentication required [AUTH]"
