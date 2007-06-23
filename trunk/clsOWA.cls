@@ -197,56 +197,62 @@ End Function
 'Get Well-Known Mailbox Folder URLs that are retrieved from a users root mailbox folder.
 '
 '@return True if the URLs are retrieved
-'@remarks <A HREF='http://msdn.microsoft.com/library/en-us/wss/wss/_exch2k_getting_well-known_mailbox_folder_urls.asp' target='_blank'>Microsoft Exchange 2000 SDK June 2005</A>
+'@remarks <A HREF='http://msdn2.microsoft.com/en-us/library/ms992623.aspx' target='_blank'>Microsoft Exchange 2000 SDK June 2005</A>
 Public Function GetFoldersURL() As Long
 
 On Error GoTo ErrHandler
-Dim query As String
-Dim strURL As String
+Dim query           As String
+Dim strURL          As String
+Dim bFBALoginFail   As Boolean
+Dim oXMLHTTP        As XMLHTTP
 
-Dim oXMLHTTP    As XMLHTTP
+If bAuthentication Then
+    WriteLog "GetFoldersURL : Trying LogingFBA ", Information
+    bFBALoginFail = Not (LogingFBA)
+End If
+If bFBALoginFail Then
+    GetFoldersURL = -1
+Else
+    query = "<?xml version='1.0'?>"
+    query = query + "<a:propfind xmlns:a='DAV:'>"
+    query = query + "<a:prop xmlns:m='urn:schemas:httpmail:'>"
+    query = query + "<m:sendmsg/>"
+    query = query + "<m:inbox/>"
+    query = query + "</a:prop>"
+    query = query + "</a:propfind>"
+     
+    Set oXMLHTTP = New XMLHTTP
+    strURL = strExchSvrName & "/exchange/" & strUser & "/"
 
-query = "<?xml version='1.0'?>"
-query = query + "<a:propfind xmlns:a='DAV:'>"
-query = query + "<a:prop xmlns:m='urn:schemas:httpmail:'>"
-query = query + "<m:sendmsg/>"
-query = query + "<m:inbox/>"
-query = query + "</a:prop>"
-query = query + "</a:propfind>"
-
-Set oXMLHTTP = New XMLHTTP
-strURL = strExchSvrName & "/exchange/" & strUser & "/"
-
-With oXMLHTTP
-    WriteLog "Getting Folders : " & strURL
-    WriteLog "FBA loging : " & bAuthentication
-    '.setOption 3, ""
-    .open "PROPFIND", strURL, True, strUser, strPassWord
-    .setRequestHeader "Content-Type", "text/xml"
-    .setRequestHeader "Depth", "0"
-    If strCookies <> Empty Then
-        .setRequestHeader "Cookies", "Necessary according to Q234486"
-        .setRequestHeader "Cookies", strCookies
-    End If
-    .send query
-    While Not .readyState = 4
-        MsgWaitObj 100
-    Wend
-
-    ' process the result
-    If (.Status >= 200 And .Status < 300) Then
-
-       Set objDOMFolders = .responseXML
-        objDOMFolders.setProperty "SelectionLanguage", "XPath"
-        objDOMFolders.setProperty "SelectionNamespaces", "xmlns:a='DAV:'"
-        objDOMFolders.setProperty "SelectionNamespaces", "xmlns:a='DAV:' xmlns:d='urn:schemas:httpmail:'"
+    With oXMLHTTP
+        WriteLog "Getting Folders : " & strURL
+        '.setOption 3, ""
+        .open "PROPFIND", strURL, True, strUser, strPassWord
+        .setRequestHeader "Content-Type", "text/xml"
+        .setRequestHeader "Depth", "0"
+        If strCookies <> Empty Then
+            .setRequestHeader "Cookies", "Necessary according to Q234486"
+            .setRequestHeader "Cookies", strCookies
+        End If
+        .send query
+        While Not .readyState = 4
+            MsgWaitObj 100
+        Wend
     
-    Else
-        Debug.Assert False
-        WriteLog "GetFoldersURL: " & .Status & vbTab & .statusText, Warning
-    End If
-    GetFoldersURL = .Status
-End With
+        ' process the result
+        If (.Status >= 200 And .Status < 300) Then
+            Set objDOMFolders = .responseXML
+            objDOMFolders.setProperty "SelectionLanguage", "XPath"
+            objDOMFolders.setProperty "SelectionNamespaces", "xmlns:a='DAV:'"
+            objDOMFolders.setProperty "SelectionNamespaces", "xmlns:a='DAV:' xmlns:d='urn:schemas:httpmail:'"
+            WriteLog "GetFoldersURL: " & vbCrLf & objDOMFolders.xml & vbCrLf, Paranoid
+        Else
+            Debug.Assert False
+            WriteLog "GetFoldersURL: " & .Status & vbTab & .statusText, Warning
+        End If
+        GetFoldersURL = .Status
+    End With
+End If
 Set oXMLHTTP = Nothing
 Exit Function
 ErrHandler:
@@ -262,30 +268,41 @@ End Function
 '@author Carlos B
 '@version 1.0
 '@date 20/01/2006
-Public Function LogingFBA() As Boolean
+Private Function LogingFBA() As Boolean
 On Error GoTo ErrHandler
 Dim vHeaders()  As String
 Dim intCounter  As Integer
 Dim intIndex    As Integer
-Dim strURL As String
+Dim strURL      As String
 Dim oXMLHTTP    As XMLHTTP
 Dim strUsername As String
+Dim strHeaders  As String
+Dim strVersion  As String
+
+
 strUsername = strUser
 If InStr(strUser, "@") > 0 Then
     strUsername = Left(strUsername, InStr(strUser, "@") - 1)
 End If
 strURL = strExchSvrName & "/exchweb/bin/auth/owaauth.dll"
+WriteLog "LogingFBA -> strURL: " & strURL, Information
+
 Set oXMLHTTP = New XMLHTTP
 With oXMLHTTP
     '.setOption 3, ""
     .open "POST", strURL, True
     .setRequestHeader "Content-type", "application/x-www-form-urlencoded"
     'Generate the body for FBA login
-    .send "destination=" & strExchSvrName & "/exchange&username=" & strUsername & "&password=" & strPassWord
+    .send "destination=" & strExchSvrName & "/exchange/&trusted=4&username=" & strUsername & "&password=" & strPassWord
     While Not .readyState = 4
         MsgWaitObj 100
     Wend
-    vHeaders = Split(.getAllResponseHeaders(), vbNewLine)
+    strHeaders = .getAllResponseHeaders()
+    WriteLog "LogingFBA -> text: " & vbCrLf & .responseText, Paranoid
+    WriteLog "LogingFBA -> body: " & vbCrLf & .responseBody, Paranoid
+    WriteLog "LogingFBA -> Headers: " & vbCrLf & strHeaders, Paranoid
+    
+    vHeaders = Split(strHeaders, vbNewLine)
 End With
 Set oXMLHTTP = Nothing
 For intIndex = 0 To UBound(vHeaders) - 1
@@ -293,8 +310,22 @@ For intIndex = 0 To UBound(vHeaders) - 1
         intCounter = intCounter + 1
         strCookies = strCookies & Mid$(vHeaders(intIndex), 12) & ";"
     End If
+    If Left$(vHeaders(intIndex), 13) = "X-OWA-Version" Then
+        strVersion = Mid$(vHeaders(intIndex), 16)
+    End If
 Next
-LogingFBA = (intCounter = 2)
+
+If intCounter > 1 Then
+    LogingFBA = True
+Else
+    If Int(Left$(strVersion, InStr(strVersion, "."))) >= 8 Then
+        WriteLog "Error LogingFBA: " & strVersion, Paranoid
+        LogingFBA = True
+    Else
+        WriteLog "LogingFBA -> Error getting headers: " & vbCrLf & strHeaders, Error
+        LogingFBA = False
+    End If
+End If
 Exit Function
 ErrHandler:
     WriteLog "GetFoldersURL: " & Err.Number & vbTab & Err.Description, Error
