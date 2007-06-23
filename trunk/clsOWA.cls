@@ -298,10 +298,7 @@ With oXMLHTTP
         MsgWaitObj 100
     Wend
     strHeaders = .getAllResponseHeaders()
-    WriteLog "LogingFBA -> text: " & vbCrLf & .responseText, Paranoid
-    WriteLog "LogingFBA -> body: " & vbCrLf & .responseBody, Paranoid
     WriteLog "LogingFBA -> Headers: " & vbCrLf & strHeaders, Paranoid
-    
     vHeaders = Split(strHeaders, vbNewLine)
 End With
 Set oXMLHTTP = Nothing
