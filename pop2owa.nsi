@@ -2,11 +2,14 @@
 ;Include Modern UI
   !include "MUI.nsh"
 ;--------------------------------
+!include Library.nsh
+
 ;Configuration
   ;General
 Var STARTMENU_FOLDER
+Var ALREADY_INSTALLED
 !define PRODUCT "pop2owa"
-!define VERSION "v1.1.5"
+!define VERSION "v1.1.6"
 Name "${PRODUCT} ${VERSION}"
 OutFile "${PRODUCT}_${VERSION}.exe"
 InstallDir "$PROGRAMFILES\${PRODUCT}"
@@ -76,7 +79,15 @@ FunctionEnd
 Section "Principal" SEC01
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
+
+
+  IfFileExists "$INSTDIR\${PRODUCT}.exe" 0 new_installation
+     StrCpy $ALREADY_INSTALLED 1
+  new_installation:
+
   File "${PRODUCT}.exe"
+
+  !insertmacro InstallLib REGDLL    $ALREADY_INSTALLED REBOOT_PROTECTED     "mscomctl.ocx" "$SYSDIR\mscomctl.ocx" "$SYSDIR"
 
 ;  WriteIniStr "$INSTDIR\VBDOXAddin.url" "InternetShortcut" "URL" "http://vbdoxaddin.carlos-garces.com"
 
@@ -129,6 +140,8 @@ Section Uninstall
 
   Delete "$INSTDIR\${PRODUCT}.exe"
   Delete "$INSTDIR\uninst.exe"
+
+!insertmacro UnInstallLib REGDLL    SHARED NOREMOVE "$SYSDIR\mscomctl.ocx"
 
 ;  ;Remove shortcut
   !insertmacro MUI_STARTMENU_GETFOLDER Application ${TEMP}
