@@ -68,6 +68,31 @@ Public hStopEvent As Long, hStartEvent As Long, hStopPendingEvent As Long
 Public IsNTService As Boolean
 Public ServiceName() As Byte, ServiceNamePtr As Long
 
+Private Declare Function CreateMutex Lib "kernel32" Alias "CreateMutexA" (ByVal lpMutexAttributes As Long, ByVal bInitialOwner As Long, ByVal lpName As String) As Long
+Private Declare Function CloseHandle Lib "kernel32" (ByVal hObject As Long) As Long
+''
+'variable constant to match if the mutex exists
+Private Const ERROR_ALREADY_EXISTS = 183&
+
+
+Type PROCESSENTRY32
+    dwSize As Long
+    cntUsage As Long
+    th32ProcessID As Long
+    th32DefaultHeapID As Long
+    th32ModuleID As Long
+    cntThreads As Long
+    th32ParentProcessID As Long
+    pcPriClassBase As Long
+    dwFlags As Long
+    szexeFile As String * 260
+End Type
+'-------------------------------------------------------
+Declare Function OpenProcess Lib "kernel32.dll" (ByVal dwDesiredAccess As Long, ByVal blnheritHandle As Long, ByVal dwAppProcessId As Long) As Long
+Declare Function ProcessFirst Lib "kernel32.dll" Alias "Process32First" (ByVal hSnapshot As Long, uProcess As PROCESSENTRY32) As Long
+Declare Function ProcessNext Lib "kernel32.dll" Alias "Process32Next" (ByVal hSnapshot As Long, uProcess As PROCESSENTRY32) As Long
+Declare Function CreateToolhelpSnapshot Lib "kernel32.dll" Alias "CreateToolhelp32Snapshot" (ByVal lFlags As Long, lProcessID As Long) As Long
+Declare Function TerminateProcess Lib "kernel32.dll" (ByVal ApphProcess As Long, ByVal uExitCode As Long) As Long
 
 ''
 'Write a pop2owa.log file with errors, warnings and log messages.
@@ -85,21 +110,45 @@ If intVerbose <= intVerbosity Then
 End If
 End Sub
 
+
+''
+'Main function.
 Public Sub Main()
 On Error GoTo ErrHandler
-Dim hnd As Long
-Dim h(0 To 1) As Long
-Dim strParametro As String
-Dim hProcess As Long
-Dim RetVal As Long
-Dim lngInterval As Long
-Dim oPOP3 As clsPOP3
-Dim bIsNT As Boolean
-'Check OS
+Dim hnd             As Long
+Dim h(0 To 1)       As Long
+Dim strParametro    As String
+Dim hProcess        As Long
+Dim RetVal          As Long
+Dim lngInterval     As Long
+Dim oPOP3           As clsPOP3
+Dim bIsNT           As Boolean
+Dim mutexvalue      As Long
+
+'Create an individual mutex value for the application
+mutexvalue = CreateMutex(ByVal 0&, 1, App.EXEName & " " & App.Major & "." & App.Minor & "." & App.Revision)
+
+'If an error occured creating the mutex, that means it
+'must have already existed, therefore your application
+'is already running
+If (Err.LastDllError = ERROR_ALREADY_EXISTS) Then
+    'Terminate the application via the reference to it, its hObject value
+    CloseHandle mutexvalue
+    If InStr(LCase$(Command$), "-quit") Then
+        Shell "net stop " & Service_Name, vbHide
+        KillProcess App.EXEName
+    Else
+        'Inform the user of running the same app twice
+        MsgBox App.EXEName & " " & App.Major & "." & App.Minor & "." & App.Revision & " is already running."
+    End If
+    Exit Sub
+End If
+
 intVerbosity = 0
 Call ParseCommandLine(Command$)
 WriteLog "Inicio v " & intVerbosity & " NT " & IsNTService, Information
 If IsNTService Then
+    'Check OS
     GetWindowsVersion 0, 0, 0, 0, bIsNT
     If bIsNT Then
     
@@ -134,12 +183,6 @@ If IsNTService Then
         App.LogEvent "Running Service: " & Service_Name
         lngInterval = 100
         Do
-'            oPOP3.Refresh
-'            If oPOP3.isActive Then
-'                lngInterval = 100
-'            Else
-'                lngInterval = 10000
-'            End If
             DoEvents
         Loop While MsgWaitObj(lngInterval, hStopPendingEvent, 1&) = WAIT_TIMEOUT
         Set oPOP3 = Nothing
@@ -175,6 +218,15 @@ ErrHandler:
 End Sub
 
 
+
+''
+'Get the Windows version instaled.
+'
+'@param lMajor  Major version number
+'@param lMinor  Minor version number
+'@param lRevision Revision number
+'@param lBuildNumber Bulid number
+'@param bIsNT True if have NT kernel
 Public Sub GetWindowsVersion( _
       Optional ByRef lMajor As Integer = 0, _
       Optional ByRef lMinor As Integer = 0, _
@@ -192,11 +244,12 @@ Dim lR As Long
    bIsNT = ((lR And &H80000000) = 0)
 End Sub
 
-
+''
 ' The MsgWaitObj function replaces Sleep,
 ' WaitForSingleObject, WaitForMultipleObjects functions.
 ' Unlike these functions, it
 ' doesn't block thread messages processing.
+'
 ' Using instead Sleep:
 '     MsgWaitObj dwMilliseconds
 ' Using instead WaitForSingleObject:
@@ -205,7 +258,11 @@ End Sub
 '     retval = MsgWaitObj(dwMilliseconds, hObj(0&), n),
 '     where n - wait objects quantity,
 '     hObj() - their handles array.
-
+'
+'@param Interval Milliseconds
+'@param hObj
+'@param nObj
+'@return
 Public Function MsgWaitObj(Interval As Long, _
             Optional hObj As Long = 0&, _
             Optional nObj As Long = 0&) As Long
@@ -269,7 +326,12 @@ Public Function MsgWaitObj(Interval As Long, _
     Loop
 End Function
 
-Public Function ParseCommandLine(ByVal cmdline As String) As Long
+
+''
+'Function to parse de command line pased by the user.
+'
+'@param cmdline String with the command line
+Private Sub ParseCommandLine(ByVal cmdline As String)
     Dim c As String
     c = Trim$(cmdline)
 
@@ -284,7 +346,7 @@ Public Function ParseCommandLine(ByVal cmdline As String) As Long
         End Select
     Loop
 
-End Function
+End Sub
 
 Private Function GetNextBlock(ByRef c As String) As String
     Dim ret As String
@@ -309,3 +371,43 @@ Private Function GetNextBlock(ByRef c As String) As String
     GetNextBlock = ret
 End Function    '   GetNextBlock
 
+
+''
+'Kill the process that match with the name pased.
+'
+'@param NameProcess Name of the process to kill
+Private Sub KillProcess(NameProcess As String)
+Const PROCESS_ALL_ACCESS = &H1F0FFF
+Const TH32CS_SNAPPROCESS As Long = 2&
+
+Dim uProcess        As PROCESSENTRY32
+Dim RProcessFound   As Long
+Dim hSnapshot       As Long
+Dim SzExename       As String
+Dim ExitCode        As Long
+Dim MyProcess       As Long
+Dim AppKill         As Boolean
+Dim AppCount        As Integer
+Dim i               As Integer
+       
+If NameProcess <> "" Then
+   AppCount = 0
+
+   uProcess.dwSize = Len(uProcess)
+   hSnapshot = CreateToolhelpSnapshot(TH32CS_SNAPPROCESS, 0&)
+   RProcessFound = ProcessFirst(hSnapshot, uProcess)
+   Do
+     i = InStr(1, uProcess.szexeFile, Chr(0))
+     SzExename = LCase$(Left$(uProcess.szexeFile, i - 1))
+     If Left$(SzExename, Len(NameProcess)) = LCase$(NameProcess) Then
+        AppCount = AppCount + 1
+        MyProcess = OpenProcess(PROCESS_ALL_ACCESS, False, uProcess.th32ProcessID)
+        AppKill = TerminateProcess(MyProcess, ExitCode)
+        Call CloseHandle(MyProcess)
+     End If
+     RProcessFound = ProcessNext(hSnapshot, uProcess)
+   Loop While RProcessFound
+   Call CloseHandle(hSnapshot)
+End If
+
+End Sub
