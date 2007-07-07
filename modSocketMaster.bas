@@ -1,22 +1,15 @@
 Attribute VB_Name = "modSocketMaster"
-'**************************************************************************************
-'
-'modSocketMaster module 1.3
-'Copyright (c) 2004 by Emiliano Scavuzzo <anshoku@yahoo.com>
-'
-'Rosario, Argentina
-'
-'**************************************************************************************
+''
 'This module contains API declarations and helper functions for the CSocketMaster class
-'**************************************************************************************
+'
+'@author Copyright (c) 2004 by Emiliano Scavuzzo. Rosario, Argentina
+'@version 1.3
+'@date 04/02/2005
 
 Option Explicit
 
-'==============================================================================
 'API FUNCTIONS
-'==============================================================================
 
-'Public Declare Function api_WSAGetLastError Lib "ws2_32.dll" Alias "WSAGetLastError" () As Long
 'FIXIT: As Any no se admite en Visual Basic .NET. Utilice un tipo específico.              FixIT90210ae-R5608-H1984
 Public Declare Sub api_CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (Destination As Any, Source As Any, ByVal Length As Long)
 Public Declare Function api_GlobalAlloc Lib "kernel32" Alias "GlobalAlloc" (ByVal wFlags As Long, ByVal dwBytes As Long) As Long
@@ -37,9 +30,7 @@ Private Declare Function api_SetTimer Lib "user32" Alias "SetTimer" (ByVal hwnd 
 Private Declare Function api_KillTimer Lib "user32" Alias "KillTimer" (ByVal hwnd As Long, ByVal nIDEvent As Long) As Long
 
 
-'==============================================================================
 'CONSTANTS
-'==============================================================================
 
 Public Const SOCKET_ERROR   As Integer = -1
 Public Const INVALID_SOCKET As Integer = -1
@@ -80,9 +71,7 @@ Public Const SO_MAX_MSG_SIZE    As Long = &H2003
 Public Const SO_BROADCAST       As Long = &H20
 Public Const FIONREAD           As Long = &H4004667F
 
-'==============================================================================
 'ERROR CODES
-'==============================================================================
 
 Public Const WSABASEERR         As Long = 10000
 Public Const WSAEINTR           As Long = (WSABASEERR + 4)
@@ -126,9 +115,7 @@ Public Const WSATRY_AGAIN       As Long = (WSABASEERR + 1002)
 Public Const WSANO_RECOVERY     As Long = (WSABASEERR + 1003)
 Public Const WSANO_DATA         As Long = (WSABASEERR + 1004)
 
-'==============================================================================
 'WINSOCK CONTROL ERROR CODES
-'==============================================================================
 
 Public Const sckOutOfMemory As Long = 7
 Public Const sckBadState    As Long = 40006
@@ -136,9 +123,7 @@ Public Const sckInvalidArg  As Long = 40014
 Public Const sckUnsupported As Long = 40018
 Public Const sckInvalidOp   As Long = 40020
 
-'==============================================================================
 'STRUCTURES
-'==============================================================================
 
 Private Type WSAData
    wVersion       As Integer
@@ -165,9 +150,7 @@ Public Type sockaddr_in
     sin_zero(1 To 8) As Byte
 End Type
 
-'==============================================================================
 'MEMBER VARIABLES
-'==============================================================================
 
 Private m_blnInitiated          As Boolean      'specify if winsock service was initiated
 Private m_lngSocksQuantity      As Long         'number of instances created
@@ -175,10 +158,8 @@ Private m_colSocketsInst        As Collection   'sockets list and instance owner
 Private m_colAcceptList         As Collection   'sockets in queue that need to be accepted
 Private m_lngWindowHandle       As Long         'message window handle
 
-'==============================================================================
 'SUBCLASSING DECLARATIONS
 'by Paul Caton
-'==============================================================================
 Private Declare Function api_IsWindow Lib "user32" Alias "IsWindow" (ByVal hwnd As Long) As Long
 Private Declare Function api_GetWindowLong Lib "user32" Alias "GetWindowLongA" (ByVal hwnd As Long, ByVal nIndex As Long) As Long
 Private Declare Function api_SetWindowLong Lib "user32" Alias "SetWindowLongA" (ByVal hwnd As Long, ByVal nIndex As Long, ByVal dwNewLong As Long) As Long
@@ -209,8 +190,11 @@ Private nAddrOriginal   As Long     'address of original WndProc
 Private hTimer          As Long     'control timer handle
 
 
+''
 'This function initiates the processes needed to keep
-'control of sockets. Returns 0 if it has success.
+'control of sockets.
+'
+'@return Returns 0 if it has success.
 Public Function InitiateProcesses() As Long
 
 InitiateProcesses = 0
@@ -237,8 +221,11 @@ If Not m_blnInitiated Then
 End If
 End Function
 
+''
 'This function initiate the winsock service calling
-'the api_WSAStartup funtion and returns resulting value.
+'the api_WSAStartup funtion.
+'
+'@return Resulting value of WSAStartup call
 Private Function InitiateService() As Long
 Dim udtWSAData As WSAData
 Dim lngResult As Long
@@ -247,10 +234,11 @@ lngResult = api_WSAStartup(SOCKET_VERSION_11, udtWSAData)
 InitiateService = lngResult
 End Function
 
+''
 'Once we are done with the class instance we call this
 'function to discount it and finish winsock service if
 'it was the last one.
-'Returns 0 if it has success.
+'@return Returns 0 if it has success
 Public Function FinalizeProcesses() As Long
 FinalizeProcesses = 0
 m_lngSocksQuantity = m_lngSocksQuantity - 1
@@ -258,7 +246,7 @@ m_lngSocksQuantity = m_lngSocksQuantity - 1
 'if the service was initiated and there's no more instances
 'of the class then we finish the service
 If m_blnInitiated And m_lngSocksQuantity = 0 Then
-    If FinalizeService = SOCKET_ERROR Then
+    If api_WSACleanup = SOCKET_ERROR Then
         Dim lngErrorCode As Long
         lngErrorCode = Err.LastDllError
         FinalizeProcesses = lngErrorCode
@@ -273,16 +261,12 @@ End If
 
 End Function
 
-'Finish winsock service calling the function
-'api_WSACleanup and returns the result.
-Private Function FinalizeService() As Long
-Dim lngResultado As Long
-lngResultado = api_WSACleanup
-FinalizeService = lngResultado
-End Function
-
+''
 'This function receives a number that represents an error
 'and returns the corresponding description string.
+'
+'@param lngErrorCode Error code
+'@return Error description
 Public Function GetErrorDescription(ByVal lngErrorCode As Long) As String
 Select Case lngErrorCode
     Case WSAEACCES
@@ -371,8 +355,9 @@ End Select
 
 End Function
 
+''
 'Create a window that is used to capture sockets messages.
-'Returns 0 if it has success.
+'@return Returns 0 if it has success.
 Private Function CreateWinsockMessageWindow() As Long
 m_lngWindowHandle = api_CreateWindowEx(0&, "STATIC", "SOCKET_WINDOW", 0&, 0&, 0&, 0&, 0&, 0&, 0&, App.hInstance, ByVal 0&)
 
@@ -385,8 +370,10 @@ Else
 End If
 End Function
 
+''
 'Destroy the window that is used to capture sockets messages.
-'Returns 0 if it has success.
+'
+'@return Returns 0 if it has success
 Private Function DestroyWinsockMessageWindow() As Long
 DestroyWinsockMessageWindow = 0
 
@@ -409,11 +396,17 @@ End If
     
 End Function
 
+''
 'When a socket needs to resolve a hostname in asynchronous way
 'it calls this function. If it has success it returns a nonzero
 'number that represents the async task handle and register this
 'number in the TableA list.
-'Returns 0 if it fails.
+'
+'
+'@param strHost Host to resolve
+'@param lngHOSTENBuf
+'@param lngObjectPointer
+'@return Returns 0 if it fails.
 Public Function ResolveHost(ByVal strHost As String, ByVal lngHOSTENBuf As Long, ByVal lngObjectPointer As Long) As Long
 Dim lngAsynHandle As Long
 lngAsynHandle = api_WSAAsyncGetHostByName(m_lngWindowHandle, RESOLVE_MESSAGE, strHost, ByVal lngHOSTENBuf, MAXGETHOSTSTRUCT)
@@ -421,7 +414,11 @@ If lngAsynHandle <> 0 Then Subclass_AddResolveMessage lngAsynHandle, lngObjectPo
 ResolveHost = lngAsynHandle
 End Function
 
+''
 'Returns the hi word from a double word.
+'
+'@param lngValue double word to translate
+'@return Hi word
 Public Function HiWord(lngValue As Long) As Long
 If (lngValue And &H80000000) = &H80000000 Then
     HiWord = ((lngValue And &H7FFF0000) \ &H10000) Or &H8000&
@@ -430,12 +427,20 @@ Else
 End If
 End Function
 
+''
 'Returns the low word from a double word.
+'
+'@param lngValue double word to translate
+'@return Low word
 Public Function LoWord(lngValue As Long) As Long
 LoWord = (lngValue And &HFFFF&)
 End Function
 
+''
 'Receives a string pointer and it turns it into a regular string.
+'
+'@param lPointer Pointer to return
+'@return String with the pointer's value
 Public Function StringFromPointer(ByVal lPointer As Long) As String
 Dim strTemp As String
 Dim lRetVal As Long
@@ -445,8 +450,13 @@ lRetVal = api_lstrcpy(ByVal strTemp, ByVal lPointer)
 If lRetVal Then StringFromPointer = strTemp
 End Function
 
-'The function takes an unsigned Integer from and API and 
-'converts it to a Long for display or arithmetic purposes
+''
+'The function takes a Long containing a value in the range 
+'of an unsigned Integer and returns an Integer that you 
+'can pass to an API that requires an unsigned Integer
+'
+'@param Value Long number to translate
+'@return Unsigned integer
 Public Function UnsignedToInteger(Value As Long) As Integer
 If Value < 0 Or Value >= OFFSET_2 Then Error 6 ' Overflow
 If Value <= MAXINT_2 Then
@@ -455,10 +465,12 @@ Else
     UnsignedToInteger = Value - OFFSET_2
 End If
 End Function
-
-'The function takes a Long containing a value in the range 
-'of an unsigned Integer and returns an Integer that you 
-'can pass to an API that requires an unsigned Integer
+''
+'The function takes an unsigned Integer from and API and 
+'converts it to a Long for display or arithmetic purposes
+'
+'@param Value Number to translate
+'@return long value
 Public Function IntegerToUnsigned(Value As Integer) As Long
 If Value < 0 Then
     IntegerToUnsigned = Value + OFFSET_2
@@ -466,12 +478,18 @@ Else
     IntegerToUnsigned = Value
 End If
 End Function
+''
 
 'Adds the socket to the m_colSocketsInst collection, and
 'registers that socket with WSAAsyncSelect Winsock API
 'function to receive network events for the socket.
 'If this socket is the first one to be registered, the
 'window and collection will be created in this function as well.
+'
+'@param lngSocket
+'@param lngObjectPointer
+'@param blnEvents
+'@return
 Public Function RegisterSocket(ByVal lngSocket As Long, ByVal lngObjectPointer As Long, ByVal blnEvents As Boolean) As Boolean
 
 If m_colSocketsInst Is Nothing Then
@@ -510,9 +528,12 @@ m_colSocketsInst.Add lngObjectPointer, "S" & lngSocket
 RegisterSocket = True
 End Function
 
+''
 'Removes the socket from the m_colSocketsInst collection
 'If it is the last socket in that collection, the window
 'and colection will be destroyed as well.
+'
+'@param lngSocket Sockect to remove
 Public Sub UnregisterSocket(ByVal lngSocket As Long)
 Subclass_DelSocketMessage lngSocket
 On Error Resume Next
@@ -526,8 +547,12 @@ If m_colSocketsInst.Count = 0 Then
 End If
 End Sub
 
-'Returns TRUE si the socket that is passed is registered
+''
+'Returns TRUE if the socket that is passed is registered
 'in the colSocketsInst collection.
+'
+'@param lngSocket Socket to test
+'@return TRUE if the socket is in the colSocketsInst collection.
 Public Function IsSocketRegistered(ByVal lngSocket As Long) As Boolean
 On Error GoTo Error_Handler
 
@@ -540,14 +565,20 @@ Error_Handler:
     IsSocketRegistered = False
 End Function
 
+''
 'When ResolveHost is called an async task handle is added
 'to TableA list. Use this function to remove that record.
+'
+'@param lngAsynHandle
 Public Sub UnregisterResolution(ByVal lngAsynHandle As Long)
 Subclass_DelResolveMessage lngAsynHandle
 End Sub
 
+''
 'Assing a temporal instance of CSocketMaster to a
 'socket and register this socket to the accept list.
+'
+'@param lngSocket Socket to accept
 Public Sub RegisterAccept(ByVal lngSocket As Long)
 If m_colAcceptList Is Nothing Then
     Set m_colAcceptList = New Collection
@@ -558,9 +589,12 @@ Set Socket = New CSocketMaster
 Socket.Accept lngSocket
 m_colAcceptList.Add Socket, "S" & lngSocket
 End Sub
-
-'Returns True is lngSocket is registered on the
-'accept list.
+''
+'Returns TRUE if the socket that is passed is registered
+'in the accept list.
+'
+'@param lngSocket Socket to test
+'@return TRUE if the socket is in the accept list.
 Public Function IsAcceptRegistered(ByVal lngSocket As Long) As Boolean
 On Error GoTo Error_Handler
 
@@ -573,7 +607,11 @@ Error_Handler:
     IsAcceptRegistered = False
 End Function
 
+
+''
 'Unregister lngSocket from the accept list.
+'
+'@param lngSocket Socket to unregist
 Public Sub UnregisterAccept(ByVal lngSocket As Long)
 m_colAcceptList.Remove "S" & lngSocket
 
@@ -583,16 +621,18 @@ If m_colAcceptList.Count = 0 Then
 End If
 End Sub
 
+''
 'Return the accept instance class from a socket.
+'
+'@param lngSocket Socket to test
+'@return Class with the socket
 Public Function GetAcceptClass(ByVal lngSocket As Long) As CSocketMaster
 Set GetAcceptClass = m_colAcceptList("S" & lngSocket)
 End Function
 
 
-'==============================================================================
 'SUBCLASSING CODE
 'based on code by Paul Caton
-'==============================================================================
 
 Private Sub Subclass_Initialize()
 Const PATCH_01 As Long = 16                                 'Code buffer offset to the location of the relative address to EbMode
@@ -653,6 +693,7 @@ Const MOD_WS   As String = "ws2_32"                         'Location of the clo
   Call Subclass_PatchRel(PATCH_08, Subclass_AddrFunc(MOD_USER, FUNC_CWP))     'Address of the CallWindowProc api function
 End Sub
 
+''
 'UnSubclass and release the allocated memory
 Private Sub Subclass_Terminate()
   Call Subclass_UnSubclass                                      'UnSubclass if the Subclass thunk is active
@@ -665,12 +706,17 @@ Private Sub Subclass_Terminate()
   ReDim lngTableB2(1 To 1)
 End Sub
 
+''
 'Return whether we're running in the IDE. Public for general utility purposes
 Private Function Subclass_InIDE() As Boolean
   Debug.Assert Subclass_SetTrue(Subclass_InIDE)
 End Function
 
+''
 'Set the window subclass
+'
+'@param hwnd
+'@return
 Private Function Subclass_Subclass(ByVal hwnd As Long) As Boolean
 Const PATCH_02 As Long = 62                                'Address of the previous WndProc
 Const PATCH_05 As Long = 82                                'Control timer handle
@@ -700,7 +746,10 @@ Const PATCH_07 As Long = 108                               'Address of the previ
   Debug.Assert Subclass_Subclass
 End Function
 
+''
 'Stop subclassing the window
+'
+'@return
 Private Function Subclass_UnSubclass() As Boolean
   If hWndSub <> 0 Then
     lngMsgCntA = 0
@@ -723,33 +772,54 @@ Private Function Subclass_UnSubclass() As Boolean
   
 End Function
 
+''
 'Return the address of the passed function in the passed dll
+'
+'@param sDLL
+'@param sProc
+'@return Memory address
 Private Function Subclass_AddrFunc(ByVal sDLL As String, _
                           ByVal sProc As String) As Long
   Subclass_AddrFunc = api_GetProcAddress(api_GetModuleHandle(sDLL), sProc)
   
 End Function
 
+''
 'Return the address of the low bound of the passed table array
+'
+'@param aMsgTbl()
+'@return
 Private Function Subclass_AddrMsgTbl(ByRef aMsgTbl() As Long) As Long
   On Error Resume Next                                    'The table may not be dimensioned yet so we need protection
     Subclass_AddrMsgTbl = VarPtr(aMsgTbl(1))              'Get the address of the first element of the passed message table
   On Error GoTo 0                                         'Switch off error protection
 End Function
 
+''
 'Patch the machine code buffer offset with the relative address to the target address
+'
+'@param nOffset
+'@param nTargetAddr
 Private Sub Subclass_PatchRel(ByVal nOffset As Long, _
                      ByVal nTargetAddr As Long)
   Call api_CopyMemory(ByVal (nAddrSubclass + nOffset), nTargetAddr - nAddrSubclass - nOffset - 4, 4)
 End Sub
 
+''
 'Patch the machine code buffer offset with the passed value
+'
+'@param nOffset
+'@param nValue
 Private Sub Subclass_PatchVal(ByVal nOffset As Long, _
                      ByVal nValue As Long)
   Call api_CopyMemory(ByVal (nAddrSubclass + nOffset), nValue, 4)
 End Sub
 
+''
 'Worker function for InIDE - will only be called whilst running in the IDE
+'
+'@param bValue
+'@return
 Private Function Subclass_SetTrue(bValue As Boolean) As Boolean
   Subclass_SetTrue = True
   bValue = True
