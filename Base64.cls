@@ -52,11 +52,6 @@ Private Const k_bytShift6 As Byte = 64
 
 Private Const k_lMaxBytesPerLine As Long = 152
 
-Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" ( _
-    ByVal Destination As Long, ByVal Source As Long, ByVal Length As Long)
-    
-
-
 Public Function Encode(ByRef sInput As String) As String
     If sInput = "" Then Exit Function
     Dim bytTemp() As Byte

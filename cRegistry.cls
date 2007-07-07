@@ -166,8 +166,6 @@ Private Declare Function RegDeleteValue Lib "advapi32.dll" Alias "RegDeleteValue
   (ByVal hKey As Long, ByVal lpValueName As String) As Long
 
 ' Other declares:
-Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" ( _
-    lpvDest As Any, lpvSource As Any, ByVal cbCopy As Long)
 Private Declare Function ExpandEnvironmentStrings Lib "kernel32" Alias "ExpandEnvironmentStringsA" (ByVal lpSrc As String, ByVal lpDst As String, ByVal nSize As Long) As Long
 
 
@@ -332,7 +330,7 @@ Dim tSA As SECURITY_ATTRIBUTES
 
         Select Case m_eValueType
         Case REG_BINARY
-            If (VarType(vValue) = vbArray + vbByte) Then
+            If (varType(vValue) = vbArray + vbByte) Then
                 Dim ab() As Byte
                 ab = vValue
                 ordType = REG_BINARY
@@ -342,7 +340,7 @@ Dim tSA As SECURITY_ATTRIBUTES
                 Err.Raise 26001
             End If
         Case REG_DWORD, REG_DWORD_BIG_ENDIAN, REG_DWORD_LITTLE_ENDIAN
-            If (VarType(vValue) = vbInteger) Or (VarType(vValue) = vbLong) Then
+            If (varType(vValue) = vbInteger) Or (varType(vValue) = vbLong) Then
                 Dim i As Long
                 i = vValue
                 ordType = REG_DWORD
