@@ -205,6 +205,15 @@ Dim query           As String
 Dim strURL          As String
 Dim bFBALoginFail   As Boolean
 Dim oXMLHTTP        As XMLHTTP
+Dim strAccount      As String
+
+If InStr(strUser, "^") > 0 Then
+    strAccount = Right(strUser, InStr(strUser, "^"))
+    strUser = Left(strUser, InStr(strUser, "^") - 1)
+Else
+    strAccount = strUser
+End If
+
 
 If bAuthentication Then
     WriteLog "GetFoldersURL : Trying LogingFBA ", Information
@@ -222,7 +231,7 @@ Else
     query = query + "</a:propfind>"
      
     Set oXMLHTTP = New XMLHTTP
-    strURL = strExchSvrName & "/exchange/" & strUser & "/"
+    strURL = strExchSvrName & "/exchange/" & strAccount & "/"
 
     With oXMLHTTP
         WriteLog "Getting Folders : " & strURL
@@ -265,9 +274,6 @@ End Function
 'Access the Exchange store via WebDAV with Form-Based-Authentication turned on.
 '
 '@return Retrun True if the login is correct.
-'@author Carlos B
-'@version 1.0
-'@date 20/01/2006
 Private Function LogingFBA() As Boolean
 On Error GoTo ErrHandler
 Dim vHeaders()  As String
