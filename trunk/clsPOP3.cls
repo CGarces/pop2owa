@@ -153,7 +153,7 @@ Private Sub skPOP3_ConnectionRequest(ByVal requestID As Long)
     skPOP3.SendData "+OK POP3 server ready"
 End Sub
 ''
-'Evaluate a POP3 command  ((<A HREF='http://www.faqs.org/rfcs/rfc1939.html' target='_blank'>RFC1939</A>))
+'Evaluate a POP3 command  (<A HREF='http://www.faqs.org/rfcs/rfc1939.html' target='_blank'>RFC1939</A>)
 'and send a reply to the email client
 '
 '@param bytesTotal bytes recived
