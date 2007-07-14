@@ -50,7 +50,7 @@ Public Const AF_INET        As Long = 2
 Public Const SOCK_STREAM    As Long = 1
 Public Const SOCK_DGRAM     As Long = 2
 Public Const IPPROTO_TCP    As Long = 6
-Public Const IPPROTO_UDP    As Long = 17
+'Public Const IPPROTO_UDP    As Long = 17
 
 Public Const FD_READ    As Integer = &H1&
 Public Const FD_WRITE   As Integer = &H2&
@@ -67,8 +67,8 @@ Public Const LOCAL_HOST_BUFF As Integer = 256
 Public Const SOL_SOCKET         As Long = 65535
 Public Const SO_SNDBUF          As Long = &H1001&
 Public Const SO_RCVBUF          As Long = &H1002&
-Public Const SO_MAX_MSG_SIZE    As Long = &H2003
-Public Const SO_BROADCAST       As Long = &H20
+'Public Const SO_MAX_MSG_SIZE    As Long = &H2003
+'Public Const SO_BROADCAST       As Long = &H20
 Public Const FIONREAD           As Long = &H4004667F
 
 'ERROR CODES
