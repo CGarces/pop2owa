@@ -167,6 +167,7 @@ Private Declare Function RegDeleteValue Lib "advapi32.dll" Alias "RegDeleteValue
 
 ' Other declares:
 Private Declare Function ExpandEnvironmentStrings Lib "kernel32" Alias "ExpandEnvironmentStringsA" (ByVal lpSrc As String, ByVal lpDst As String, ByVal nSize As Long) As Long
+Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByVal Destination As Long, ByVal Source As Long, ByVal Length As Long)
 
 
 Public Enum ERegistryClassConstants
