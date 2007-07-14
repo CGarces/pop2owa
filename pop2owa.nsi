@@ -9,7 +9,7 @@
 Var STARTMENU_FOLDER
 Var ALREADY_INSTALLED
 !define PRODUCT "pop2owa"
-!define VERSION "v1.1.6"
+!define VERSION "v1.1.7"
 Name "${PRODUCT} ${VERSION}"
 OutFile "${PRODUCT}_${VERSION}.exe"
 InstallDir "$PROGRAMFILES\${PRODUCT}"
