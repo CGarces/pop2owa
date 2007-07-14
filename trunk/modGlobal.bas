@@ -41,8 +41,6 @@ Private Declare Function MsgWaitForMultipleObjects Lib "user32" _
 Private Declare Function CreateMutex Lib "kernel32" Alias "CreateMutexA" (ByVal lpMutexAttributes As Long, ByVal bInitialOwner As Long, ByVal lpName As String) As Long
 Private Declare Function CloseHandle Lib "kernel32" (ByVal hObject As Long) As Long
 
-Public Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByVal Destination As Long, ByVal Source As Long, ByVal Length As Long)
-
 Type PROCESSENTRY32
     dwSize As Long
     cntUsage As Long
