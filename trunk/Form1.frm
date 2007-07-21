@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
+Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "mscomctl.ocx"
 Begin VB.Form frmMain 
    BorderStyle     =   1  'Fixed Single
    Caption         =   "POP2OWA"
@@ -171,7 +171,7 @@ Attribute m_frmSysTray.VB_VarHelpID = -1
 Private bsysTray As Boolean
 
 ''
-'Enabe/Disable the SMTP features.
+'Enable/Disable the SMTP features.
 Private Sub chkSMTP_Click()
     Me.txtPort(1).Enabled = (chkSMTP.Value = vbChecked)
 End Sub
