@@ -37,8 +37,7 @@ Private Declare Function api_getpeername Lib "ws2_32.dll" Alias "getpeername" (B
 Private Declare Function api_inet_addr Lib "ws2_32.dll" Alias "inet_addr" (ByVal cp As String) As Long
 'FIXIT: As Any no se admite en Visual Basic .NET. Utilice un tipo específico.              FixIT90210ae-R5608-H1984
 Private Declare Function api_send Lib "ws2_32.dll" Alias "send" (ByVal s As Long, ByRef buf As Any, ByVal buflen As Long, ByVal flags As Long) As Long
-'FIXIT: As Any no se admite en Visual Basic .NET. Utilice un tipo específico.              FixIT90210ae-R5608-H1984
-Private Declare Function api_setsockopt Lib "ws2_32.dll" Alias "setsockopt" (ByVal s As Long, ByVal level As Long, ByVal optname As Long, optval As Any, ByVal optlen As Long) As Long
+Private Declare Function api_setsockopt Lib "ws2_32.dll" Alias "setsockopt" (ByVal s As Long, ByVal level As Long, ByVal optname As Long, optval As Long, ByVal optlen As Long) As Long
 'FIXIT: As Any no se admite en Visual Basic .NET. Utilice un tipo específico.              FixIT90210ae-R5608-H1984
 Private Declare Function api_recv Lib "ws2_32.dll" Alias "recv" (ByVal s As Long, ByRef buf As Any, ByVal buflen As Long, ByVal flags As Long) As Long
 Private Declare Function api_WSACancelAsyncRequest Lib "ws2_32.dll" Alias "WSACancelAsyncRequest" (ByVal hAsyncTaskHandle As Long) As Long
@@ -63,11 +62,6 @@ Public Enum SockState
 End Enum
 
 Private Const SOMAXCONN As Long = 5
-
-'Public Enum ProtocolConstants
-'    sckTCPProtocol = 0
-'    sckUDPProtocol = 1
-'End Enum
 
 'EVENTS
 
@@ -218,11 +212,7 @@ End If
 End Property
 
 Public Property Get BytesReceived() As Long
-'If m_enmProtocol = sckTCPProtocol Then
     BytesReceived = Len(m_strRecvBuffer)
-'Else
-'    BytesReceived = GetBufferLenUDP
-'End If
 End Property
 
 Public Property Get SocketHandle() As Long
@@ -236,18 +226,6 @@ End Property
 Public Property Let Tag(ByVal strTag As String)
 m_strTag = strTag
 End Property
-
-'Public Property Get Protocol() As ProtocolConstants
-'Protocol = m_enmProtocol
-'End Property
-
-'Public Property Let Protocol(ByVal enmProtocol As ProtocolConstants)
-'If m_enmState <> sckClosed Then
-'    Err.Raise sckInvalidOp, "CSocketMaster.Protocol", "Invalid operation at current state"
-'Else
-'    m_enmProtocol = enmProtocol
-'End If
-'End Property
 
 ''
 'Destroys the socket if it exists and unregisters it
@@ -308,13 +286,7 @@ Dim lngErrorCode As Long
 'check if there is a socket already
 If m_lngSocketHandle = INVALID_SOCKET Then
     
-    'decide what kind of socket we are creating, TCP or UDP
-'    If m_enmProtocol = sckTCPProtocol Then
-        lngResult = api_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)
-'    Else
-'        lngResult = api_socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)
-'    End If
-    
+    lngResult = api_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)
     If lngResult = INVALID_SOCKET Then
         
         m_enmState = sckError: Debug.Print "STATE: sckError"
@@ -378,13 +350,6 @@ If Not SocketExists Then Exit Sub
 
 'Here we bind the socket
 If Not BindInternal Then Exit Sub
-
-''If we are using UDP we just exit silently.
-''Remember UDP is a connectionless protocol.
-'If m_enmProtocol = sckUDPProtocol Then
-'    m_enmState = sckOpen: Debug.Print "STATE: sckOpen"
-'    Exit Sub
-'End If
 
 'try to get a 32 bits long that is used to identify a host
 Dim lngAddress As Long
@@ -533,46 +498,21 @@ Case FD_READ
 
     Debug.Print "FD_READ " & m_lngSocketHandle
     
-'    If m_enmProtocol = sckTCPProtocol Then
+    If m_enmState <> sckConnected Then
+        Debug.Print "WARNING: Omitting FD_READ"
+        Exit Sub
+    End If
+    
+    'Call the RecvDataToBuffer function that move arrived data
+    'from the Winsock buffer to the local one and returns number
+    'of bytes received.
+
+    lngBytesReceived = RecvDataToBuffer
+
+    If lngBytesReceived > 0 Then
+        RaiseEvent DataArrival(Len(m_strRecvBuffer))
+    End If
         
-        If m_enmState <> sckConnected Then
-            Debug.Print "WARNING: Omitting FD_READ"
-            Exit Sub
-        End If
-        
-        'Call the RecvDataToBuffer function that move arrived data
-        'from the Winsock buffer to the local one and returns number
-        'of bytes received.
-    
-        lngBytesReceived = RecvDataToBuffer
-    
-        If lngBytesReceived > 0 Then
-            RaiseEvent DataArrival(Len(m_strRecvBuffer))
-        End If
-    
-'    Else 'UDP protocol
-'
-'        If m_enmState <> sckOpen Then
-'            Debug.Print "WARNING: Omitting FD_READ"
-'            Exit Sub
-'        End If
-'
-'        'If we use UDP we don't remove data from winsock buffer.
-'        'We just let the user know the amount received so
-'        'he/she can decide what to do.
-'
-'        lngBytesReceived = GetBufferLenUDP
-'
-'        If lngBytesReceived > 0 Then
-'            RaiseEvent DataArrival(lngBytesReceived)
-'        End If
-'
-'
-'        'Now the buffer is emptied no matter what the user
-'        'dicided to do with the received data
-'        EmptyBuffer
-'    End If
-    
     
 '======================================================================
 
@@ -724,9 +664,6 @@ End Sub
 '@param varLocalPort
 '@param varLocalIP
 '@return Retunrs TRUE if it has success.
-'@author Invitado
-'@version 1.0
-'@date 07/07/2007
 Private Function BindInternal(Optional ByVal varLocalPort As Long, Optional ByVal varLocalIP As String) As Boolean
 If m_enmState = sckOpen Then
     BindInternal = True
@@ -1039,16 +976,10 @@ Public Sub SendData(strData As String)
 
 Dim arrData() As Byte 'We store the data here before send it
 
-'If m_enmProtocol = sckTCPProtocol Then
-    If m_enmState <> sckConnected Then
-        Err.Raise sckBadState, "CSocketMaster.SendData", "Wrong protocol or connection state for the requested transaction or request"
-        Exit Sub
-    End If
-'Else 'If we use UDP we create a socket if there isn't one yet
-'    If Not SocketExists Then Exit Sub
-'    If Not BindInternal Then Exit Sub
-'    m_enmState = sckOpen: Debug.Print "STATE: sckOpen"
-'End If
+If m_enmState <> sckConnected Then
+    Err.Raise sckBadState, "CSocketMaster.SendData", "Wrong protocol or connection state for the requested transaction or request"
+    Exit Sub
+End If
 
 'Add CRLF if needed
 If Right$(strData, 2) <> vbCrLf Then
@@ -1075,26 +1006,16 @@ SendBufferedData
 
 End Sub
 
-''
-'Check which protocol we are using to decide which
-'function should handle the data sending.
-Private Sub SendBufferedData()
-'If m_enmProtocol = sckTCPProtocol Then
-    SendBufferedDataTCP
-'Else
-'    SendBufferedDataUDP
-'End If
-End Sub
 
 
 ''
 'Send buffered data if we are using TCP protocol.
-Private Sub SendBufferedDataTCP()
+Private Sub SendBufferedData()
 
 Dim arrData()       As Byte
 Dim lngBufferLength As Long
-Dim lngResult    As Long
-Dim lngTotalSent As Long
+Dim lngResult       As Long
+Dim lngTotalSent    As Long
 
 Do Until lngResult = SOCKET_ERROR Or Len(m_strSendBuffer) = 0
 
@@ -1179,12 +1100,11 @@ End Function
 'Retrieves some socket options.
 'If it is an UDP socket also sets SO_BROADCAST option.
 Private Sub ProcessOptions()
-Dim lngResult As Long
-Dim lngBuffer As Long
-Dim lngErrorCode As Long
+Dim lngResult       As Long
+Dim lngBuffer       As Long
+Dim lngErrorCode    As Long
 
-'If m_enmProtocol = sckTCPProtocol Then
-    lngBuffer = 32768
+    lngBuffer = 65536
     lngResult = api_setsockopt(m_lngSocketHandle, SOL_SOCKET, SO_RCVBUF, lngBuffer, LenB(lngBuffer))
     
     If lngResult = SOCKET_ERROR Then
@@ -1203,41 +1123,18 @@ Dim lngErrorCode As Long
         m_lngSendBufferLen = lngBuffer
     End If
 
-'Else
-'    lngBuffer = 1
-'    lngResult = api_setsockopt(m_lngSocketHandle, SOL_SOCKET, SO_BROADCAST, lngBuffer, LenB(lngBuffer))
-'
-'    lngResult = api_getsockopt(m_lngSocketHandle, SOL_SOCKET, SO_MAX_MSG_SIZE, lngBuffer, LenB(lngBuffer))
-'
-'    If lngResult = SOCKET_ERROR Then
-'        lngErrorCode = Err.LastDllError
-'        Err.Raise lngErrorCode, "CSocketMaster.ProcessOptions", GetErrorDescription(lngErrorCode)
-'    Else
-'        m_lngRecvBufferLen = lngBuffer
-'        m_lngSendBufferLen = lngBuffer
-'    End If
-'End If
-
-
 Debug.Print "Winsock buffer size for sends: " & m_lngRecvBufferLen
 Debug.Print "Winsock buffer size for receives: " & m_lngSendBufferLen
 End Sub
 
 'FIXIT: Declare 'Data' and 'varType' and 'maxLen' con un tipo de datos de enlace en tiempo de compilación     FixIT90210ae-R1672-R1B8ZE
 Public Sub GetData(ByRef Data As Variant, Optional varType As Variant, Optional maxLen As Variant)
+Dim lngBytesRecibidos  As Long
 
-'If m_enmProtocol = sckTCPProtocol Then
-    If m_enmState <> sckConnected And Not m_blnAcceptClass Then
-        Err.Raise sckBadState, "CSocketMaster.GetData", "Wrong protocol or connection state for the requested transaction or request"
-        Exit Sub
-    End If
-'Else
-'    If m_enmState <> sckOpen Then
-'        Err.Raise sckBadState, "CSocketMaster.GetData", "Wrong protocol or connection state for the requested transaction or request"
-'        Exit Sub
-'    End If
-'    If GetBufferLenUDP = 0 Then Exit Sub
-'End If
+If m_enmState <> sckConnected And Not m_blnAcceptClass Then
+    Err.Raise sckBadState, "CSocketMaster.GetData", "Wrong protocol or connection state for the requested transaction or request"
+    Exit Sub
+End If
 
 If Not IsMissing(maxLen) Then
     If IsNumeric(maxLen) Then
@@ -1245,15 +1142,9 @@ If Not IsMissing(maxLen) Then
             Err.Raise sckInvalidArg, "CSocketMaster.GetData", "The argument passed to a function was not in the correct format or in the specified range."
         End If
     Else
-        'If m_enmProtocol = sckTCPProtocol Then
-            maxLen = Len(m_strRecvBuffer)
-        'Else
-        '    maxLen = GetBufferLenUDP
-        'End If
+        maxLen = Len(m_strRecvBuffer)
     End If
 End If
-
-Dim lngBytesRecibidos  As Long
 
 lngBytesRecibidos = RecvData(Data, False, varType, maxLen)
 Debug.Print "OK Bytes obtained from buffer: " & lngBytesRecibidos
@@ -1262,19 +1153,12 @@ End Sub
 
 'FIXIT: Declare 'Data' and 'varType' and 'maxLen' con un tipo de datos de enlace en tiempo de compilación     FixIT90210ae-R1672-R1B8ZE
 Public Sub PeekData(ByRef Data As Variant, Optional varType As Variant, Optional maxLen As Variant)
+Dim lngBytesRecibidos  As Long
 
-'If m_enmProtocol = sckTCPProtocol Then
-    If m_enmState <> sckConnected Then
-        Err.Raise sckBadState, "CSocketMaster.PeekData", "Wrong protocol or connection state for the requested transaction or request"
-        Exit Sub
-    End If
-'Else
-'    If m_enmState <> sckOpen Then
-'        Err.Raise sckBadState, "CSocketMaster.PeekData", "Wrong protocol or connection state for the requested transaction or request"
-'        Exit Sub
-'    End If
-'    If GetBufferLenUDP = 0 Then Exit Sub
-'End If
+If m_enmState <> sckConnected Then
+    Err.Raise sckBadState, "CSocketMaster.PeekData", "Wrong protocol or connection state for the requested transaction or request"
+    Exit Sub
+End If
 
 If Not IsMissing(maxLen) Then
     If IsNumeric(maxLen) Then
@@ -1282,15 +1166,9 @@ If Not IsMissing(maxLen) Then
             Err.Raise sckInvalidArg, "CSocketMaster.PeekData", "The argument passed to a function was not in the correct format or in the specified range."
         End If
     Else
-        'If m_enmProtocol = sckTCPProtocol Then
-            maxLen = Len(m_strRecvBuffer)
-'        Else
-'            maxLen = GetBufferLenUDP
-'        End If
+        maxLen = Len(m_strRecvBuffer)
     End If
 End If
-
-Dim lngBytesRecibidos  As Long
 
 lngBytesRecibidos = RecvData(Data, True, varType, maxLen)
 Debug.Print "OK Bytes obtained from buffer: " & lngBytesRecibidos
@@ -1322,12 +1200,7 @@ Dim blnClassMiss    As Boolean
 Dim lngBufferLen    As Long
 Dim arrBuffer()     As Byte
 
-'If m_enmProtocol = sckTCPProtocol Then
-    lngBufferLen = Len(m_strRecvBuffer)
-'Else
-'    lngBufferLen = GetBufferLenUDP
-'End If
-
+lngBufferLen = Len(m_strRecvBuffer)
 blnMaxLenMiss = IsMissing(maxLen)
 blnClassMiss = IsMissing(varClass)
 
@@ -1370,12 +1243,6 @@ If varClass = vbString Or varClass = vbArray + vbByte Then
         
             arrBuffer = StrConv("", vbFromUnicode)
             Data = arrBuffer
-            
-'            If m_enmProtocol = sckUDPProtocol Then
-'                EmptyBuffer
-'                Err.Raise WSAEMSGSIZE, "CSocketMaster.RecvData", GetErrorDescription(WSAEMSGSIZE)
-'            End If
-            
             Exit Function
         
         ElseIf maxLen > lngBufferLen Then
@@ -1476,35 +1343,13 @@ End Function
 Private Sub BuildArray(ByVal Size As Long, ByVal blnPeek As Boolean, ByRef bytArray() As Byte)
 Dim strData As String
 
-'If m_enmProtocol = sckTCPProtocol Then
         
-    strData = Left$(m_strRecvBuffer, CLng(Size))
-    bytArray = StrConv(strData, vbFromUnicode)
-                
-    If Not blnPeek Then
-        m_strRecvBuffer = Mid$(m_strRecvBuffer, Size + 1)
-    End If
-
-'Else 'UDP protocol
-'    Dim arrBuffer() As Byte
-'    Dim lngResult As Long
-'    Dim udtSockAddr As sockaddr_in
-'    Dim lngFlags As Long
-'
-'    If blnPeek Then lngFlags = MSG_PEEK
-'
-'    ReDim arrBuffer(Size - 1)
-'
-'    lngResult = api_recvfrom(m_lngSocketHandle, arrBuffer(0), Size, lngFlags, udtSockAddr, LenB(udtSockAddr))
-'
-'    If lngResult = SOCKET_ERROR Then
-'        lngErrorCode = Err.LastDllError
-'    End If
-'
-'    bytArray = arrBuffer
-'    GetRemoteInfoFromSI udtSockAddr, m_lngRemotePort, m_strRemoteHostIP, m_strRemoteHost
-'
-'End If
+strData = Left$(m_strRecvBuffer, CLng(Size))
+bytArray = StrConv(strData, vbFromUnicode)
+            
+If Not blnPeek Then
+    m_strRecvBuffer = Mid$(m_strRecvBuffer, Size + 1)
+End If
 End Sub
 
 ''
@@ -1560,7 +1405,6 @@ If m_enmState <> sckClosed Then
 End If
 
 m_lngSocketHandle = requestID
-'m_enmProtocol = sckTCPProtocol
 ProcessOptions
 
 If Not modSocketMaster.IsAcceptRegistered(requestID) Then
@@ -1611,13 +1455,14 @@ End Sub
 '@param strLocalIP
 '@return If succeeds returns TRUE and loads the arguments.<BR>If fails returns FALSE and arguments are not loaded.
 Private Function GetLocalInfo(ByVal lngSocket As Long, ByRef lngLocalPort As Long, ByRef strLocalIP As String) As Boolean
-GetLocalInfo = False
+
 Dim lngResult As Long
 Dim udtSockAddr As sockaddr_in
 
 lngResult = api_getsockname(lngSocket, udtSockAddr, LenB(udtSockAddr))
 
 If lngResult = SOCKET_ERROR Then
+    GetLocalInfo = False
     lngLocalPort = 0
     strLocalIP = ""
 Else
@@ -1637,18 +1482,17 @@ End Function
 '@param strRemoteHost
 '@return If succeeds returns TRUE and loads the arguments.<BR>If fails returns FALSE and arguments are not loaded.
 Private Function GetRemoteInfo(ByVal lngSocket As Long, ByRef lngRemotePort As Long, ByRef strRemoteHostIP As String) As Boolean
-GetRemoteInfo = False
-Dim lngResult As Long
+Dim lngResult   As Long
 Dim udtSockAddr As sockaddr_in
 
 lngResult = api_getpeername(lngSocket, udtSockAddr, LenB(udtSockAddr))
-
 If lngResult = 0 Then
     GetRemoteInfo = True
     lngRemotePort = IntegerToUnsigned(api_ntohs(udtSockAddr.sin_port))
     strRemoteHostIP = StringFromPointer(api_inet_ntoa(udtSockAddr.sin_addr))
 Else
-   lngRemotePort = 0
-   strRemoteHostIP = ""
+    GetRemoteInfo = False
+    lngRemotePort = 0
+    strRemoteHostIP = ""
 End If
 End Function
