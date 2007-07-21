@@ -20,9 +20,11 @@ Attribute VB_Exposed = False
 
 Option Explicit
 
-Private objDOMFolders   As DOMDocument
 
-Private strCookies As String
+Private strCookies  As String
+Private strURLSend  As String
+Private strURLInbox As String
+
 
 Public intMsgCount As Integer
 
@@ -32,7 +34,8 @@ Public intMsgCount As Integer
 '
 '@param intMsg  Message position in the inbox folder
 Private Function GetURL(ByVal intMsg As Integer) As String
-    GetURL = objDOMInbox.childNodes(1).childNodes(intMsg - 1).selectSingleNode("a:propstat/a:prop/a:href").Text
+    GetURL = objDOMInbox.childNodes(1).childNodes(intMsg - 1).selectSingleNode("a:href").Text
+
 End Function
 
 
@@ -54,10 +57,11 @@ Set oXMLHTTP = New XMLHTTP
 
 With oXMLHTTP
     '.setOption 3, ""
-    .open "GET", strURL, True, strUser, strPassWord
+    .open "GET", strURL & "?ID=" & Timer, True, strUser, strPassWord
     .setRequestHeader "Content-type", "text/xml"
     .setRequestHeader "Depth", "infinity"
     .setRequestHeader "Translate", "f"
+    
     If strCookies <> Empty Then
         .setRequestHeader "Cookies", "Necessary according to Q234486"
         .setRequestHeader "Cookies", strCookies
@@ -81,7 +85,7 @@ With oXMLHTTP
         ParseAtachment strMsg
         'Fix OWA errors in recived messages
         If InStr(strMsg, "X-MimeOLE: Produced By Microsoft Exchange") > 0 Then
-            ParseMsg strMsg
+            ParseHeader strMsg
         End If
         objPOP3.SendData strMsg
         GetMsg = True
@@ -95,7 +99,7 @@ Set oXMLHTTP = Nothing
 Exit Function
 ErrHandler:
     WriteLog "GetMsg " & Err.Description, Error
-    objPOP3.SendData "-ERR "
+    objPOP3.SendData "-ERR " & Err.Description
     GetMsg = False
 End Function
 
@@ -136,14 +140,12 @@ End Function
 '@return Reply to e-mail client
 Public Function GetMsgList() As Boolean
 On Error GoTo ErrHandler
-Dim strURL As String
 Dim oXMLHTTP As XMLHTTP
-strURL = objDOMFolders.selectSingleNode(XMLPATH & "d:inbox").Text & "/"
 ' Create an instance of the xmlHTTP object
 Set oXMLHTTP = New XMLHTTP
 With oXMLHTTP
     ' Open a request to a particular url
-    .open "SEARCH", strURL, True, strUser, strPassWord
+    .open "SEARCH", strURLInbox, True, strUser, strPassWord
     ' Set the header type - we want XML
     .setRequestHeader "Content-type", "text/xml"
     .setRequestHeader "Depth", "1"
@@ -157,14 +159,13 @@ With oXMLHTTP
     Call .send("<?xml version='1.0' ?>" & _
                 "<a:searchrequest xmlns:a='DAV:'><a:sql>" & _
                  "SELECT" & _
-                 " ""DAV:href""" & _
-                 ",""DAV:id""" & _
+                 " ""DAV:id""" & _
                  ",""DAV:getcontentlength""" & _
-                 " FROM scope('shallow traversal of """ & strURL & """')" & _
-                " WHERE ""DAV:ishidden""=False" & _
-                " AND ""DAV:isfolder""=False" & _
-                "</a:sql></a:searchrequest>")
-
+                 " FROM scope('shallow traversal of """ & strURLInbox & """')" & _
+                 " WHERE ""DAV:ishidden""=False" & _
+                 " AND ""DAV:isfolder""=False" & _
+                 "</a:sql></a:searchrequest>")
+    
     While Not .readyState = 4
         MsgWaitObj 100
     Wend
@@ -208,6 +209,7 @@ Dim strURL          As String
 Dim bFBALoginFail   As Boolean
 Dim oXMLHTTP        As XMLHTTP
 Dim strAccount      As String
+Dim objDOMFolders   As DOMDocument
 
 If InStr(strUser, "^") > 0 Then
     strAccount = Mid(strUser, InStr(strUser, "^") + 1)
@@ -223,14 +225,6 @@ End If
 If bFBALoginFail Then
     GetFoldersURL = -1
 Else
-    query = "<?xml version='1.0'?>"
-    query = query + "<a:propfind xmlns:a='DAV:'>"
-    query = query + "<a:prop xmlns:m='urn:schemas:httpmail:'>"
-    query = query + "<m:sendmsg/>"
-    query = query + "<m:inbox/>"
-    query = query + "</a:prop>"
-    query = query + "</a:propfind>"
-     
     Set oXMLHTTP = New XMLHTTP
     strURL = strExchSvrName & "/exchange/" & strAccount & "/"
 
@@ -244,7 +238,14 @@ Else
             .setRequestHeader "Cookies", "Necessary according to Q234486"
             .setRequestHeader "Cookies", strCookies
         End If
-        .send query
+        .send "<?xml version='1.0'?>" & _
+            "<a:propfind xmlns:a='DAV:'>" & _
+            "<a:prop xmlns:m='urn:schemas:httpmail:'>" & _
+            "<m:sendmsg/>" & _
+            "<m:inbox/>" & _
+            "</a:prop>" & _
+            "</a:propfind>"
+
         While Not .readyState = 4
             MsgWaitObj 100
         Wend
@@ -256,6 +257,9 @@ Else
             objDOMFolders.setProperty "SelectionNamespaces", "xmlns:a='DAV:'"
             objDOMFolders.setProperty "SelectionNamespaces", "xmlns:a='DAV:' xmlns:d='urn:schemas:httpmail:'"
             WriteLog "GetFoldersURL: " & vbCrLf & objDOMFolders.xml & vbCrLf, Paranoid
+            strURLSend = objDOMFolders.selectSingleNode(XMLPATH & "d:sendmsg").Text
+            strURLInbox = objDOMFolders.selectSingleNode(XMLPATH & "d:inbox").Text & "/"
+            Set objDOMFolders = Nothing
         Else
             Debug.Assert False
             WriteLog "GetFoldersURL: " & .Status & vbTab & .statusText, Warning
@@ -305,10 +309,12 @@ With oXMLHTTP
         MsgWaitObj 100
     Wend
     strHeaders = .getAllResponseHeaders()
-    WriteLog "LogingFBA -> Headers: " & vbCrLf & strHeaders, Paranoid
-    vHeaders = Split(strHeaders, vbNewLine)
 End With
 Set oXMLHTTP = Nothing
+
+WriteLog "LogingFBA -> Headers: " & vbCrLf & strHeaders, Paranoid
+vHeaders = Split(strHeaders, vbNewLine)
+
 For intIndex = 0 To UBound(vHeaders) - 1
     If Left$(vHeaders(intIndex), 10) = "Set-Cookie" Then
         intCounter = intCounter + 1
@@ -345,21 +351,14 @@ End Function
 Public Function SendMail(ByVal strMailData As String) As Boolean
 
 On Error GoTo ErrHandler
-Dim strSubURL As String
 Dim oXMLHTTP As XMLHTTP
 
-    If strMailData <> "" Then
-        SendMail = True
-        Exit Function
-    End If
-    
     Set oXMLHTTP = New XMLHTTP
-    strSubURL = objDOMFolders.selectSingleNode(XMLPATH & "d:sendmsg").Text
      
-     'Create the DAV PUT request.
+    'Create the DAV PUT request.
     'xmlReq.setOption 3, ""
     With oXMLHTTP
-        .open "PUT", strSubURL, True, strUser, strPassWord
+        .open "PUT", strURLSend, True, strUser, strPassWord
         If strCookies <> Empty Then
             .setRequestHeader "Cookies", "Necessary according to Q234486"
             .setRequestHeader "Cookies", strCookies
@@ -390,37 +389,39 @@ ErrHandler:
     SendMail = False
 End Function
 
-Private Sub ParseMsg(ByRef strMsg As String)
-Dim strHeader As String
-Dim lngPosFin As Long
-lngPosFin = InStr(1, strMsg, vbCrLf & vbCrLf)
-If lngPosFin > 0 Then
- '   intPosFin = InStr(intPosIni + 1, strMsg, vbCrLf & vbCrLf, vbTextCompare)
-    strHeader = Left$(strMsg, lngPosFin)
-    ParseHeader strHeader
-    strMsg = strHeader & Mid$(strMsg, lngPosFin)
+''
+'Parse the mail header to fix incorrect email adress with non US chars.
+'
+'@param strMsg Email message in RFC 821 format
+Private Sub ParseHeader(ByRef strMsg As String)
+Dim strHeader       As String
+Dim lngPos          As Long
+Dim lngPosHeader    As Long
+Dim lngPosEnd       As Long
+Dim bModified       As Boolean
+
+lngPosHeader = InStr(1, strMsg, vbCrLf & vbCrLf)
+If lngPosHeader > 0 Then
+    'Extract the header, faster than work with the entire msg
+    strHeader = Left$(strMsg, lngPosHeader)
+    lngPos = InStr(1, strHeader, "?Q", vbTextCompare)
+    While lngPos > 0
+        If Not Mid$(strHeader, lngPos + 3, 3) = "=22" Then
+            lngPosEnd = InStr(lngPos + 3, strHeader, "?=", vbTextCompare)
+            If InStr(1, Mid$(strHeader, lngPos + 3, lngPosEnd - lngPos - 3), "=2C", vbTextCompare) > 0 Then
+                strHeader = Left$(strHeader, lngPos + 2) & "=22" & Mid$(strHeader, lngPos + 3, lngPosEnd - lngPos - 3) & "=22" & Mid$(strHeader, lngPosEnd)
+                bModified = True
+            End If
+        End If
+        lngPos = InStr(lngPos + 1, strHeader, "?Q", vbTextCompare)
+    Wend
+    If bModified Then
+        strMsg = strHeader & Mid$(strMsg, lngPosHeader)
+    End If
 End If
 
 End Sub
 
-''
-'Parse the mail header to fix incorrect email adress with non US chars.
-'
-'@param strHeader Email header message in RFC 821 format
-Private Sub ParseHeader(ByRef strHeader As String)
-Dim lngPos As Long
-Dim lngPosEnd As Long
-lngPos = InStr(1, strHeader, "?Q", vbTextCompare)
-While lngPos > 0
-    If Not Mid$(strHeader, lngPos + 3, 3) = "=22" Then
-        lngPosEnd = InStr(lngPos + 3, strHeader, "?=", vbTextCompare)
-        If InStr(1, Mid$(strHeader, lngPos + 3, lngPosEnd - lngPos - 3), "=2C", vbTextCompare) > 0 Then
-            strHeader = Left$(strHeader, lngPos + 2) & "=22" & Mid$(strHeader, lngPos + 3, lngPosEnd - lngPos - 3) & "=22" & Mid$(strHeader, lngPosEnd)
-        End If
-    End If
-    lngPos = InStr(lngPosEnd + 1, strHeader, "?Q", vbTextCompare)
-Wend
-End Sub
 
 
 ''
@@ -436,23 +437,23 @@ Dim lngContentTypeStart As Long
     
 lngPos = InStr(1, strMsg, "boundary=""", vbTextCompare)
 If lngPos > 0 Then
+
     lngPosEnd = InStr(lngPos + 10, strMsg, """", vbTextCompare)
+    'Get the Boundary string to identify the attachments
     strBoundary = Mid$(strMsg, lngPos + 10, lngPosEnd - lngPos - 10)
-Else
-    Exit Sub
-End If
-    
-lngPos = InStr(1, strMsg, strBoundary, vbTextCompare)
-lngPos = InStr(lngPos + 1, strMsg, strBoundary, vbTextCompare)
-While lngPos > 0
-    lngContentTypeStart = InStr(lngPos, strMsg, "application/octet-stream", vbTextCompare)
-    If lngContentTypeStart > 0 Then
-        lngPosEnd = InStr(lngContentTypeStart, strMsg, vbCrLf & vbCrLf, vbTextCompare)
-        If lngPosEnd > 0 And Mid$(strMsg, lngPosEnd + 4, 4) = "/9j/" Then
-            strMsg = Left$(strMsg, lngContentTypeStart - 1) & "image/jpeg" & Mid$(strMsg, lngContentTypeStart + 24)
+
+    lngPos = InStr(lngPosEnd, strMsg, strBoundary, vbTextCompare)
+    While lngPos > 0
+        lngContentTypeStart = InStr(lngPos, strMsg, "application/octet-stream", vbTextCompare)
+        If lngContentTypeStart > 0 Then
+            lngPosEnd = InStr(lngContentTypeStart, strMsg, vbCrLf & vbCrLf, vbTextCompare)
+            If lngPosEnd > 0 And Mid$(strMsg, lngPosEnd + 4, 4) = "/9j/" Then
+                strMsg = Left$(strMsg, lngContentTypeStart - 1) & "image/jpeg" & Mid$(strMsg, lngContentTypeStart + 24)
+            End If
         End If
-    End If
-    lngPos = InStr(lngPos + 1, strMsg, strBoundary, vbTextCompare)
-Wend
+        lngPos = InStr(lngPos + 1, strMsg, strBoundary, vbTextCompare)
+    Wend
+
+End If
 End Sub
 
