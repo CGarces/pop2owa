@@ -22,38 +22,33 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
-Option Explicit
-
-' 03/03/2003
+''
+'frmSysTray.
+'Steve McMahon
+'Original version based on code supplied from Ben Baird:
+'Setting an icon in the taskbar's system tray.
+'
+'@author Copyright (c) 1997, Ben Baird
+'@date 03/03/2003
+'
 ' * Added Unicode support
 ' * Added support for new tray version (ME,2000 or above required)
 ' * Added support for balloon tips (ME,2000 or above required)
 
-' frmSysTray.
-' Steve McMahon
-' Original version based on code supplied from Ben Baird:
 
-'Author:
-'        Ben Baird <psyborg@cyberhighway.com>
-'        Copyright (c) 1997, Ben Baird
-'
-'Purpose:
-'        Demonstrates setting an icon in the taskbar's
-'        system tray without the overhead of subclassing
-'        to receive events.
+Option Explicit
 
-Private Declare Function Shell_NotifyIconA Lib "shell32.dll" _
-   (ByVal dwMessage As Long, lpData As NOTIFYICONDATAA) As Long
+
+
+
+Private Declare Function Shell_NotifyIconA Lib "shell32.dll" (ByVal dwMessage As Long, lpData As NOTIFYICONDATAA) As Long
    
-Private Declare Function Shell_NotifyIconW Lib "shell32.dll" _
-   (ByVal dwMessage As Long, lpData As NOTIFYICONDATAW) As Long
+Private Declare Function Shell_NotifyIconW Lib "shell32.dll" (ByVal dwMessage As Long, lpData As NOTIFYICONDATAW) As Long
 
 
 Private Const NIF_ICON = &H2
 Private Const NIF_MESSAGE = &H1
 Private Const NIF_TIP = &H4
-Private Const NIF_STATE = &H8
-Private Const NIF_INFO = &H10
 
 Private Const NIM_ADD = &H0
 Private Const NIM_MODIFY = &H1
@@ -117,65 +112,17 @@ Private Const WM_RBUTTONUP = &H205
 
 Private Const WM_USER = &H400
 
-Private Const NIN_SELECT = WM_USER
-Private Const NINF_KEY = &H1
-Private Const NIN_KEYSELECT = (NIN_SELECT Or NINF_KEY)
-Private Const NIN_BALLOONSHOW = (WM_USER + 2)
-Private Const NIN_BALLOONHIDE = (WM_USER + 3)
-Private Const NIN_BALLOONTIMEOUT = (WM_USER + 4)
-Private Const NIN_BALLOONUSERCLICK = (WM_USER + 5)
-
 Public Event SysTrayMouseDown(ByVal eButton As MouseButtonConstants)
 Public Event SysTrayMouseUp(ByVal eButton As MouseButtonConstants)
 Public Event SysTrayMouseMove()
 Public Event SysTrayDoubleClick(ByVal eButton As MouseButtonConstants)
 Public Event MenuClick(ByVal lIndex As Long, ByVal sKey As String)
-Public Event BalloonShow()
-Public Event BalloonHide()
-Public Event BalloonTimeOut()
-Public Event BalloonClicked()
-
-Public Enum EBalloonIconTypes
-   NIIF_NONE = 0
-   NIIF_INFO = 1
-   NIIF_WARNING = 2
-   NIIF_ERROR = 3
-   NIIF_NOSOUND = &H10
-End Enum
 
 Private m_bAddedMenuItem As Boolean
 Private m_iDefaultIndex As Long
 
 Private m_bUseUnicode As Boolean
 Private m_bSupportsNewVersion As Boolean
-
-Public Sub ShowBalloonTip( _
-      ByVal sMessage As String, _
-      Optional ByVal sTitle As String, _
-      Optional ByVal eIcon As EBalloonIconTypes, _
-      Optional ByVal lTimeOutMs As Long = 30000 _
-   )
-Dim lR As Long
-   If (m_bSupportsNewVersion) Then
-      If (m_bUseUnicode) Then
-         stringToArray sMessage, nfIconDataW.szInfo, 512
-         stringToArray sTitle, nfIconDataW.szInfoTitle, 128
-         nfIconDataW.uTimeOutOrVersion = lTimeOutMs
-         nfIconDataW.dwInfoFlags = eIcon
-         nfIconDataW.uFlags = NIF_INFO
-         lR = Shell_NotifyIconW(NIM_MODIFY, nfIconDataW)
-      Else
-         nfIconDataA.szInfo = sMessage
-         nfIconDataA.szInfoTitle = sTitle
-         nfIconDataA.uTimeOutOrVersion = lTimeOutMs
-         nfIconDataA.dwInfoFlags = eIcon
-         nfIconDataA.uFlags = NIF_INFO
-         lR = Shell_NotifyIconA(NIM_MODIFY, nfIconDataA)
-      End If
-   Else
-      ' can't do it, fail silently.
-   End If
-End Sub
 
 Public Property Get ToolTip() As String
 Dim sTip As String
@@ -290,6 +237,8 @@ Private Sub Form_Load()
    Dim lMajor As Integer
    Dim lMinor As Integer
    Dim bIsNT As Boolean
+   Dim lR As Long
+   
    GetWindowsVersion lMajor, lMinor, , , bIsNT
 
    If (bIsNT) Then
@@ -305,7 +254,6 @@ Private Sub Form_Load()
    
    
    'Add the icon to the system tray...
-   Dim lR As Long
    
    If (m_bUseUnicode) Then
       With nfIconDataW
@@ -411,14 +359,14 @@ Dim lX As Long
       RaiseEvent SysTrayMouseUp(vbRightButton)
    Case WM_RBUTTONDBLCLK
       RaiseEvent SysTrayDoubleClick(vbRightButton)
-   Case NIN_BALLOONSHOW
-      RaiseEvent BalloonShow
-   Case NIN_BALLOONHIDE
-      RaiseEvent BalloonHide
-   Case NIN_BALLOONTIMEOUT
-      RaiseEvent BalloonTimeOut
-   Case NIN_BALLOONUSERCLICK
-      RaiseEvent BalloonClicked
+'   Case NIN_BALLOONSHOW
+'      RaiseEvent BalloonShow
+'   Case NIN_BALLOONHIDE
+'      RaiseEvent BalloonHide
+'   Case NIN_BALLOONTIMEOUT
+'      RaiseEvent BalloonTimeOut
+'   Case NIN_BALLOONUSERCLICK
+'      RaiseEvent BalloonClicked
    End Select
 
 End Sub
@@ -434,6 +382,3 @@ End Sub
 Private Sub mnuSysTray_Click(Index As Integer)
    RaiseEvent MenuClick(Index, mnuSysTray(Index).Tag)
 End Sub
-
-
-

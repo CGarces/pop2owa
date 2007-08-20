@@ -24,7 +24,7 @@ End Enum
 
 Public bSaveinsent      As Boolean
 Public bAuthentication  As Boolean
-Public IsNTService As Boolean
+Public IsNTService      As Boolean
 
 ''
 ' API go get the OS version
@@ -41,7 +41,7 @@ Private Declare Function MsgWaitForMultipleObjects Lib "user32" _
 Private Declare Function CreateMutex Lib "kernel32" Alias "CreateMutexA" (ByVal lpMutexAttributes As Long, ByVal bInitialOwner As Long, ByVal lpName As String) As Long
 Private Declare Function CloseHandle Lib "kernel32" (ByVal hObject As Long) As Long
 
-Type PROCESSENTRY32
+Private Type PROCESSENTRY32
     dwSize As Long
     cntUsage As Long
     th32ProcessID As Long
@@ -63,7 +63,7 @@ Private Declare Function TerminateProcess Lib "kernel32.dll" (ByVal ApphProcess 
 ''
 'Write a pop2owa.log file with errors, warnings and log messages.
 '
-'@param strText Test to write in the log
+'@param strText Text to write in the log
 '@param intVerbose Versosity
 Public Sub WriteLog(ByVal strText As String, Optional ByVal intVerbose As Verbosity = Error)
 Dim intFile As Integer
@@ -120,7 +120,6 @@ WriteLog "Inicio v " & intVerbosity & " NT " & IsNTService, Information
 If IsNTService Then
     StartService
 Else
-    WriteLog "Init", Information
     frmMain.Init
 End If
 Exit Sub
@@ -130,8 +129,6 @@ ErrHandler:
         Unload frmMain
     End If
 End Sub
-
-
 
 ''
 'Get the Windows version instaled.
@@ -319,12 +316,9 @@ Dim hSnapshot       As Long
 Dim SzExename       As String
 Dim ExitCode        As Long
 Dim MyProcess       As Long
-Dim AppKill         As Boolean
-Dim AppCount        As Integer
 Dim i               As Integer
        
 If NameProcess <> "" Then
-   AppCount = 0
 
    uProcess.dwSize = Len(uProcess)
    hSnapshot = CreateToolhelpSnapshot(TH32CS_SNAPPROCESS, 0&)
@@ -333,9 +327,8 @@ If NameProcess <> "" Then
      i = InStr(1, uProcess.szexeFile, Chr(0))
      SzExename = LCase$(Left$(uProcess.szexeFile, i - 1))
      If Left$(SzExename, Len(NameProcess)) = LCase$(NameProcess) Then
-        AppCount = AppCount + 1
         MyProcess = OpenProcess(PROCESS_ALL_ACCESS, False, uProcess.th32ProcessID)
-        AppKill = TerminateProcess(MyProcess, ExitCode)
+        Call TerminateProcess(MyProcess, ExitCode)
         Call CloseHandle(MyProcess)
      End If
      RProcessFound = ProcessNext(hSnapshot, uProcess)
