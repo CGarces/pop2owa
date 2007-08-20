@@ -165,9 +165,16 @@ Attribute VB_Exposed = False
 
 Option Explicit
 
+''
+'Class to handle POP3/STMP commands.
 Private oPOP3 As clsPOP3
+
+''
+'Form with systray code.
 Private WithEvents m_frmSysTray As frmSysTray
 Attribute m_frmSysTray.VB_VarHelpID = -1
+''
+'Control the state of the SysTray icon.
 Private bsysTray As Boolean
 
 ''
@@ -183,6 +190,10 @@ Private Sub cmdOk_Click()
     Reset
     FillControls
 End Sub
+
+
+''
+'Main function to start the aplication in form mode.
 Public Sub Init()
 Dim objFrame As Frame
 
@@ -197,11 +208,13 @@ Dim objFrame As Frame
     Me.Move Me.Left, Me.Top, 2700, 3150
     Set objFrame = Nothing
     'Get values from registry
-    Me.FillControls
+    FillControls
     Reset
     Me.Show
 End Sub
 
+''
+'Event used to finish the aplication.
 Private Sub Form_QueryUnload(Cancel As Integer, UnloadMode As Integer)
 If Not (m_frmSysTray Is Nothing) Then
     Unload m_frmSysTray
@@ -229,7 +242,9 @@ Private Sub TabStrip1_Click()
     Frame1(TabStrip1.SelectedItem.Index - 1).Refresh
 End Sub
 
-Public Sub FillControls()
+''
+'Fill the control in the form with the registry information.
+Private Sub FillControls()
 Dim c As cRegistry
 Set c = New cRegistry
 'Values are stored in (HKEY_CURRENT_USER\Software\pop2owa)
@@ -260,7 +275,8 @@ With c
     Me.chkFBA.Value = .Value
 End With
 End Sub
-
+''
+'Fill the registry with the data in the form.
 Private Sub writeRegistry()
 Dim c As cRegistry
 Set c = New cRegistry
@@ -293,13 +309,20 @@ With c
 End With
 End Sub
 
-Public Sub Reset()
+''
+'Reset the POP/SMTP object to restore the connection with the new values.
+Private Sub Reset()
     If Not (oPOP3 Is Nothing) Then
         Set oPOP3 = Nothing
     End If
     Set oPOP3 = New clsPOP3
 End Sub
 
+''
+'Event to capture one click in the popup menu.
+'
+'@param lIndex  Number of the mouse button pressed
+'@param sKey    Option menu
 Private Sub m_frmSysTray_MenuClick(ByVal lIndex As Long, ByVal sKey As String)
    Select Case sKey
    Case "open"
@@ -316,22 +339,25 @@ Private Sub m_frmSysTray_MenuClick(ByVal lIndex As Long, ByVal sKey As String)
     
 End Sub
 
+''
+'Event to capture double click in the systray icon.
+'
+'@param eButton Number of the mouse button pressed
 Private Sub m_frmSysTray_SysTrayDoubleClick(ByVal eButton As MouseButtonConstants)
     m_frmSysTray_MenuClick 0, "open"
 End Sub
 
+''
+'Event to capture mouse down in the systray icon.
+'
+'@param eButton Number of the mouse button pressed
 Private Sub m_frmSysTray_SysTrayMouseDown(ByVal eButton As MouseButtonConstants)
     If (eButton = vbRightButton) Then
         m_frmSysTray.ShowMenu
     End If
 End Sub
-
-Private Sub SetIcon()
- 
-m_frmSysTray.IconHandle = Me.Icon
-
-End Sub
-
+''
+'Put/Remove pop2owa icon from the systray.
 Private Sub SysTray()
     If bsysTray Then
         Set m_frmSysTray = New frmSysTray
@@ -340,14 +366,10 @@ Private Sub SysTray()
             .AddMenuItem "-"
             .AddMenuItem "&Close", "close"
             .ToolTip = "Pop2Owa!"
+            .IconHandle = Me.Icon
         End With
-        SetIcon
     ElseIf Not (m_frmSysTray Is Nothing) Then
             Unload m_frmSysTray
             Set m_frmSysTray = Nothing
     End If
 End Sub
-
-
-
-
