@@ -53,7 +53,6 @@ Begin VB.Form frmMain
          Width           =   2175
       End
       Begin VB.Label Label4 
-         BackColor       =   &H8000000A&
          Caption         =   "Exchange Server"
          Height          =   255
          Left            =   120
@@ -110,7 +109,6 @@ Begin VB.Form frmMain
          Width           =   1215
       End
       Begin VB.Label Label1 
-         BackColor       =   &H8000000A&
          Caption         =   "IP"
          Height          =   255
          Index           =   0
@@ -197,7 +195,7 @@ End Sub
 Public Sub Init()
 Dim objFrame As Frame
 
-    Me.Caption = App.EXEName & " " & App.Major & "." & App.Minor & "." & App.Revision
+    Me.Caption = App.EXEName & " " & App.Major & "." & App.Minor & " RC1"
     'Redraw controls
     For Each objFrame In Me.Frame1
         objFrame.Move Me.TabStrip1.ClientLeft, _
