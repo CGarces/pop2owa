@@ -201,7 +201,7 @@ On Error GoTo ErrHandler
             strDataToSend = "-ERR Invalid Password for " & strUser
             bCloseSocket = True
         Case Else
-            strDataToSend = "-ERR Unable to conect with mailbox "
+            strDataToSend = "-ERR Unable to connect with mailbox "
             bCloseSocket = True
         End Select
     Case "STAT"
@@ -213,7 +213,7 @@ On Error GoTo ErrHandler
             Next
             strDataToSend = "+OK " & objOWA.intMsgCount & " " & lngSize
         Else
-            strDataToSend = "-ERR Unable to conect with mailbox "
+            strDataToSend = "-ERR Unable to connect with mailbox "
         End If
     Case "RETR", "TOP "
         'strDataToSend = GetMsg(objDOMInbox.childNodes(1).childNodes(CInt(Mid$(strDataRecived, 6)) - 1).selectSingleNode("a:propstat/a:prop/a:href").Text)
