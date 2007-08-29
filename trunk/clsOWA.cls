@@ -328,13 +328,17 @@ Next
 If intCounter > 1 Then
     LogingFBA = True
 Else
-    If Int(Left$(strVersion, InStr(strVersion, "."))) >= 8 Then
+    Select Case True
+    Case strVersion = Empty
+        WriteLog "LogingFBA -> X-OWA-Version headder missing", Error
+        LogingFBA = True
+    Case Int(Left$(strVersion, InStr(strVersion, "."))) >= 8
         WriteLog "Error LogingFBA: " & strVersion, Paranoid
         LogingFBA = True
-    Else
+    Case Else
         WriteLog "LogingFBA -> Error getting headers: " & vbCrLf & strHeaders, Error
         LogingFBA = False
-    End If
+    End Select
 End If
 Exit Function
 ErrHandler:
@@ -425,7 +429,7 @@ End Sub
 
 
 ''
-'Parse the mail attachments to fix jpeg files mark as application/octet-stream.
+'Parse the mail attachments to fix image files mark as application/octet-stream.
 '
 '@param strMsg Email message in RFC 821 format
 Private Sub ParseAtachment(ByRef strMsg As String)
@@ -446,10 +450,17 @@ If lngPos > 0 Then
     While lngPos > 0
         lngContentTypeStart = InStr(lngPos, strMsg, "application/octet-stream", vbTextCompare)
         If lngContentTypeStart > 0 Then
+            lngPos = lngContentTypeStart
             lngPosEnd = InStr(lngContentTypeStart, strMsg, vbCrLf & vbCrLf, vbTextCompare)
             If lngPosEnd > 0 And Mid$(strMsg, lngPosEnd + 4, 4) = "/9j/" Then
+                'JPEG file
                 strMsg = Left$(strMsg, lngContentTypeStart - 1) & "image/jpeg" & Mid$(strMsg, lngContentTypeStart + 24)
             End If
+            If lngPosEnd > 0 And Mid$(strMsg, lngPosEnd + 4, 4) = "R0lG" Then
+                'GIF file
+                strMsg = Left$(strMsg, lngContentTypeStart - 1) & "image/gif" & Mid$(strMsg, lngContentTypeStart + 24)
+            End If
+
         End If
         lngPos = InStr(lngPos + 1, strMsg, strBoundary, vbTextCompare)
     Wend
