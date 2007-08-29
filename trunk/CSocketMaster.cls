@@ -582,7 +582,7 @@ Case FD_ACCEPT
     
 Case FD_CLOSE
     
-    'This message means that the remote host is closing the conection
+    'This message means that the remote host is closing the connection
     
     Debug.Print "FD_CLOSE " & m_lngSocketHandle
     
