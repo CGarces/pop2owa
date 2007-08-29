@@ -9,7 +9,7 @@
 Var STARTMENU_FOLDER
 Var ALREADY_INSTALLED
 !define PRODUCT "pop2owa"
-!define VERSION "v1.1.7"
+!define VERSION "v1.2 RC1"
 Name "${PRODUCT} ${VERSION}"
 OutFile "${PRODUCT}_${VERSION}.exe"
 InstallDir "$PROGRAMFILES\${PRODUCT}"
@@ -66,10 +66,10 @@ InstallDirRegKey HKCU "Software\${PRODUCT}" ""
 
 ;--------------------------------
 ;Languages
-  !insertmacro MUI_LANGUAGE "Catalan"
   !insertmacro MUI_LANGUAGE "English"
   !insertmacro MUI_LANGUAGE "French"
   !insertmacro MUI_LANGUAGE "Spanish"
+  !insertmacro MUI_LANGUAGE "Catalan"
   !insertmacro MUI_RESERVEFILE_LANGDLL
 
 Function .onInit
