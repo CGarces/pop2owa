@@ -194,7 +194,6 @@ End Sub
 'Main function to start the aplication in form mode.
 Public Sub Init()
 Dim objFrame As Frame
-
     Me.Caption = App.EXEName & " " & App.Major & "." & App.Minor & " RC1"
     'Redraw controls
     For Each objFrame In Me.Frame1
@@ -265,6 +264,8 @@ With c
     'SMTP Port
     .ValueKey = "SMTP"
     Me.txtPort(1).Text = .Value
+    .ValueKey = "SMTPEnabled"
+    chkSMTP.Value = .Value
     'Leave a copy in send folder
     .ValueKey = "Saveinsent"
     Me.chkSend.Value = .Value
@@ -296,6 +297,8 @@ With c
     .ValueKey = "POP3"
     .Value = CInt(Me.txtPort(0).Text)
     'SMTP Port
+    .ValueKey = "SMTPEnabled"
+    .Value = chkSMTP.Value
     .ValueKey = "SMTP"
     .Value = CInt(Me.txtPort(1).Text)
     'Leave a copy in send folder
