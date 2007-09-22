@@ -161,15 +161,15 @@ Private m_lngWindowHandle       As Long         'message window handle
 'SUBCLASSING DECLARATIONS
 'by Paul Caton
 Private Declare Function api_IsWindow Lib "user32" Alias "IsWindow" (ByVal hwnd As Long) As Long
-Private Declare Function api_GetWindowLong Lib "user32" Alias "GetWindowLongA" (ByVal hwnd As Long, ByVal nIndex As Long) As Long
-Private Declare Function api_SetWindowLong Lib "user32" Alias "SetWindowLongA" (ByVal hwnd As Long, ByVal nIndex As Long, ByVal dwNewLong As Long) As Long
+Private Declare Function api_GetWindowLong Lib "user32" Alias "GetWindowLongA" (ByVal hwnd As Long, ByVal nIndex As Integer) As Long
+Private Declare Function api_SetWindowLong Lib "user32" Alias "SetWindowLongA" (ByVal hwnd As Long, ByVal nIndex As Integer, ByVal dwNewLong As Long) As Long
 Private Declare Function api_GetModuleHandle Lib "kernel32" Alias "GetModuleHandleA" (ByVal lpModuleName As String) As Long
 Private Declare Function api_GetProcAddress Lib "kernel32" Alias "GetProcAddress" (ByVal hModule As Long, ByVal lpProcName As String) As Long
 
 Private Const PATCH_09 As Long = 119
 Private Const PATCH_0C As Long = 150
 
-Private Const GWL_WNDPROC As Long = (-4)
+Private Const GWL_WNDPROC As Integer = (-4)
 
 Private Const WM_APP As Long = 32768 '0x8000
 
@@ -597,9 +597,17 @@ End Sub
 '@return TRUE if the socket is in the accept list.
 Public Function IsAcceptRegistered(ByVal lngSocket As Long) As Boolean
 On Error GoTo Error_Handler
-
-m_colAcceptList.Item ("S" & lngSocket)
-IsAcceptRegistered = True
+Dim oTemp As CSocketMaster
+Dim bAccepted As Boolean
+WriteLog "IsAcceptRegistered"
+For Each oTemp In m_colAcceptList
+    If oTemp.SocketHandle = lngSocket Then
+        bAccepted = True
+        Exit For
+    End If
+Next
+Set oTemp = Nothing
+IsAcceptRegistered = bAccepted
 
 Exit Function
 
