@@ -95,8 +95,13 @@ With c
     .ValueKey = "POP3"
     vPorts(0) = .Value
     'SMTP Port
-    .ValueKey = "SMTP"
-    vPorts(1) = .Value
+    .ValueKey = "SMTPEnabled"
+    If .Value = 0 Then
+        vPorts(1) = 0
+    Else
+        .ValueKey = "SMTP"
+        vPorts(1) = .Value
+    End If
     'Leave a copy in send folder
     .ValueKey = "Saveinsent"
     bSaveinsent = .Value
@@ -155,6 +160,7 @@ Private Sub skPOP3_ConnectionRequest(ByVal requestID As Long)
     skPOP3.CloseSck
     skPOP3.Accept requestID
     skPOP3.SendData "+OK POP3 server ready"
+    WriteLog "+OK POP3 server ready", Paranoid
 End Sub
 ''
 'Evaluate a POP3 command  (<A HREF='http://www.faqs.org/rfcs/rfc1939.html' target='_blank'>RFC1939</A>)
@@ -171,11 +177,11 @@ On Error GoTo ErrHandler
     Dim bCloseSocket    As Boolean
     Dim lngSize         As Long
     Dim strDataRecived  As String
-    
+    WriteLog "skPOP3_DataArrival." & bytesTotal & "Bytes", Paranoid
     skPOP3.GetData strDataRecived
     '
     If Left$(strDataRecived, 4) <> "PASS" Then
-        Debug.Print strDataRecived
+        WriteLog strDataRecived, Paranoid
     End If
     Select Case Left$(strDataRecived, 4)
     Case Empty
@@ -296,12 +302,13 @@ On Error GoTo ErrHandler
         skPOP3.CloseSck
         skPOP3.Bind vPorts(0), m_strIP
         skPOP3.Listen
+        strPassWord = Empty
+        strUser = Empty
         Select Case intState
         Case POP3
             intState = None
             Set objOWA = Nothing
         Case BOTH
-            Debug.Assert False
             intState = SMTP
         End Select
     End If
@@ -316,14 +323,16 @@ ErrHandler:
 
 End Sub
 
-Private Sub skPOP3_Error(ByVal Number As Integer, Description As String, ByVal sCode As Long, ByVal Source As String, ByVal HelpFile As String, ByVal HelpContext As Long, CancelDisplay As Boolean)
+Private Sub skPOP3_Error(ByVal Number As Long, Description As String, ByVal sCode As Long, ByVal Source As String, ByVal HelpFile As String, ByVal HelpContext As Long, CancelDisplay As Boolean)
     WriteLog "skPOP3_Error " & Number & "->" & Description, Error
 End Sub
+
 
 Private Sub skSMTP_ConnectionRequest(ByVal requestID As Long)
     skSMTP.CloseSck
     skSMTP.Accept requestID
     skSMTP.SendData "220 " & m_strIP & " Simple Mail Transfer Service Ready"
+    WriteLog "220 " & m_strIP & " Simple Mail Transfer Service Ready", Paranoid
 End Sub
 ''
 'Evaluate a STMP command (<A HREF='http://www.faqs.org/rfcs/rfc822.html' target='_blank'>RFC822</A>)
@@ -340,7 +349,7 @@ On Error GoTo ErrHandler
     skSMTP.GetData strDataRecived
     '
     If Left$(strDataRecived, 4) <> "PASS" And strSMTPState <> "DATA" Then
-        Debug.Print strDataRecived
+        WriteLog strDataRecived, Paranoid
     End If
     If strSMTPState = "LOGIN" Or strSMTPState = "PASSWORD" Then
         strDataRecived = "AUTH " & strDataRecived
@@ -460,6 +469,8 @@ On Error GoTo ErrHandler
         skSMTP.CloseSck
         skSMTP.Bind vPorts(1), m_strIP
         skSMTP.Listen
+        strPassWord = Empty
+        strUser = Empty
     End If
 Exit Sub
 ErrHandler:
@@ -469,7 +480,7 @@ ErrHandler:
     'lngPop3Write = 0
 End Sub
 
-Private Sub skSMTP_Error(ByVal Number As Integer, Description As String, ByVal sCode As Long, ByVal Source As String, ByVal HelpFile As String, ByVal HelpContext As Long, CancelDisplay As Boolean)
+Private Sub skSMTP_Error(ByVal Number As Long, Description As String, ByVal sCode As Long, ByVal Source As String, ByVal HelpFile As String, ByVal HelpContext As Long, CancelDisplay As Boolean)
     WriteLog "skPOP3_Error " & Number & "->" & Description, Error
 End Sub
 
