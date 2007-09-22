@@ -69,7 +69,7 @@ Public Event CloseSck()
 Public Event Connect()
 Public Event ConnectionRequest(ByVal requestID As Long)
 Public Event DataArrival(ByVal bytesTotal As Long)
-Public Event Error(ByVal Number As Integer, Description As String, ByVal sCode As Long, ByVal Source As String, ByVal HelpFile As String, ByVal HelpContext As Long, CancelDisplay As Boolean)
+Public Event Error(ByVal Number As Long, Description As String, ByVal sCode As Long, ByVal Source As String, ByVal HelpFile As String, ByVal HelpContext As Long, CancelDisplay As Boolean)
 Public Event SendComplete()
 Public Event SendProgress(ByVal bytesSent As Long, ByVal bytesRemaining As Long)
 
