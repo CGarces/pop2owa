@@ -196,7 +196,7 @@ Private hTimer          As Long     'control timer handle
 '
 '@return Returns 0 if it has success.
 Public Function InitiateProcesses() As Long
-
+On Error GoTo ErrHandler
 InitiateProcesses = 0
 m_lngSocksQuantity = m_lngSocksQuantity + 1
 
@@ -219,6 +219,9 @@ If Not m_blnInitiated Then
     End If
     
 End If
+Exit Function
+ErrHandler:
+    Err.Raise Err.Number, "InitiateProcesses ->" & Err.Source, Err.Description
 End Function
 
 ''
@@ -227,11 +230,15 @@ End Function
 '
 '@return Resulting value of WSAStartup call
 Private Function InitiateService() As Long
+On Error GoTo ErrHandler
 Dim udtWSAData As WSAData
 Dim lngResult As Long
 
 lngResult = api_WSAStartup(SOCKET_VERSION_11, udtWSAData)
 InitiateService = lngResult
+Exit Function
+ErrHandler:
+    Err.Raise Err.Number, "InitiateService ->" & Err.Source, Err.Description
 End Function
 
 ''
@@ -240,6 +247,7 @@ End Function
 'it was the last one.
 '@return Returns 0 if it has success
 Public Function FinalizeProcesses() As Long
+On Error GoTo ErrHandler
 FinalizeProcesses = 0
 m_lngSocksQuantity = m_lngSocksQuantity - 1
 
@@ -258,7 +266,9 @@ If m_blnInitiated And m_lngSocksQuantity = 0 Then
     Subclass_Terminate
     m_blnInitiated = False
 End If
-
+Exit Function
+ErrHandler:
+    Err.Raise Err.Number, "FinalizeProcesses ->" & Err.Source, Err.Description
 End Function
 
 ''
@@ -268,6 +278,7 @@ End Function
 '@param lngErrorCode Error code
 '@return Error description
 Public Function GetErrorDescription(ByVal lngErrorCode As Long) As String
+On Error GoTo ErrHandler
 Select Case lngErrorCode
     Case WSAEACCES
         GetErrorDescription = "Permission denied."
@@ -352,7 +363,9 @@ Select Case lngErrorCode
     Case Else
         GetErrorDescription = "Unknown error."
 End Select
-
+Exit Function
+ErrHandler:
+    Err.Raise Err.Number, "GetErrorDescription ->" & Err.Source, Err.Description
 End Function
 
 ''
@@ -375,6 +388,7 @@ End Function
 '
 '@return Returns 0 if it has success
 Private Function DestroyWinsockMessageWindow() As Long
+On Error GoTo ErrHandler
 DestroyWinsockMessageWindow = 0
 
 If m_lngWindowHandle = 0 Then
@@ -393,7 +407,9 @@ Else
     Debug.Print "OK Destroyed winsock message window " & m_lngWindowHandle
     m_lngWindowHandle = 0
 End If
-    
+Exit Function
+ErrHandler:
+    Err.Raise Err.Number, "DestroyWinsockMessageWindow ->" & Err.Source, Err.Description
 End Function
 
 ''
@@ -408,10 +424,14 @@ End Function
 '@param lngObjectPointer
 '@return Returns 0 if it fails.
 Public Function ResolveHost(ByVal strHost As String, ByVal lngHOSTENBuf As Long, ByVal lngObjectPointer As Long) As Long
+On Error GoTo ErrHandler
 Dim lngAsynHandle As Long
 lngAsynHandle = api_WSAAsyncGetHostByName(m_lngWindowHandle, RESOLVE_MESSAGE, strHost, ByVal lngHOSTENBuf, MAXGETHOSTSTRUCT)
 If lngAsynHandle <> 0 Then Subclass_AddResolveMessage lngAsynHandle, lngObjectPointer
 ResolveHost = lngAsynHandle
+Exit Function
+ErrHandler:
+    Err.Raise Err.Number, "ResolveHost ->" & Err.Source, Err.Description
 End Function
 
 ''
@@ -420,11 +440,15 @@ End Function
 '@param lngValue double word to translate
 '@return Hi word
 Public Function HiWord(lngValue As Long) As Long
+On Error GoTo ErrHandler
 If (lngValue And &H80000000) = &H80000000 Then
     HiWord = ((lngValue And &H7FFF0000) \ &H10000) Or &H8000&
 Else
     HiWord = (lngValue And &HFFFF0000) \ &H10000
 End If
+Exit Function
+ErrHandler:
+    Err.Raise Err.Number, "HiWord ->" & Err.Source, Err.Description
 End Function
 
 ''
@@ -433,7 +457,11 @@ End Function
 '@param lngValue double word to translate
 '@return Low word
 Public Function LoWord(lngValue As Long) As Long
+On Error GoTo ErrHandler
 LoWord = (lngValue And &HFFFF&)
+Exit Function
+ErrHandler:
+    Err.Raise Err.Number, "LoWord ->" & Err.Source, Err.Description
 End Function
 
 ''
@@ -442,12 +470,16 @@ End Function
 '@param lPointer Pointer to return
 '@return String with the pointer's value
 Public Function StringFromPointer(ByVal lPointer As Long) As String
+On Error GoTo ErrHandler
 Dim strTemp As String
 Dim lRetVal As Long
 
 strTemp = String$(api_lstrlen(ByVal lPointer), 0)
 lRetVal = api_lstrcpy(ByVal strTemp, ByVal lPointer)
 If lRetVal Then StringFromPointer = strTemp
+Exit Function
+ErrHandler:
+    Err.Raise Err.Number, "StringFromPointer ->" & Err.Source, Err.Description
 End Function
 
 ''
@@ -458,12 +490,16 @@ End Function
 '@param Value Long number to translate
 '@return Unsigned integer
 Public Function UnsignedToInteger(Value As Long) As Integer
+On Error GoTo ErrHandler
 If Value < 0 Or Value >= OFFSET_2 Then Error 6 ' Overflow
 If Value <= MAXINT_2 Then
     UnsignedToInteger = Value
 Else
     UnsignedToInteger = Value - OFFSET_2
 End If
+Exit Function
+ErrHandler:
+    Err.Raise Err.Number, "UnsignedToInteger ->" & Err.Source, Err.Description
 End Function
 ''
 'The function takes an unsigned Integer from and API and 
@@ -472,11 +508,15 @@ End Function
 '@param Value Number to translate
 '@return long value
 Public Function IntegerToUnsigned(Value As Integer) As Long
+On Error GoTo ErrHandler
 If Value < 0 Then
     IntegerToUnsigned = Value + OFFSET_2
 Else
     IntegerToUnsigned = Value
 End If
+Exit Function
+ErrHandler:
+    Err.Raise Err.Number, "IntegerToUnsigned ->" & Err.Source, Err.Description
 End Function
 ''
 
@@ -491,7 +531,7 @@ End Function
 '@param blnEvents
 '@return
 Public Function RegisterSocket(ByVal lngSocket As Long, ByVal lngObjectPointer As Long, ByVal blnEvents As Boolean) As Boolean
-
+On Error GoTo ErrHandler
 If m_colSocketsInst Is Nothing Then
     Set m_colSocketsInst = New Collection
     Debug.Print "OK Created socket collection"
@@ -526,6 +566,9 @@ End If
 
 m_colSocketsInst.Add lngObjectPointer, "S" & lngSocket
 RegisterSocket = True
+Exit Function
+ErrHandler:
+    Err.Raise Err.Number, "RegisterSocket ->" & Err.Source, Err.Description
 End Function
 
 ''
@@ -580,6 +623,7 @@ End Sub
 '
 '@param lngSocket Socket to accept
 Public Sub RegisterAccept(ByVal lngSocket As Long)
+On Error GoTo ErrHandler
 If m_colAcceptList Is Nothing Then
     Set m_colAcceptList = New Collection
     Debug.Print "OK Created accept collection"
@@ -588,6 +632,9 @@ Dim Socket As CSocketMaster
 Set Socket = New CSocketMaster
 Socket.Accept lngSocket
 m_colAcceptList.Add Socket, "S" & lngSocket
+Exit Sub
+ErrHandler:
+    Err.Raise Err.Number, "RegisterAccept ->" & Err.Source, Err.Description
 End Sub
 ''
 'Returns TRUE if the socket that is passed is registered
@@ -599,7 +646,6 @@ Public Function IsAcceptRegistered(ByVal lngSocket As Long) As Boolean
 On Error GoTo Error_Handler
 Dim oTemp As CSocketMaster
 Dim bAccepted As Boolean
-WriteLog "IsAcceptRegistered"
 For Each oTemp In m_colAcceptList
     If oTemp.SocketHandle = lngSocket Then
         bAccepted = True
@@ -621,12 +667,16 @@ End Function
 '
 '@param lngSocket Socket to unregist
 Public Sub UnregisterAccept(ByVal lngSocket As Long)
+On Error GoTo ErrHandler
 m_colAcceptList.Remove "S" & lngSocket
 
 If m_colAcceptList.Count = 0 Then
     Set m_colAcceptList = Nothing
     Debug.Print "OK Destroyed accept collection"
 End If
+Exit Sub
+ErrHandler:
+    Err.Raise Err.Number, "UnregisterAccept ->" & Err.Source, Err.Description
 End Sub
 
 ''
@@ -643,6 +693,7 @@ End Function
 'based on code by Paul Caton
 
 Private Sub Subclass_Initialize()
+On Error GoTo ErrHandler
 Const PATCH_01 As Long = 16                                 'Code buffer offset to the location of the relative address to EbMode
 Const PATCH_03 As Long = 72                                 'Relative address of SetWindowsLong
 Const PATCH_04 As Long = 77                                 'Relative address of WSACleanup
@@ -699,11 +750,15 @@ Const MOD_WS   As String = "ws2_32"                         'Location of the clo
   Call Subclass_PatchRel(PATCH_04, Subclass_AddrFunc(MOD_WS, FUNC_WCU))       'Address of the WSACleanup api function
   Call Subclass_PatchRel(PATCH_06, Subclass_AddrFunc(MOD_USER, FUNC_KTM))     'Address of the KillTimer api function
   Call Subclass_PatchRel(PATCH_08, Subclass_AddrFunc(MOD_USER, FUNC_CWP))     'Address of the CallWindowProc api function
+Exit Sub
+ErrHandler:
+    Err.Raise Err.Number, "Subclass_Initialize ->" & Err.Source, Err.Description
 End Sub
 
 ''
 'UnSubclass and release the allocated memory
 Private Sub Subclass_Terminate()
+On Error GoTo ErrHandler
   Call Subclass_UnSubclass                                      'UnSubclass if the Subclass thunk is active
   Call api_GlobalFree(nAddrSubclass)                            'Release the allocated memory
   Debug.Print "OK Freed subclass memory at: " & nAddrSubclass
@@ -712,6 +767,9 @@ Private Sub Subclass_Terminate()
   ReDim lngTableA2(1 To 1)
   ReDim lngTableB1(1 To 1)
   ReDim lngTableB2(1 To 1)
+Exit Sub
+ErrHandler:
+    Err.Raise Err.Number, "Subclass_Terminate ->" & Err.Source, Err.Description
 End Sub
 
 ''
@@ -726,6 +784,7 @@ End Function
 '@param hwnd
 '@return
 Private Function Subclass_Subclass(ByVal hwnd As Long) As Boolean
+On Error GoTo ErrHandler
 Const PATCH_02 As Long = 62                                'Address of the previous WndProc
 Const PATCH_05 As Long = 82                                'Control timer handle
 Const PATCH_07 As Long = 108                               'Address of the previous WndProc
@@ -752,6 +811,9 @@ Const PATCH_07 As Long = 108                               'Address of the previ
   End If
 
   Debug.Assert Subclass_Subclass
+Exit Function
+ErrHandler:
+    Err.Raise Err.Number, "Subclass_Subclass ->" & Err.Source, Err.Description
 End Function
 
 ''
@@ -759,6 +821,7 @@ End Function
 '
 '@return
 Private Function Subclass_UnSubclass() As Boolean
+On Error GoTo ErrHandler
   If hWndSub <> 0 Then
     lngMsgCntA = 0
     lngMsgCntB = 0
@@ -777,7 +840,9 @@ Private Function Subclass_UnSubclass() As Boolean
 
     Subclass_UnSubclass = True                              'Success
   End If
-  
+Exit Function
+ErrHandler:
+    Err.Raise Err.Number, "Subclass_UnSubclass ->" & Err.Source, Err.Description
 End Function
 
 ''
@@ -834,6 +899,7 @@ Private Function Subclass_SetTrue(bValue As Boolean) As Boolean
 End Function
 
 Private Sub Subclass_AddResolveMessage(ByVal lngAsync As Long, ByVal lngObjectPointer As Long)
+On Error GoTo ErrHandler
 Dim Count As Long
 For Count = 1 To lngMsgCntA
     Select Case lngTableA1(Count)
@@ -855,10 +921,13 @@ ReDim Preserve lngTableA2(1 To lngMsgCntA)
 lngTableA1(lngMsgCntA) = lngAsync
 lngTableA2(lngMsgCntA) = lngObjectPointer
 Subclass_PatchTableA
-
+Exit Sub
+ErrHandler:
+    Err.Raise Err.Number, "Subclass_AddResolveMessage ->" & Err.Source, Err.Description
 End Sub
 
 Private Sub Subclass_AddSocketMessage(ByVal lngSocket As Long, ByVal lngObjectPointer As Long)
+On Error GoTo ErrHandler
 Dim Count As Long
 For Count = 1 To lngMsgCntB
     Select Case lngTableB1(Count)
@@ -880,10 +949,13 @@ ReDim Preserve lngTableB2(1 To lngMsgCntB)
 lngTableB1(lngMsgCntB) = lngSocket
 lngTableB2(lngMsgCntB) = lngObjectPointer
 Subclass_PatchTableB
-
+Exit Sub
+ErrHandler:
+    Err.Raise Err.Number, "Subclass_AddSocketMessage ->" & Err.Source, Err.Description
 End Sub
 
 Private Sub Subclass_DelResolveMessage(ByVal lngAsync As Long)
+On Error GoTo ErrHandler
 Dim Count As Long
 For Count = 1 To lngMsgCntA
     If lngTableA1(Count) = lngAsync Then
@@ -892,9 +964,13 @@ For Count = 1 To lngMsgCntA
         Exit Sub
     End If
 Next Count
+Exit Sub
+ErrHandler:
+    Err.Raise Err.Number, "Subclass_DelResolveMessage ->" & Err.Source, Err.Description
 End Sub
 
 Private Sub Subclass_DelSocketMessage(ByVal lngSocket As Long)
+On Error GoTo ErrHandler
 Dim Count As Long
 For Count = 1 To lngMsgCntB
     If lngTableB1(Count) = lngSocket Then
@@ -903,27 +979,39 @@ For Count = 1 To lngMsgCntB
         Exit Sub
     End If
 Next Count
+Exit Sub
+ErrHandler:
+    Err.Raise Err.Number, "Subclass_DelSocketMessage ->" & Err.Source, Err.Description
 End Sub
 
 Private Sub Subclass_PatchTableA()
+On Error GoTo ErrHandler
 Const PATCH_0A As Long = 127
 Const PATCH_0B As Long = 143
 
 Call Subclass_PatchVal(PATCH_09, lngMsgCntA)
 Call Subclass_PatchVal(PATCH_0A, Subclass_AddrMsgTbl(lngTableA1))
 Call Subclass_PatchVal(PATCH_0B, Subclass_AddrMsgTbl(lngTableA2))
+Exit Sub
+ErrHandler:
+    Err.Raise Err.Number, "Subclass_PatchTableA ->" & Err.Source, Err.Description
 End Sub
 
 Private Sub Subclass_PatchTableB()
+On Error GoTo ErrHandler
 Const PATCH_0D As Long = 158
 Const PATCH_0E As Long = 174
 
 Call Subclass_PatchVal(PATCH_0C, lngMsgCntB)
 Call Subclass_PatchVal(PATCH_0D, Subclass_AddrMsgTbl(lngTableB1))
 Call Subclass_PatchVal(PATCH_0E, Subclass_AddrMsgTbl(lngTableB2))
+Exit Sub
+ErrHandler:
+    Err.Raise Err.Number, "Subclass_PatchTableB ->" & Err.Source, Err.Description
 End Sub
 
 Public Sub Subclass_ChangeOwner(ByVal lngSocket As Long, ByVal lngObjectPointer As Long)
+On Error GoTo ErrHandler
 Dim Count As Long
 For Count = 1 To lngMsgCntB
     If lngTableB1(Count) = lngSocket Then
@@ -931,4 +1019,7 @@ For Count = 1 To lngMsgCntB
         Exit Sub
     End If
 Next Count
+Exit Sub
+ErrHandler:
+    Err.Raise Err.Number, "Subclass_ChangeOwner ->" & Err.Source, Err.Description
 End Sub
