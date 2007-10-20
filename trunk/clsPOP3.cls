@@ -157,10 +157,14 @@ Private Sub Class_Terminate()
 End Sub
 
 Private Sub skPOP3_ConnectionRequest(ByVal requestID As Long)
+On Error GoTo ErrHandler
     skPOP3.CloseSck
     skPOP3.Accept requestID
     skPOP3.SendData "+OK POP3 server ready"
     WriteLog "+OK POP3 server ready", Paranoid
+Exit Sub
+ErrHandler:
+WriteLog "POP3 ConnectionRequest ->" & Err.Source & vbTab & Err.Description, Error
 End Sub
 ''
 'Evaluate a POP3 command  (<A HREF='http://www.faqs.org/rfcs/rfc1939.html' target='_blank'>RFC1939</A>)
@@ -329,10 +333,14 @@ End Sub
 
 
 Private Sub skSMTP_ConnectionRequest(ByVal requestID As Long)
+On Error GoTo ErrHandler
     skSMTP.CloseSck
     skSMTP.Accept requestID
     skSMTP.SendData "220 " & m_strIP & " Simple Mail Transfer Service Ready"
     WriteLog "220 " & m_strIP & " Simple Mail Transfer Service Ready", Paranoid
+Exit Sub
+ErrHandler:
+    WriteLog "skSMTP_ConnectionRequest ->" & Err.Source & vbTab & Err.Description, Error
 End Sub
 ''
 'Evaluate a STMP command (<A HREF='http://www.faqs.org/rfcs/rfc822.html' target='_blank'>RFC822</A>)
@@ -474,7 +482,7 @@ On Error GoTo ErrHandler
     End If
 Exit Sub
 ErrHandler:
-    WriteLog "SendSMTP " & Err.Description, Error
+    WriteLog "skSMTP_DataArrival ->" & Err.Source & vbTab & Err.Description, Error
     Debug.Assert False
     skSMTP.CloseSck
     'lngPop3Write = 0
