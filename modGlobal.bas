@@ -124,7 +124,7 @@ Else
 End If
 Exit Sub
 ErrHandler:
-    WriteLog Err.Source & vbTab & Err.Description, Error
+    WriteLog "Main ->" & Err.Source & vbTab & Err.Description, Error
     If Not IsNTService Then
         Unload frmMain
     End If
