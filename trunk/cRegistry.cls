@@ -12,12 +12,7 @@ Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 Option Explicit
-
-' =========================================================
-' Class:    cRegistry
-' Author:   Steve McMahon
-' Date  :   21 Feb 1997
-'
+''
 ' A nice class wrapper around the registry functions
 ' Allows searching,deletion,modification and addition
 ' of Keys or Values.
@@ -50,6 +45,10 @@ Option Explicit
 ' vbAccelerator - free, advanced source code for VB programmers.
 '     http://vbaccelerator.com
 ' =========================================================
+'
+'@author Steve McMahon
+'@date 21/02/1997
+
 
 'Registry Specific Access Rights
 Private Const KEY_QUERY_VALUE = &H1
