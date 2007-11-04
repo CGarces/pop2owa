@@ -61,8 +61,6 @@ Public Enum SockState
     sckError
 End Enum
 
-Private Const SOMAXCONN As Long = 5
-
 'EVENTS
 
 Public Event CloseSck()
@@ -74,28 +72,58 @@ Public Event SendComplete()
 Public Event SendProgress(ByVal bytesSent As Long, ByVal bytesRemaining As Long)
 
 'MEMBER VARIABLES
-Private m_lngSocketHandle       As Long                 'socket handle
-Private m_enmState              As SockState            'socket state
-Private m_strTag                As String               'tag
-Private m_strRemoteHost         As String               'remote host
-Private m_lngRemotePort         As Long                 'remote port
-Private m_strRemoteHostIP       As String               'remote host ip
-Private m_lngLocalPort          As Long                 'local port
-Private m_lngLocalPortBind      As Long                 'temporary local port
-Private m_strLocalIP            As String               'local IP
+''
+'socket handle
+Private m_lngSocketHandle       As Long
+''
+'socket state
+Private m_enmState              As SockState
+''
+'tag
+Private m_strTag                As String
+''
+'remote host
+Private m_strRemoteHost         As String
+''
+'remote port
+Private m_lngRemotePort         As Long
+''
+'remote host ip
+Private m_strRemoteHostIP       As String
+''
+'local port
+Private m_lngLocalPort          As Long
+''
+'temporary local port
+Private m_lngLocalPortBind      As Long
+''
+'local IP
+Private m_strLocalIP            As String
 'Private m_enmProtocol           As ProtocolConstants    'protocol used (TCP / UDP)
-
-Private m_lngMemoryPointer  As Long 'memory pointer used as buffer when resolving host
-Private m_lngMemoryHandle   As Long 'buffer memory handle
-
-Private m_lngSendBufferLen  As Long 'winsock buffer size for sends
-Private m_lngRecvBufferLen  As Long 'winsock buffer size for receives
-
-Private m_strSendBuffer As String   'local incoming buffer
-Private m_strRecvBuffer As String   'local outgoing buffer
-
-Private m_blnAcceptClass As Boolean 'if True then this is an Accept socket class
-Private m_colWaitingResolutions As Collection   'hosts waiting to be resolved by the system
+''
+'memory pointer used as buffer when resolving host
+Private m_lngMemoryPointer  As Long
+''
+'buffer memory handle
+Private m_lngMemoryHandle   As Long
+''
+'winsock buffer size for sends
+Private m_lngSendBufferLen  As Long
+''
+'winsock buffer size for receives
+Private m_lngRecvBufferLen  As Long
+''
+'local incoming buffer
+Private m_strSendBuffer As String
+''
+'local outgoing buffer
+Private m_strRecvBuffer As String
+''
+'If True then this is an Accept socket class
+Private m_blnAcceptClass As Boolean
+''
+'hosts waiting to be resolved by the system
+Private m_colWaitingResolutions As Collection
 
 ''
 'This sub receives system messages from our WndProc.<BR>
@@ -1128,8 +1156,18 @@ Debug.Print "Winsock buffer size for receives: " & m_lngSendBufferLen
 End Sub
 
 'FIXIT: Declare 'Data' and 'varType' and 'maxLen' con un tipo de datos de enlace en tiempo de compilación     FixIT90210ae-R1672-R1B8ZE
-Public Sub GetData(ByRef Data As Variant, Optional varType As Variant, Optional maxLen As Variant)
+Public Sub GetData(ByRef Data As Variant, Optional varClass As VbVarType, Optional maxLen As Variant)
 Dim lngBytesRecibidos  As Long
+Dim blnClassMiss As Boolean
+
+blnClassMiss = IsMissing(varClass)
+'Select type of data
+If varType(Data) = vbEmpty Then
+    If blnClassMiss Then varClass = vbArray + vbByte
+Else
+    varClass = varType(Data)
+End If
+
 
 If m_enmState <> sckConnected And Not m_blnAcceptClass Then
     Err.Raise sckBadState, "CSocketMaster.GetData", "Wrong protocol or connection state for the requested transaction or request"
@@ -1146,33 +1184,11 @@ If Not IsMissing(maxLen) Then
     End If
 End If
 
-lngBytesRecibidos = RecvData(Data, False, varType, maxLen)
+lngBytesRecibidos = RecvData(Data, varClass, maxLen)
 Debug.Print "OK Bytes obtained from buffer: " & lngBytesRecibidos
 
 End Sub
 
-'FIXIT: Declare 'Data' and 'varType' and 'maxLen' con un tipo de datos de enlace en tiempo de compilación     FixIT90210ae-R1672-R1B8ZE
-Public Sub PeekData(ByRef Data As Variant, Optional varType As Variant, Optional maxLen As Variant)
-Dim lngBytesRecibidos  As Long
-
-If m_enmState <> sckConnected Then
-    Err.Raise sckBadState, "CSocketMaster.PeekData", "Wrong protocol or connection state for the requested transaction or request"
-    Exit Sub
-End If
-
-If Not IsMissing(maxLen) Then
-    If IsNumeric(maxLen) Then
-        If CLng(maxLen) < 0 Then
-            Err.Raise sckInvalidArg, "CSocketMaster.PeekData", "The argument passed to a function was not in the correct format or in the specified range."
-        End If
-    Else
-        maxLen = Len(m_strRecvBuffer)
-    End If
-End If
-
-lngBytesRecibidos = RecvData(Data, True, varType, maxLen)
-Debug.Print "OK Bytes obtained from buffer: " & lngBytesRecibidos
-End Sub
 
 
 'FIXIT: Declare 'Data' and 'varClass' and 'maxLen' con un tipo de datos de enlace en tiempo de compilación     FixIT90210ae-R1672-R1B8ZE
@@ -1181,35 +1197,21 @@ End Sub
 'This function is to retrieve data from the buffer. If we are using TCP
 'then the data is retrieved from a local buffer (m_strRecvBuffer). If we
 'are using UDP the data is retrieved from winsock buffer.
-'It can be called by two public methods of the class - GetData and PeekData.
-'Behavior of the function is defined by the blnPeek argument. If a value of
-'that argument is TRUE, the function returns number of bytes in the
-'buffer, and copy data from that buffer into the data argument.
-'If a value of the blnPeek is FALSE, then this function returns number of
-'bytes received, and move data from the buffer into the data
-'argument. MOVE means that data will be removed from the buffer.
+'This function returns number of bytes received, and move data from
+'the buffer into the data argument.
+'MOVE means that data will be removed from the buffer.
 '
 '@param Data
-'@param blnPeek
 '@param varClass
 '@param maxLen
-Private Function RecvData(ByRef Data As Variant, ByVal blnPeek As Boolean, Optional varClass As Variant, Optional maxLen As Variant) As Long
+Private Function RecvData(ByRef Data As Variant, Optional varClass As VbVarType, Optional maxLen As Variant) As Long
 
 Dim blnMaxLenMiss   As Boolean
-Dim blnClassMiss    As Boolean
 Dim lngBufferLen    As Long
 Dim arrBuffer()     As Byte
 
 lngBufferLen = Len(m_strRecvBuffer)
 blnMaxLenMiss = IsMissing(maxLen)
-blnClassMiss = IsMissing(varClass)
-
-'Select type of data
-If varType(Data) = vbEmpty Then
-    If blnClassMiss Then varClass = vbArray + vbByte
-Else
-    varClass = varType(Data)
-End If
 
 'As stated on Winsock control documentation if the
 'data type passed is string or byte array type then
@@ -1218,10 +1220,8 @@ End If
 If varClass = vbString Or varClass = vbArray + vbByte Then
 
     If blnMaxLenMiss Then 'if maxLen argument is missing
-    
+        RecvData = lngBufferLen
         If lngBufferLen = 0 Then
-        
-            RecvData = 0
         
             arrBuffer = StrConv("", vbFromUnicode)
             Data = arrBuffer
@@ -1229,10 +1229,7 @@ If varClass = vbString Or varClass = vbArray + vbByte Then
             Exit Function
     
         Else
-            
-            RecvData = lngBufferLen
-            BuildArray lngBufferLen, blnPeek, arrBuffer
-
+            BuildArray lngBufferLen, arrBuffer
         End If
 
     Else 'if maxLen argument is not missing
@@ -1248,12 +1245,12 @@ If varClass = vbString Or varClass = vbArray + vbByte Then
         ElseIf maxLen > lngBufferLen Then
             
             RecvData = lngBufferLen
-            BuildArray lngBufferLen, blnPeek, arrBuffer
+            BuildArray lngBufferLen, arrBuffer
 
         Else
             
             RecvData = CLng(maxLen)
-            BuildArray CLng(maxLen), blnPeek, arrBuffer
+            BuildArray CLng(maxLen), arrBuffer
 
         End If
     
@@ -1264,70 +1261,69 @@ End If
     Select Case varClass
     
     Case vbString
-        Dim strData As String
-        strData = StrConv(arrBuffer(), vbUnicode)
-        Data = strData
+        Data = StrConv(arrBuffer(), vbUnicode)
     Case vbArray + vbByte
+        Debug.Assert False
         Data = arrBuffer
-    Case vbBoolean
-        Dim blnData As Boolean
-        If LenB(blnData) > lngBufferLen Then Exit Function
-        BuildArray LenB(blnData), blnPeek, arrBuffer
-        RecvData = LenB(blnData)
-        api_CopyMemory blnData, arrBuffer(0), LenB(blnData)
-        Data = blnData
-    Case vbByte
-        Dim bytData As Byte
-        If LenB(bytData) > lngBufferLen Then Exit Function
-        BuildArray LenB(bytData), blnPeek, arrBuffer
-        RecvData = LenB(bytData)
-        api_CopyMemory bytData, arrBuffer(0), LenB(bytData)
-        Data = bytData
-    Case vbCurrency
-        Dim curData As Currency
-        If LenB(curData) > lngBufferLen Then Exit Function
-        BuildArray LenB(curData), blnPeek, arrBuffer
-        RecvData = LenB(curData)
-        api_CopyMemory curData, arrBuffer(0), LenB(curData)
-        Data = curData
-    Case vbDate
-        Dim datData As Date
-        If LenB(datData) > lngBufferLen Then Exit Function
-        BuildArray LenB(datData), blnPeek, arrBuffer
-        RecvData = LenB(datData)
-        api_CopyMemory datData, arrBuffer(0), LenB(datData)
-        Data = datData
-    Case vbDouble
-        Dim dblData As Double
-        If LenB(dblData) > lngBufferLen Then Exit Function
-        BuildArray LenB(dblData), blnPeek, arrBuffer
-        RecvData = LenB(dblData)
-        api_CopyMemory dblData, arrBuffer(0), LenB(dblData)
-        Data = dblData
-    Case vbInteger
-        Dim intData As Integer
-        If LenB(intData) > lngBufferLen Then Exit Function
-        BuildArray LenB(intData), blnPeek, arrBuffer
-        RecvData = LenB(intData)
-        api_CopyMemory intData, arrBuffer(0), LenB(intData)
-        Data = intData
-    Case vbLong
-        Dim lngData As Long
-        If LenB(lngData) > lngBufferLen Then Exit Function
-        BuildArray LenB(lngData), blnPeek, arrBuffer
-        RecvData = LenB(lngData)
-        api_CopyMemory lngData, arrBuffer(0), LenB(lngData)
-        Data = lngData
-    Case vbSingle
-        Dim sngData As Single
-        If LenB(sngData) > lngBufferLen Then Exit Function
-        BuildArray LenB(sngData), blnPeek, arrBuffer
-        RecvData = LenB(sngData)
-        api_CopyMemory sngData, arrBuffer(0), LenB(sngData)
-        Data = sngData
+'    Case vbBoolean
+'        Dim blnData As Boolean
+'        If LenB(blnData) > lngBufferLen Then Exit Function
+'        BuildArray LenB(blnData), blnPeek, arrBuffer
+'        RecvData = LenB(blnData)
+'        api_CopyMemory blnData, arrBuffer(0), LenB(blnData)
+'        Data = blnData
+'    Case vbByte
+'        Dim bytData As Byte
+'        If LenB(bytData) > lngBufferLen Then Exit Function
+'        BuildArray LenB(bytData), blnPeek, arrBuffer
+'        RecvData = LenB(bytData)
+'        api_CopyMemory bytData, arrBuffer(0), LenB(bytData)
+'        Data = bytData
+'    Case vbCurrency
+'        Dim curData As Currency
+'        If LenB(curData) > lngBufferLen Then Exit Function
+'        BuildArray LenB(curData), blnPeek, arrBuffer
+'        RecvData = LenB(curData)
+'        api_CopyMemory curData, arrBuffer(0), LenB(curData)
+'        Data = curData
+'    Case vbDate
+'        Dim datData As Date
+'        If LenB(datData) > lngBufferLen Then Exit Function
+'        BuildArray LenB(datData), blnPeek, arrBuffer
+'        RecvData = LenB(datData)
+'        api_CopyMemory datData, arrBuffer(0), LenB(datData)
+'        Data = datData
+'    Case vbDouble
+'        Dim dblData As Double
+'        If LenB(dblData) > lngBufferLen Then Exit Function
+'        BuildArray LenB(dblData), blnPeek, arrBuffer
+'        RecvData = LenB(dblData)
+'        api_CopyMemory dblData, arrBuffer(0), LenB(dblData)
+'        Data = dblData
+'    Case vbInteger
+'        Dim intData As Integer
+'        If LenB(intData) > lngBufferLen Then Exit Function
+'        BuildArray LenB(intData), blnPeek, arrBuffer
+'        RecvData = LenB(intData)
+'        api_CopyMemory intData, arrBuffer(0), LenB(intData)
+'        Data = intData
+'    Case vbLong
+'        Dim lngData As Long
+'        If LenB(lngData) > lngBufferLen Then Exit Function
+'        BuildArray LenB(lngData), blnPeek, arrBuffer
+'        RecvData = LenB(lngData)
+'        api_CopyMemory lngData, arrBuffer(0), LenB(lngData)
+'        Data = lngData
+'    Case vbSingle
+'        Dim sngData As Single
+'        If LenB(sngData) > lngBufferLen Then Exit Function
+'        BuildArray LenB(sngData), blnPeek, arrBuffer
+'        RecvData = LenB(sngData)
+'        api_CopyMemory sngData, arrBuffer(0), LenB(sngData)
+'        Data = sngData
     Case Else
+        Debug.Assert False
         Err.Raise sckUnsupported, "CSocketMaster.RecvData", "Unsupported variant type."
-       
     End Select
 
 End Function
@@ -1337,19 +1333,16 @@ End Function
 'Returns a byte array of Size bytes filled with incoming buffer data.
 '
 '@param Size
-'@param blnPeek
 '@param lngErrorCode
 '@param bytArray Incoming buffer data
-Private Sub BuildArray(ByVal Size As Long, ByVal blnPeek As Boolean, ByRef bytArray() As Byte)
+Private Sub BuildArray(ByVal Size As Long, ByRef bytArray() As Byte)
 Dim strData As String
 
         
 strData = Left$(m_strRecvBuffer, CLng(Size))
 bytArray = StrConv(strData, vbFromUnicode)
-            
-If Not blnPeek Then
-    m_strRecvBuffer = Mid$(m_strRecvBuffer, Size + 1)
-End If
+m_strRecvBuffer = Mid$(m_strRecvBuffer, Size + 1)
+
 End Sub
 
 ''
@@ -1378,6 +1371,9 @@ Next
 End Sub
 
 Public Sub Listen()
+
+Const SOMAXCONN As Long = 5
+
 If m_enmState <> sckClosed And m_enmState <> sckOpen Then
     Err.Raise sckInvalidOp, "CSocketMaster.Listen", "Invalid operation at current state"
 End If
