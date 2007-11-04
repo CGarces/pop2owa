@@ -28,18 +28,6 @@ Private strURLInbox As String
 
 Public intMsgCount As Integer
 
-
-''
-'Get the URL of inbox messages
-'
-'@param intMsg  Message position in the inbox folder
-Private Function GetURL(ByVal intMsg As Integer) As String
-    GetURL = objDOMInbox.childNodes(1).childNodes(intMsg - 1).selectSingleNode("a:href").Text
-
-End Function
-
-
-
 ''
 'Retrieve message in RFC 821 format and send it to the client.
 '
@@ -57,7 +45,7 @@ Set oXMLHTTP = New XMLHTTP
 
 With oXMLHTTP
     '.setOption 3, ""
-    .open "GET", strURL & "?ID=" & Timer, True, strUser, strPassWord
+    .open "GET", strURL & "?ID=" & (Timer * 100), True, strUser, strPassWord
     .setRequestHeader "Content-type", "text/xml"
     .setRequestHeader "Depth", "infinity"
     .setRequestHeader "Translate", "f"
@@ -84,7 +72,7 @@ With oXMLHTTP
         'Fix errors in inline images
         ParseAtachment strMsg
         'Fix OWA errors in recived messages
-        If InStr(strMsg, "X-MimeOLE: Produced By Microsoft Exchange") > 0 Then
+        If InStr(strMsg, "X-MimeOLE: Produced By Microsoft Exchange") <> 0 Then
             ParseHeader strMsg
         End If
         objPOP3.SendData strMsg
@@ -114,7 +102,7 @@ Dim oXMLHTTP    As XMLHTTP
     Set oXMLHTTP = New XMLHTTP
     With oXMLHTTP
         '.setOption 3, ""
-        .open "DELETE", GetURL(intMsg), True, strUser, strPassWord
+        .open "DELETE", objDOMInbox.childNodes(1).childNodes(intMsg - 1).selectSingleNode("a:href").Text, True, strUser, strPassWord
         If strCookies <> Empty Then
             .setRequestHeader "Cookies", "Necessary according to Q234486"
             .setRequestHeader "Cookies", strCookies
@@ -211,9 +199,9 @@ Dim oXMLHTTP        As XMLHTTP
 Dim strAccount      As String
 Dim objDOMFolders   As DOMDocument
 
-If InStr(strUser, "^") > 0 Then
-    strAccount = Mid(strUser, InStr(strUser, "^") + 1)
-    strUser = Left(strUser, InStr(strUser, "^") - 1)
+If InStr(strUser, "^") <> 0 Then
+    strAccount = Mid$(strUser, InStr(strUser, "^") + 1)
+    strUser = Left$(strUser, InStr(strUser, "^") - 1)
 Else
     strAccount = strUser
 End If
@@ -278,7 +266,7 @@ End Function
 ''
 'Access the Exchange store via WebDAV with Form-Based-Authentication turned on.
 '
-'@return Retrun True if the login is correct.
+'@return Return True if the login is correct.
 Private Function LogingFBA() As Boolean
 On Error GoTo ErrHandler
 Dim vHeaders()  As String
@@ -292,7 +280,7 @@ Dim strVersion  As String
 
 
 strUsername = strUser
-If InStr(strUser, "@") > 0 Then
+If InStr(strUser, "@") <> 0 Then
     strUsername = Left(strUsername, InStr(strUser, "@") - 1)
 End If
 strURL = strExchSvrName & "/exchweb/bin/auth/owaauth.dll"
@@ -405,19 +393,19 @@ Dim lngPosEnd       As Long
 Dim bModified       As Boolean
 
 lngPosHeader = InStr(1, strMsg, vbCrLf & vbCrLf)
-If lngPosHeader > 0 Then
+If lngPosHeader <> 0 Then
     'Extract the header, faster than work with the entire msg
     strHeader = Left$(strMsg, lngPosHeader)
-    lngPos = InStr(1, strHeader, "?Q", vbTextCompare)
-    While lngPos > 0
+    lngPos = InStr(1, LCase(strHeader), "?q")
+    While lngPos <> 0
         If Not Mid$(strHeader, lngPos + 3, 3) = "=22" Then
-            lngPosEnd = InStr(lngPos + 3, strHeader, "?=", vbTextCompare)
-            If InStr(1, Mid$(strHeader, lngPos + 3, lngPosEnd - lngPos - 3), "=2C", vbTextCompare) > 0 Then
+            lngPosEnd = InStr(lngPos + 3, strHeader, "?=")
+            If InStr(1, LCase(Mid$(strHeader, lngPos + 3, lngPosEnd - lngPos - 3)), "=2c") > 0 Then
                 strHeader = Left$(strHeader, lngPos + 2) & "=22" & Mid$(strHeader, lngPos + 3, lngPosEnd - lngPos - 3) & "=22" & Mid$(strHeader, lngPosEnd)
                 bModified = True
             End If
         End If
-        lngPos = InStr(lngPos + 1, strHeader, "?Q", vbTextCompare)
+        lngPos = InStr(lngPos + 1, LCase(strHeader), "?q")
     Wend
     If bModified Then
         strMsg = strHeader & Mid$(strMsg, lngPosHeader)
@@ -426,45 +414,41 @@ End If
 
 End Sub
 
-
-
 ''
 'Parse the mail attachments to fix image files mark as application/octet-stream.
 '
 '@param strMsg Email message in RFC 821 format
 Private Sub ParseAtachment(ByRef strMsg As String)
 
-Dim lngPos As Long
-Dim lngPosEnd As Long
-Dim strBoundary As String
+Dim lngPos              As Long
+Dim lngPosEnd           As Long
+Dim strBoundary         As String
 Dim lngContentTypeStart As Long
     
-lngPos = InStr(1, strMsg, "boundary=""", vbTextCompare)
-If lngPos > 0 Then
+lngPos = InStr(1, LCase(strMsg), "boundary=""")
+If lngPos <> 0 Then
 
-    lngPosEnd = InStr(lngPos + 10, strMsg, """", vbTextCompare)
+    lngPosEnd = InStr(lngPos + 10, strMsg, """")
     'Get the Boundary string to identify the attachments
-    strBoundary = Mid$(strMsg, lngPos + 10, lngPosEnd - lngPos - 10)
+    strBoundary = LCase(Mid$(strMsg, lngPos + 10, lngPosEnd - lngPos - 10))
 
-    lngPos = InStr(lngPosEnd, strMsg, strBoundary, vbTextCompare)
-    While lngPos > 0
-        lngContentTypeStart = InStr(lngPos, strMsg, "application/octet-stream", vbTextCompare)
+    lngPos = InStr(lngPosEnd, LCase(strMsg), strBoundary)
+    While lngPos <> 0
+        lngContentTypeStart = InStr(lngPos, LCase(strMsg), "application/octet-stream")
         If lngContentTypeStart > 0 Then
             lngPos = lngContentTypeStart
-            lngPosEnd = InStr(lngContentTypeStart, strMsg, vbCrLf & vbCrLf, vbTextCompare)
-            If lngPosEnd > 0 And Mid$(strMsg, lngPosEnd + 4, 4) = "/9j/" Then
+            lngPosEnd = InStr(lngContentTypeStart, strMsg, vbCrLf & vbCrLf)
+            If lngPosEnd <> 0 And Mid$(strMsg, lngPosEnd + 4, 4) = "/9j/" Then
                 'JPEG file
                 strMsg = Left$(strMsg, lngContentTypeStart - 1) & "image/jpeg" & Mid$(strMsg, lngContentTypeStart + 24)
             End If
-            If lngPosEnd > 0 And Mid$(strMsg, lngPosEnd + 4, 4) = "R0lG" Then
+            If lngPosEnd <> 0 And Mid$(strMsg, lngPosEnd + 4, 4) = "R0lG" Then
                 'GIF file
                 strMsg = Left$(strMsg, lngContentTypeStart - 1) & "image/gif" & Mid$(strMsg, lngContentTypeStart + 24)
             End If
 
         End If
-        lngPos = InStr(lngPos + 1, strMsg, strBoundary, vbTextCompare)
+        lngPos = InStr(lngPos + 1, LCase(strMsg), strBoundary)
     Wend
-
 End If
 End Sub
-
