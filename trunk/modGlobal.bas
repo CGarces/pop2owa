@@ -9,7 +9,6 @@ Public Const Service_Name  As String = "POP2OWA"
 
 Public strUser          As String
 Public strPassWord      As String
-Public objDOMInbox      As DOMDocument
 Public strExchSvrName   As String
 
 Public hStopPendingEvent As Long
