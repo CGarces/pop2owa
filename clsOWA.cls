@@ -25,7 +25,7 @@ Private strCookies  As String
 Private strURLSend  As String
 Private strURLInbox As String
 
-
+Public objDOMInbox As DOMDocument
 Public intMsgCount As Integer
 
 ''
@@ -33,8 +33,7 @@ Public intMsgCount As Integer
 '
 '@param strUrl  Url of the .EML file
 '@param objPOP3 Socket object to send data
-'@return True if sucess.
-Public Function GetMsg(ByVal strURL As String, ByRef objPOP3 As CSocketMaster) As Boolean
+Public Sub GetMsg(ByVal strURL As String, ByRef objPOP3 As CSocketMaster)
 On Error GoTo ErrHandler
 
 Dim oXMLHTTP    As XMLHTTP
@@ -76,20 +75,17 @@ With oXMLHTTP
             ParseHeader strMsg
         End If
         objPOP3.SendData strMsg
-        GetMsg = True
     Else
         WriteLog "GetMsg.Status " & .statusText, Warning
         objPOP3.SendData "-ERR " & .statusText
-        GetMsg = False
     End If
 End With
 Set oXMLHTTP = Nothing
-Exit Function
+Exit Sub
 ErrHandler:
     WriteLog "GetMsg " & Err.Description, Error
     objPOP3.SendData "-ERR " & Err.Description
-    GetMsg = False
-End Function
+End Sub
 
 ''
 'Delete a message
@@ -318,7 +314,7 @@ If intCounter > 1 Then
 Else
     Select Case True
     Case strVersion = Empty
-        WriteLog "LogingFBA -> X-OWA-Version headder missing", Error
+        WriteLog "LogingFBA -> X-OWA-Version headder missing", Paranoid
         LogingFBA = True
     Case Int(Left$(strVersion, InStr(strVersion, "."))) >= 8
         WriteLog "Error LogingFBA: " & strVersion, Paranoid
@@ -451,4 +447,8 @@ If lngPos <> 0 Then
         lngPos = InStr(lngPos + 1, LCase(strMsg), strBoundary)
     Wend
 End If
+End Sub
+
+Private Sub Class_Initialize()
+Set objDOMInbox = Nothing
 End Sub
