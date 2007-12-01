@@ -77,8 +77,8 @@ With c
     'Exchange server
     .ValueKey = "ExchangeServer"
     strExchSvrName = .Value
-    If Right$(strExchSvrName, 1) = "/" Then
-        strExchSvrName = Left$(strExchSvrName, Len(strExchSvrName) - 1)
+    If Right$(strExchSvrName, 1) <> "/" Then
+        strExchSvrName = strExchSvrName & "/"
     End If
     'IP to listen
     .ValueKey = "IP"
@@ -135,7 +135,7 @@ Private Function ValidateSMTPAUTH() As String
         ValidateSMTPAUTH = "235 AUTHENTICATION SUCCESSFUL"
     Case 401
         'Wrong password
-        ValidateSMTPAUTH = "535 5.7.0 authentication failed"
+        ValidateSMTPAUTH = "535 5.7.0 Authentication failed"
     Case Else
         'Unknow error
         ValidateSMTPAUTH = "533  Authentication required [AUTH]"
@@ -172,11 +172,11 @@ Private Sub skPOP3_ConnectionRequest(ByVal requestID As Long)
 On Error GoTo ErrHandler
     skPOP3.CloseSck
     skPOP3.Accept requestID
-    skPOP3.SendData "+OK POP3 server ready"
-    WriteLog "+OK POP3 server ready", Paranoid
+    skPOP3.SendData OK & "POP3 server ready"
+    WriteLog OK & "POP3 server ready", Paranoid
 Exit Sub
 ErrHandler:
-WriteLog "POP3 ConnectionRequest ->" & Err.Source & vbTab & Err.Description, Error
+WriteLog "POP3 ConnectionRequest ->" & Err.Source & vbTab & Err.Description, Fail
 End Sub
 ''
 'Evaluate a POP3 command  (<A HREF='http://www.faqs.org/rfcs/rfc1939.html' target='_blank'>RFC1939</A>)
@@ -192,18 +192,20 @@ On Error GoTo ErrHandler
     Dim intMsg          As Integer
     Dim lngSize         As Long
     Dim strDataRecived  As String
+    
+    Const UNABLETOCONNECT As String = "Unable to connect with mailbox "
     WriteLog "skPOP3_DataArrival." & bytesTotal & "Bytes", Paranoid
     skPOP3.GetData strDataRecived
     '
-    If Left$(strDataRecived, 4) <> "PASS" Then
+    If Left$(strDataRecived, 4) = "PASS" Then
+        WriteLog "PASS **********", Paranoid
+    Else
         WriteLog strDataRecived, Paranoid
     End If
     Select Case Left$(strDataRecived, 4)
-    Case Empty
-        strDataToSend = "+OK POP3 server ready"
     Case "USER"
         strUser = Mid$(strDataRecived, 6, Len(strDataRecived) - 7)
-        strDataToSend = "+OK Password required for " & strUser
+        strDataToSend = OK & "Password required for " & strUser
     Case "PASS"
         Select Case intState
         Case SMTP
@@ -217,11 +219,11 @@ On Error GoTo ErrHandler
         strPassWord = Mid$(strDataRecived, 6, Len(strDataRecived) - 7)
         Select Case objOWA.GetFoldersURL
         Case 200 To 299
-            strDataToSend = "+OK mailbox for " & strUser & " ready"
+            strDataToSend = OK & "mailbox for " & strUser & " ready"
         Case 401
-            strDataToSend = "-ERR Invalid Password for " & strUser
+            strDataToSend = Error & "Invalid Password for " & strUser
         Case Else
-            strDataToSend = "-ERR Unable to connect with mailbox "
+            strDataToSend = Error & UNABLETOCONNECT
         End Select
     Case "STAT"
         If objOWA.GetMsgList Then
@@ -230,9 +232,9 @@ On Error GoTo ErrHandler
                 'strDataToSend = strDataToSend & intMsg & " 1 " & vbCrLf
                 lngSize = lngSize + oElement.Text
             Next
-            strDataToSend = "+OK " & objOWA.intMsgCount & " " & lngSize
+            strDataToSend = OK & objOWA.intMsgCount & " " & lngSize
         Else
-            strDataToSend = "-ERR Unable to connect with mailbox "
+            strDataToSend = Error & UNABLETOCONNECT
         End If
     Case "RETR", "TOP "
         'strDataToSend = GetMsg(objDOMInbox.childNodes(1).childNodes(CInt(Mid$(strDataRecived, 6)) - 1).selectSingleNode("a:propstat/a:prop/a:href").Text)
@@ -242,36 +244,36 @@ On Error GoTo ErrHandler
             intMsg = CInt(Mid$(strDataRecived, 5, InStr(5, strDataRecived, " ") - 5))
         End If
         With objOWA.objDOMInbox.childNodes(1).childNodes(intMsg - 1)
-            skPOP3.SendData "+OK " & .selectSingleNode("a:propstat/a:prop/a:getcontentlength").Text & " octets"
+            skPOP3.SendData OK & .selectSingleNode("a:propstat/a:prop/a:getcontentlength").Text & " octets"
             objOWA.GetMsg .selectSingleNode("a:href").Text, skPOP3
         End With
         strDataToSend = vbCrLf & "."
     Case "QUIT"
-        strDataToSend = "+OK " & m_strIP & " server signing off, 0 messages deleted"
+        strDataToSend = OK & m_strIP & " server signing off, 0 messages deleted"
     Case "LIST"
         Set oElements = objOWA.objDOMInbox.selectNodes(XMLPATH & "a:getcontentlength")
         If Len(strDataRecived) > 6 Then
             intMsg = CInt(Mid$(strDataRecived, 6))
-            strDataToSend = "+OK " & intMsg & " " & oElements(intMsg - 1).Text & vbCrLf
+            strDataToSend = OK & intMsg & " " & oElements(intMsg - 1).Text & vbCrLf
         Else
-            strDataToSend = "+OK " & intMsg & " messages (" & lngSize & ") octets" & vbCrLf
+            strDataToSend = OK & intMsg & " messages (" & lngSize & ") octets" & vbCrLf
             For Each oElement In oElements
                 'strDataToSend = strDataToSend & intMsg & " 1 " & vbCrLf
                 intMsg = intMsg + 1
                 lngSize = lngSize + oElement.Text
                 strDataToSend = strDataToSend & intMsg & " " & oElement.Text & vbCrLf
             Next
-            strDataToSend = strDataToSend & vbCrLf & "." & vbCrLf
+            strDataToSend = strDataToSend & "." & vbCrLf
         End If
     Case "NOOP"
-        strDataToSend = "+OK "
+        strDataToSend = OK
     Case "UIDL"
         Set oElements = objOWA.objDOMInbox.selectNodes(XMLPATH & "a:id")
         If Len(strDataRecived) > 6 Then
             intMsg = CInt(Mid$(strDataRecived, 6))
-            strDataToSend = "+OK " & intMsg & " " & oElements(intMsg - 1).Text & vbCrLf
+            strDataToSend = OK & intMsg & " " & oElements(intMsg - 1).Text & vbCrLf
         Else
-            strDataToSend = "+OK " & vbCrLf
+            strDataToSend = OK & vbCrLf
             For Each oElement In oElements
                 intMsg = intMsg + 1
                 strDataToSend = strDataToSend & intMsg & " " & oElement.Text & " " & vbCrLf
@@ -279,24 +281,25 @@ On Error GoTo ErrHandler
             strDataToSend = strDataToSend & "."
         End If
     Case "CAPA"
-        strDataToSend = "+OK Capability list follows" & vbCrLf & _
+        strDataToSend = OK & "Capability list follows" & vbCrLf & _
                         "USER" & vbCrLf & _
                         "UIDL" & vbCrLf & _
                         "."
     Case "DELE"
         intMsg = CInt(Mid$(strDataRecived, 6))
         If objOWA.Delete(intMsg) Then
-            strDataToSend = "+OK message " & intMsg & " deleted"
+            strDataToSend = OK & "message " & intMsg & " deleted"
             'Additional Sleep, My Outlook 2000 fails if delete msg faster
             MsgWaitObj 500
         Else
-            strDataToSend = "-ERR deleting message " & Mid$(strDataRecived, 6)
+            strDataToSend = Error & "deleting message " & Mid$(strDataRecived, 6)
         End If
     Case "AUTH"
-        strDataToSend = "-ERR " & Left$(strDataRecived, 4) & " unsuported feature "
+        strDataToSend = Error & Left$(strDataRecived, 4) & " unsuported feature "
     Case Else
         Debug.Assert False
-        strDataToSend = "-ERR Syntax error"
+        WriteLog "Unknow data: " & strDataRecived, Warning
+        strDataToSend = Error & "Syntax error"
     End Select
     If skPOP3.State = sckConnected Then skPOP3.SendData strDataToSend
     
@@ -311,12 +314,11 @@ ErrHandler:
 End Sub
 
 Private Sub skPOP3_Error(ByVal Number As Long, Description As String, ByVal sCode As Long, ByVal Source As String, ByVal HelpFile As String, ByVal HelpContext As Long, CancelDisplay As Boolean)
-    WriteLog "skPOP3_Error " & Number & "->" & Description, Error
+    WriteLog "skPOP3_Error " & Number & "->" & Description, Fail
 End Sub
 
 
 Private Sub skSMTP_CloseSck()
-    Debug.Assert False
     'Socket closed by email client
     Select Case intState
     Case SMTP
@@ -342,7 +344,7 @@ On Error GoTo ErrHandler
     WriteLog "220 " & m_strIP & " Simple Mail Transfer Service Ready", Paranoid
 Exit Sub
 ErrHandler:
-    WriteLog "skSMTP_ConnectionRequest ->" & Err.Source & vbTab & Err.Description, Error
+    WriteLog "skSMTP_ConnectionRequest ->" & Err.Source & vbTab & Err.Description, Fail
 End Sub
 ''
 'Evaluate a STMP command (<A HREF='http://www.faqs.org/rfcs/rfc2821.html' target='_blank'>RFC2821</A>)
@@ -478,14 +480,14 @@ On Error GoTo ErrHandler
     End If
 Exit Sub
 ErrHandler:
-    WriteLog "skSMTP_DataArrival ->" & Err.Source & vbTab & Err.Description, Error
+    WriteLog "skSMTP_DataArrival ->" & Err.Source & vbTab & Err.Description, Fail
     Debug.Assert False
     skSMTP.CloseSck
     'lngPop3Write = 0
 End Sub
 
 Private Sub skSMTP_Error(ByVal Number As Long, Description As String, ByVal sCode As Long, ByVal Source As String, ByVal HelpFile As String, ByVal HelpContext As Long, CancelDisplay As Boolean)
-    WriteLog "skPOP3_Error " & Number & "->" & Description, Error
+    WriteLog "skPOP3_Error " & Number & "->" & Description, Fail
 End Sub
 
 ''

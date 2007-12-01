@@ -22,8 +22,19 @@ Option Explicit
 
 
 Private strCookies  As String
-Private strURLSend  As String
-Private strURLInbox As String
+
+Private Type ExchangeConfig
+    'ExchSvrName As String
+    URLSend     As String
+    URLInbox    As String
+    AuthPage    As String
+    HiddenField As String
+    HiddenValue As String
+End Type
+Private Config As ExchangeConfig
+
+Private vTypes(3, 1)    As String
+
 
 Public objDOMInbox As DOMDocument
 Public intMsgCount As Integer
@@ -39,7 +50,7 @@ On Error GoTo ErrHandler
 Dim oXMLHTTP    As XMLHTTP
 Dim lngTimer    As Long
 Dim strMsg      As String
-
+Const ERRCOMMAND As String = "-ERR no such message"
 Set oXMLHTTP = New XMLHTTP
 
 With oXMLHTTP
@@ -65,7 +76,7 @@ With oXMLHTTP
 '            Debug.Assert False
         End If
     Wend
-    WriteLog "Donwloaded Status " & .Status & vbTab & strURL, Information
+    WriteLog "Download Status " & .Status & vbTab & strURL, Information
     If (.Status >= 200 And .Status < 300) Then
         strMsg = StrConv(.responseBody, vbUnicode)
         'Fix errors in inline images
@@ -77,14 +88,15 @@ With oXMLHTTP
         objPOP3.SendData strMsg
     Else
         WriteLog "GetMsg.Status " & .statusText, Warning
-        objPOP3.SendData "-ERR " & .statusText
+        objPOP3.SendData ERRCOMMAND
+
     End If
 End With
 Set oXMLHTTP = Nothing
 Exit Sub
 ErrHandler:
-    WriteLog "GetMsg " & Err.Description, Error
-    objPOP3.SendData "-ERR " & Err.Description
+    WriteLog "GetMsg " & Err.Description, Fail
+    objPOP3.SendData ERRCOMMAND
 End Sub
 
 ''
@@ -129,7 +141,7 @@ Dim oXMLHTTP As XMLHTTP
 Set oXMLHTTP = New XMLHTTP
 With oXMLHTTP
     ' Open a request to a particular url
-    .open "SEARCH", strURLInbox, True, strUser, strPassWord
+    .open "SEARCH", Config.URLInbox, True, strUser, strPassWord
     ' Set the header type - we want XML
     .setRequestHeader "Content-type", "text/xml"
     .setRequestHeader "Depth", "1"
@@ -139,13 +151,13 @@ With oXMLHTTP
     End If
     ' Send the request
     MsgWaitObj 100
-    WriteLog "Geting msg list ", Information
+    WriteLog "Getting msg list ", Information
     Call .send("<?xml version='1.0' ?>" & _
                 "<a:searchrequest xmlns:a='DAV:'><a:sql>" & _
                  "SELECT" & _
                  " ""DAV:id""" & _
                  ",""DAV:getcontentlength""" & _
-                 " FROM scope('shallow traversal of """ & strURLInbox & """')" & _
+                 " FROM scope('shallow traversal of """ & Config.URLInbox & """')" & _
                  " WHERE ""DAV:ishidden""=False" & _
                  " AND ""DAV:isfolder""=False" & _
                  "</a:sql></a:searchrequest>")
@@ -182,9 +194,11 @@ End Function
 
 ''
 'Get Well-Known Mailbox Folder URLs that are retrieved from a users root mailbox folder.
-'
-'@return True if the URLs are retrieved
+'Urls are stored in config object
+'@return WebDav status code, -1 with unespected error
 '@remarks <A HREF='http://msdn2.microsoft.com/en-us/library/ms992623.aspx' target='_blank'>Microsoft Exchange 2000 SDK June 2005</A>
+'@see Config
+
 Public Function GetFoldersURL() As Long
 
 On Error GoTo ErrHandler
@@ -202,6 +216,12 @@ Else
     strAccount = strUser
 End If
 
+If Right(UCase(strExchSvrName), Len("/exchange/")) = "/exchange/" Then
+    strURL = strExchSvrName & strAccount & "/"
+Else
+   strURL = strExchSvrName & "exchange/" & strAccount & "/"
+End If
+
 If bAuthentication Then
     WriteLog "GetFoldersURL : Trying LogingFBA ", Information
     bFBALoginFail = Not (LogingFBA)
@@ -210,7 +230,7 @@ If bFBALoginFail Then
     GetFoldersURL = -1
 Else
     Set oXMLHTTP = New XMLHTTP
-    strURL = strExchSvrName & "/exchange/" & strAccount & "/"
+    'strURL = strExchSvrName & "/exchange/" & strAccount & "/"
 
     With oXMLHTTP
         WriteLog "Getting Folders : " & strURL
@@ -241,11 +261,10 @@ Else
             objDOMFolders.setProperty "SelectionNamespaces", "xmlns:a='DAV:'"
             objDOMFolders.setProperty "SelectionNamespaces", "xmlns:a='DAV:' xmlns:d='urn:schemas:httpmail:'"
             WriteLog "GetFoldersURL: " & vbCrLf & objDOMFolders.xml & vbCrLf, Paranoid
-            strURLSend = objDOMFolders.selectSingleNode(XMLPATH & "d:sendmsg").Text
-            strURLInbox = objDOMFolders.selectSingleNode(XMLPATH & "d:inbox").Text & "/"
+            Config.URLSend = objDOMFolders.selectSingleNode(XMLPATH & "d:sendmsg").Text
+            Config.URLInbox = objDOMFolders.selectSingleNode(XMLPATH & "d:inbox").Text & "/"
             Set objDOMFolders = Nothing
         Else
-            Debug.Assert False
             WriteLog "GetFoldersURL: " & .Status & vbTab & .statusText, Warning
         End If
         GetFoldersURL = .Status
@@ -254,7 +273,7 @@ End If
 Set oXMLHTTP = Nothing
 Exit Function
 ErrHandler:
-    WriteLog "GetFoldersURL: " & Err.Number & vbTab & Err.Description, Error
+    WriteLog "GetFoldersURL: " & Err.Number & vbTab & Err.Description, Fail
     GetFoldersURL = -1
     Debug.Assert False
 End Function
@@ -268,7 +287,6 @@ On Error GoTo ErrHandler
 Dim vHeaders()  As String
 Dim intCounter  As Integer
 Dim intIndex    As Integer
-Dim strURL      As String
 Dim oXMLHTTP    As XMLHTTP
 Dim strUsername As String
 Dim strHeaders  As String
@@ -279,19 +297,20 @@ strUsername = strUser
 If InStr(strUser, "@") <> 0 Then
     strUsername = Left(strUsername, InStr(strUser, "@") - 1)
 End If
-strURL = strExchSvrName & "/exchweb/bin/auth/owaauth.dll"
-WriteLog "LogingFBA -> strURL: " & strURL, Information
+
+WriteLog "LogingFBA -> Config.AuthPage: " & Config.AuthPage, Information
 
 Set oXMLHTTP = New XMLHTTP
 With oXMLHTTP
     '.setOption 3, ""
-    .open "POST", strURL, True
+    .open "POST", Config.AuthPage, True
     .setRequestHeader "Content-type", "application/x-www-form-urlencoded"
     'Generate the body for FBA login
-    .send "destination=" & strExchSvrName & "/exchange/&trusted=4&username=" & strUsername & "&password=" & strPassWord
+    .send Config.HiddenField & "=" & Config.HiddenValue & "&trusted=0&username=" & strUsername & "&password=" & strPassWord
     While Not .readyState = 4
         MsgWaitObj 100
     Wend
+    WriteLog "LogingFBA: " & .Status & vbTab & .statusText, Information
     strHeaders = .getAllResponseHeaders()
 End With
 Set oXMLHTTP = Nothing
@@ -326,7 +345,7 @@ Else
 End If
 Exit Function
 ErrHandler:
-    WriteLog "GetFoldersURL: " & Err.Number & vbTab & Err.Description, Error
+    WriteLog "GetFoldersURL: " & Err.Number & vbTab & Err.Description, Fail
     Set oXMLHTTP = Nothing
     LogingFBA = False
 End Function
@@ -346,7 +365,7 @@ Dim oXMLHTTP As XMLHTTP
     'Create the DAV PUT request.
     'xmlReq.setOption 3, ""
     With oXMLHTTP
-        .open "PUT", strURLSend, True, strUser, strPassWord
+        .open "PUT", Config.URLSend, True, strUser, strPassWord
         If strCookies <> Empty Then
             .setRequestHeader "Cookies", "Necessary according to Q234486"
             .setRequestHeader "Cookies", strCookies
@@ -372,7 +391,7 @@ Dim oXMLHTTP As XMLHTTP
     Set oXMLHTTP = Nothing
 Exit Function
 ErrHandler:
-    WriteLog "SendMail: " & Err.Number & vbTab & Err.Description, Error
+    WriteLog "SendMail: " & Err.Number & vbTab & Err.Description, Fail
     Set oXMLHTTP = Nothing
     SendMail = False
 End Function
@@ -419,36 +438,75 @@ Private Sub ParseAtachment(ByRef strMsg As String)
 Dim lngPos              As Long
 Dim lngPosEnd           As Long
 Dim strBoundary         As String
+Dim lngBoundary         As Long
 Dim lngContentTypeStart As Long
-    
-lngPos = InStr(1, LCase(strMsg), "boundary=""")
-If lngPos <> 0 Then
+Dim intType             As Integer
 
+lngPos = InStr(1, LCase(strMsg), "boundary=""")
+    
+While lngPos <> 0
     lngPosEnd = InStr(lngPos + 10, strMsg, """")
     'Get the Boundary string to identify the attachments
     strBoundary = LCase(Mid$(strMsg, lngPos + 10, lngPosEnd - lngPos - 10))
-
-    lngPos = InStr(lngPosEnd, LCase(strMsg), strBoundary)
+    lngBoundary = InStr(lngPosEnd, LCase(strMsg), strBoundary)
+    lngPos = lngBoundary
     While lngPos <> 0
         lngContentTypeStart = InStr(lngPos, LCase(strMsg), "application/octet-stream")
         If lngContentTypeStart > 0 Then
             lngPos = lngContentTypeStart
             lngPosEnd = InStr(lngContentTypeStart, strMsg, vbCrLf & vbCrLf)
-            If lngPosEnd <> 0 And Mid$(strMsg, lngPosEnd + 4, 4) = "/9j/" Then
-                'JPEG file
-                strMsg = Left$(strMsg, lngContentTypeStart - 1) & "image/jpeg" & Mid$(strMsg, lngContentTypeStart + 24)
-            End If
-            If lngPosEnd <> 0 And Mid$(strMsg, lngPosEnd + 4, 4) = "R0lG" Then
-                'GIF file
-                strMsg = Left$(strMsg, lngContentTypeStart - 1) & "image/gif" & Mid$(strMsg, lngContentTypeStart + 24)
+            If lngPosEnd <> 0 Then
+                For intType = 0 To UBound(vTypes, 1)
+                    If Mid$(strMsg, lngPosEnd + 4, Len(vTypes(intType, 1))) = vTypes(intType, 1) Then
+                        strMsg = Left$(strMsg, lngContentTypeStart - 1) & vTypes(intType, 0) & Mid$(strMsg, lngContentTypeStart + 24)
+                        Exit For
+                    End If
+                Next
             End If
 
         End If
         lngPos = InStr(lngPos + 1, LCase(strMsg), strBoundary)
     Wend
-End If
+    lngPos = InStr(lngBoundary + 1, LCase(strMsg), "boundary=""")
+Wend
 End Sub
 
 Private Sub Class_Initialize()
+Dim objDOMConfig As DOMDocument
+Dim objNodeElement As IXMLDOMElement
+Dim objNodeList As IXMLDOMNodeList
+
+Set objDOMConfig = New DOMDocument
+objDOMConfig.async = False
+objDOMConfig.Load App.Path & "\config.xml"
+If objDOMConfig.parseError.errorCode = 0 Then
+    Config.AuthPage = strExchSvrName & objDOMConfig.selectSingleNode("/xml/Form_Based_Auth/AuthPage").Text
+    Set objNodeElement = objDOMConfig.selectSingleNode("xml/Form_Based_Auth/Main_Hidden_Field")
+    Config.HiddenField = objNodeElement.getAttribute("Name")
+    Config.HiddenValue = objNodeElement.getAttribute("Value")
+    Set objNodeList = objDOMConfig.selectNodes("xml/Form_Based_Auth/Hidden_Field")
+    For Each objNodeElement In objNodeList
+        Config.HiddenValue = Config.HiddenValue & "&" & objNodeElement.getAttribute("Name") & "=" & objNodeElement.getAttribute("Value")
+    Next
+    Set objNodeElement = Nothing
+Else
+    Err.Raise 51, "clsOwa", "Error parsing config file"
+End If
+
+Set objDOMConfig = Nothing
+
+vTypes(0, 0) = "image/jpeg"
+vTypes(0, 1) = "/9j/"
+vTypes(1, 0) = "image/gif"
+vTypes(1, 1) = "R0lG"
+vTypes(2, 0) = "image/bmp"
+vTypes(2, 1) = "Qk"
+vTypes(3, 0) = "image/png"
+vTypes(3, 1) = "iVBORw0K"
+
+End Sub
+
+Private Sub Class_Terminate()
 Set objDOMInbox = Nothing
+Erase vTypes
 End Sub
