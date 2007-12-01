@@ -151,7 +151,7 @@ CloseHandle hStartEvent
 CloseHandle hStopPendingEvent
 Exit Sub
 ErrHandler:
-    WriteLog Err.Source & vbTab & Err.Description, Error
+    WriteLog Err.Source & vbTab & Err.Description, Fail
     CloseHandle hStopEvent
     CloseHandle hStartEvent
     CloseHandle hStopPendingEvent
