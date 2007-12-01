@@ -86,10 +86,9 @@ Section "Principal" SEC01
   new_installation:
 
   File "${PRODUCT}.exe"
+  File "config.xml"
 
   !insertmacro InstallLib REGDLL    $ALREADY_INSTALLED REBOOT_PROTECTED     "mscomctl.ocx" "$SYSDIR\mscomctl.ocx" "$SYSDIR"
-
-;  WriteIniStr "$INSTDIR\VBDOXAddin.url" "InternetShortcut" "URL" "http://vbdoxaddin.carlos-garces.com"
 
   !insertmacro MUI_STARTMENU_WRITE_BEGIN Application
   createdirectory "$SMPROGRAMS\$STARTMENU_FOLDER"
@@ -140,6 +139,7 @@ Section Uninstall
 
   Delete "$INSTDIR\${PRODUCT}.exe"
   Delete "$INSTDIR\uninst.exe"
+  Delete "$INSTDIR\config.xml"
 
 !insertmacro UnInstallLib REGDLL    SHARED NOREMOVE "$SYSDIR\mscomctl.ocx"
 
@@ -147,8 +147,6 @@ Section Uninstall
   !insertmacro MUI_STARTMENU_GETFOLDER Application ${TEMP}
 
   StrCmp ${TEMP} "" noshortcuts
-         ;Delete "$SMPROGRAMS\${TEMP}\${PRODUCT}.lnk"
-         ;Delete "$SMPROGRAMS\${TEMP}\Uninstall.lnk"
          RMDir /R "$SMPROGRAMS\${TEMP}"
   noshortcuts:
   RMDir "$INSTDIR"
