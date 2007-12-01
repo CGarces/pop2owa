@@ -7,6 +7,10 @@ Public Const XMLPATH As String = "a:multistatus/a:response/a:propstat/a:prop/"
 Public Const INFINITE = -1&      '  Timeout infinito
 Public Const Service_Name  As String = "POP2OWA"
 
+Public Const OK    As String = "+OK "
+Public Const Error As String = "-ERR "
+
+
 Public strUser          As String
 Public strPassWord      As String
 Public strExchSvrName   As String
@@ -15,7 +19,7 @@ Public hStopPendingEvent As Long
 
 Private intVerbosity    As Integer
 Public Enum Verbosity
-    Error = 0
+    Fail = 0
     Warning = 1
     Information = 2
     Paranoid = 3
@@ -64,7 +68,7 @@ Private Declare Function TerminateProcess Lib "kernel32.dll" (ByVal ApphProcess 
 '
 '@param strText Text to write in the log
 '@param intVerbose Versosity
-Public Sub WriteLog(ByVal strText As String, Optional ByVal intVerbose As Verbosity = Error)
+Public Sub WriteLog(ByVal strText As String, Optional ByVal intVerbose As Verbosity = Fail)
 Dim intFile As Integer
 If intVerbose <= intVerbosity Then
     intFile = FreeFile
@@ -123,7 +127,7 @@ Else
 End If
 Exit Sub
 ErrHandler:
-    WriteLog "Main ->" & Err.Source & vbTab & Err.Description, Error
+    WriteLog "Main ->" & Err.Source & vbTab & Err.Description, Fail
     If Not IsNTService Then
         Unload frmMain
     End If
