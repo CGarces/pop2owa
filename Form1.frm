@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "mscomctl.ocx"
+Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
 Begin VB.Form frmMain 
    BorderStyle     =   1  'Fixed Single
    Caption         =   "POP2OWA"
@@ -194,7 +194,7 @@ End Sub
 'Main function to start the aplication in form mode.
 Public Sub Init()
 Dim objFrame As Frame
-    Me.Caption = App.EXEName & " " & App.Major & "." & App.Minor & " RC1"
+    Me.Caption = App.EXEName & " " & App.Major & "." & App.Minor
     'Redraw controls
     For Each objFrame In Me.Frame1
         objFrame.Move Me.TabStrip1.ClientLeft, _
