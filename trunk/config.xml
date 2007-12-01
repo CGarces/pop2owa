@@ -1,0 +1,6 @@
+<xml>
+<Form_Based_Auth>
+	<AuthPage>exchweb/bin/auth/owaauth.dll</AuthPage>
+	<Main_Hidden_Field  Name='destination' Value='Z2Fexchange'/>
+</Form_Based_Auth>
+</xml>
