@@ -82,7 +82,7 @@ With oXMLHTTP
         'Fix errors in inline images
         ParseAtachment strMsg
         'Fix OWA errors in recived messages
-        If InStr(strMsg, "X-MimeOLE: Produced By Microsoft Exchange") <> 0 Then
+        If InStr(strMsg, "X-MimeOLE: Produced By Microsoft") <> 0 Then
             ParseHeader strMsg
         End If
         objPOP3.SendData strMsg
@@ -216,7 +216,7 @@ Else
     strAccount = strUser
 End If
 
-If Right(UCase(strExchSvrName), Len("/exchange/")) = "/exchange/" Then
+If Right(LCase(strExchSvrName), Len("/exchange/")) = "/exchange/" Then
     strURL = strExchSvrName & strAccount & "/"
 Else
    strURL = strExchSvrName & "exchange/" & strAccount & "/"
@@ -398,29 +398,40 @@ End Function
 
 ''
 'Parse the mail header to fix incorrect email adress with non US chars.
-'
+'For example:<BR>
+'=?iso-8859-1?Q?   Martin_Sacrist=E1n=2C_C=2E   ?= <XXXX>
+'Should be:<BR>
+'=?iso-8859-1?Q?=22Martin_Sacrist=E1n=2C_C=2E=22?= <XXXX>
+'Quotes are missing and some email clientes fails.
 '@param strMsg Email message in RFC 821 format
 Private Sub ParseHeader(ByRef strMsg As String)
 Dim strHeader       As String
+Dim strQuotedText   As String
 Dim lngPos          As Long
 Dim lngPosHeader    As Long
 Dim lngPosEnd       As Long
 Dim bModified       As Boolean
+Const STARTQUOTED As String = "?q"
 
 lngPosHeader = InStr(1, strMsg, vbCrLf & vbCrLf)
 If lngPosHeader <> 0 Then
     'Extract the header, faster than work with the entire msg
     strHeader = Left$(strMsg, lngPosHeader)
-    lngPos = InStr(1, LCase(strHeader), "?q")
+    'Look for quoted string
+    lngPos = InStr(1, LCase(strHeader), STARTQUOTED)
     While lngPos <> 0
-        If Not Mid$(strHeader, lngPos + 3, 3) = "=22" Then
-            lngPosEnd = InStr(lngPos + 3, strHeader, "?=")
-            If InStr(1, LCase(Mid$(strHeader, lngPos + 3, lngPosEnd - lngPos - 3)), "=2c") > 0 Then
-                strHeader = Left$(strHeader, lngPos + 2) & "=22" & Mid$(strHeader, lngPos + 3, lngPosEnd - lngPos - 3) & "=22" & Mid$(strHeader, lngPosEnd)
+        'Look for end quoted string
+        lngPosEnd = InStr(lngPos + 3, strHeader, "?=")
+        strQuotedText = Mid$(strHeader, lngPos + 3, lngPosEnd - lngPos - 3)
+        If InStr(1, LCase(strQuotedText), "=2c") <> 0 Then
+            If Not Left$(strQuotedText, 3) = "=22" Then
+                strHeader = Left$(strHeader, lngPos + 2) & "=22" & strQuotedText & "=22" & Mid$(strHeader, lngPosEnd)
                 bModified = True
             End If
         End If
-        lngPos = InStr(lngPos + 1, LCase(strHeader), "?q")
+        Debug.Assert InStr(lngPos + 1, LCase(strHeader), STARTQUOTED) = InStr(lngPosEnd + 1, LCase(strHeader), STARTQUOTED)
+        lngPos = InStr(lngPosEnd + 1, LCase(strHeader), STARTQUOTED)
+        
     Wend
     If bModified Then
         strMsg = strHeader & Mid$(strMsg, lngPosHeader)
