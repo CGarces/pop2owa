@@ -15,6 +15,11 @@ Public strUser          As String
 Public strPassWord      As String
 Public strExchSvrName   As String
 
+''
+'Object to handle POP3/STMP commands.
+Public oPOP3            As clsPOP3
+
+
 Public hStopPendingEvent As Long
 
 Private intVerbosity    As Integer

@@ -164,10 +164,6 @@ Attribute VB_Exposed = False
 Option Explicit
 
 ''
-'Class to handle POP3/STMP commands.
-Private oPOP3 As clsPOP3
-
-''
 'Form with systray code.
 Private WithEvents m_frmSysTray As frmSysTray
 Attribute m_frmSysTray.VB_VarHelpID = -1
@@ -194,7 +190,7 @@ End Sub
 'Main function to start the aplication in form mode.
 Public Sub Init()
 Dim objFrame As Frame
-    Me.Caption = App.EXEName & " " & App.Major & "." & App.Minor
+    Me.Caption = App.EXEName & " " & App.Major & "." & App.Minor & "." & App.Revision
     'Redraw controls
     For Each objFrame In Me.Frame1
         objFrame.Move Me.TabStrip1.ClientLeft, _
@@ -202,8 +198,9 @@ Dim objFrame As Frame
                     Me.TabStrip1.ClientWidth, _
                     Me.TabStrip1.ClientHeight
     Next
-    Me.Move Me.Left, Me.Top, 2700, 3150
     Set objFrame = Nothing
+
+    Me.Move Me.Left, Me.Top, 2700, 3150
     'Get values from registry
     FillControls
     Reset
@@ -273,6 +270,7 @@ With c
     .ValueKey = "FormBasedAuth"
     Me.chkFBA.Value = .Value
 End With
+Set c = Nothing
 End Sub
 ''
 'Fill the registry with the data in the form.
@@ -286,7 +284,7 @@ With c
     .ValueType = REG_SZ
     'Exchange server
     .ValueKey = "ExchangeServer"
-    .Value = Me.txtServer.Text
+    .Value = Trim(Me.txtServer.Text)
     'IP to listen
     .ValueKey = "IP"
     .Value = Me.txtIP.Text
@@ -308,6 +306,7 @@ With c
     .ValueKey = "FormBasedAuth"
     .Value = Me.chkFBA.Value
 End With
+Set c = Nothing
 End Sub
 
 ''
