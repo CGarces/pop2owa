@@ -306,43 +306,44 @@ With oXMLHTTP
     .open "POST", Config.AuthPage, True
     .setRequestHeader "Content-type", "application/x-www-form-urlencoded"
     'Generate the body for FBA login
-    .send Config.HiddenField & "=" & Config.HiddenValue & "&trusted=0&username=" & strUsername & "&password=" & strPassWord
+    .send Config.HiddenField & "=" & Config.HiddenValue & "&trusted=0&username=" & URLEncode(strUsername) & "&password=" & URLEncode(strPassWord)
     While Not .readyState = 4
         MsgWaitObj 100
     Wend
-    WriteLog "LogingFBA: " & .Status & vbTab & .statusText, Information
-    strHeaders = .getAllResponseHeaders()
+    If (.Status >= 200 And .Status < 300) Then
+        strHeaders = .getAllResponseHeaders()
+        WriteLog "LogingFBA -> Headers: " & vbCrLf & strHeaders, Paranoid
+        vHeaders = Split(strHeaders, vbNewLine)
+        For intIndex = 0 To UBound(vHeaders) - 1
+            If Left$(vHeaders(intIndex), 10) = "Set-Cookie" Then
+                intCounter = intCounter + 1
+                strCookies = strCookies & Mid$(vHeaders(intIndex), 12) & ";"
+            ElseIf Left$(vHeaders(intIndex), 13) = "X-OWA-Version" Then
+                strVersion = Mid$(vHeaders(intIndex), 16)
+            End If
+        Next
+        If intCounter > 1 Then
+            LogingFBA = True
+        Else
+            Select Case True
+            Case strVersion = Empty
+                WriteLog "LogingFBA -> X-OWA-Version headder missing", Paranoid
+                LogingFBA = True
+            Case Int(Left$(strVersion, InStr(strVersion, "."))) >= 8
+                WriteLog "Error LogingFBA: " & strVersion, Paranoid
+                LogingFBA = True
+            Case Else
+                WriteLog "LogingFBA -> Error getting headers: " & vbCrLf & strHeaders, Error
+                LogingFBA = False
+            End Select
+        End If
+    Else
+       WriteLog "LogingFBA: " & .Status & vbTab & .statusText, Warning
+       LogingFBA = False
+    End If
 End With
 Set oXMLHTTP = Nothing
 
-WriteLog "LogingFBA -> Headers: " & vbCrLf & strHeaders, Paranoid
-vHeaders = Split(strHeaders, vbNewLine)
-
-For intIndex = 0 To UBound(vHeaders) - 1
-    If Left$(vHeaders(intIndex), 10) = "Set-Cookie" Then
-        intCounter = intCounter + 1
-        strCookies = strCookies & Mid$(vHeaders(intIndex), 12) & ";"
-    End If
-    If Left$(vHeaders(intIndex), 13) = "X-OWA-Version" Then
-        strVersion = Mid$(vHeaders(intIndex), 16)
-    End If
-Next
-
-If intCounter > 1 Then
-    LogingFBA = True
-Else
-    Select Case True
-    Case strVersion = Empty
-        WriteLog "LogingFBA -> X-OWA-Version headder missing", Paranoid
-        LogingFBA = True
-    Case Int(Left$(strVersion, InStr(strVersion, "."))) >= 8
-        WriteLog "Error LogingFBA: " & strVersion, Paranoid
-        LogingFBA = True
-    Case Else
-        WriteLog "LogingFBA -> Error getting headers: " & vbCrLf & strHeaders, Error
-        LogingFBA = False
-    End Select
-End If
 Exit Function
 ErrHandler:
     WriteLog "GetFoldersURL: " & Err.Number & vbTab & Err.Description, Fail
@@ -497,14 +498,15 @@ If objDOMConfig.parseError.errorCode = 0 Then
     Config.HiddenValue = objNodeElement.getAttribute("Value")
     Set objNodeList = objDOMConfig.selectNodes("xml/Form_Based_Auth/Hidden_Field")
     For Each objNodeElement In objNodeList
-        Config.HiddenValue = Config.HiddenValue & "&" & objNodeElement.getAttribute("Name") & "=" & objNodeElement.getAttribute("Value")
+        Config.HiddenValue = Config.HiddenValue & "&" & objNodeElement.getAttribute("Name") & "=" & URLEncode(objNodeElement.getAttribute("Value"))
     Next
-    Set objNodeElement = Nothing
 Else
     Err.Raise 51, "clsOwa", "Error parsing config file"
 End If
 
 Set objDOMConfig = Nothing
+Set objNodeElement = Nothing
+Set objNodeList = Nothing
 
 vTypes(0, 0) = "image/jpeg"
 vTypes(0, 1) = "/9j/"
@@ -521,3 +523,32 @@ Private Sub Class_Terminate()
 Set objDOMInbox = Nothing
 Erase vTypes
 End Sub
+
+
+''
+'Encode one string to send it as url parameter.
+'
+'@param Text String to encode
+'@return Encoded string
+Function URLEncode(ByVal Text As String) As String
+Dim i As Integer
+Dim acode As Integer
+
+URLEncode = Text
+
+For i = Len(URLEncode) To 1 Step -1
+    acode = Asc(Mid$(URLEncode, i, 1))
+    Select Case acode
+    Case 48 To 57, 65 To 90, 97 To 122
+        ' don't touch alphanumeric chars
+    Case 32
+        ' replace space with "+"
+        Mid$(URLEncode, i, 1) = "+"
+    Case Else
+        ' replace punctuation chars with "%hex"
+        URLEncode = Left$(URLEncode, i - 1) & "%" & Hex$(acode) & Mid$(URLEncode, i + 1)
+    End Select
+Next
+    
+End Function
+
