@@ -62,9 +62,7 @@ End Sub
 Private Sub Start()
 On Error GoTo ErrHandler
 
-Dim vPorts(0 To 1)  As Long
-Dim c               As cRegistry
-
+Dim c   As cRegistry
 Set c = New cRegistry
 
 'Read values form registry
@@ -88,14 +86,18 @@ With c
     .ValueType = REG_DWORD
     'POP3 Port
     .ValueKey = "POP3"
-    vPorts(0) = .Value
+    
+    Set skPOP3 = New CSocketMaster
+    skPOP3.Bind .Value, m_strIP
+    skPOP3.Listen
+    
     'SMTP Port
     .ValueKey = "SMTPEnabled"
-    If .Value = 0 Then
-        vPorts(1) = 0
-    Else
+    If .Value <> 0 Then
         .ValueKey = "SMTP"
-        vPorts(1) = .Value
+        Set skSMTP = New CSocketMaster
+        skSMTP.Bind .Value, m_strIP
+        skSMTP.Listen
     End If
     'Leave a copy in send folder
     .ValueKey = "Saveinsent"
@@ -104,15 +106,6 @@ With c
     .ValueKey = "FormBasedAuth"
     bAuthentication = .Value
 End With
-
-Set skPOP3 = New CSocketMaster
-skPOP3.Bind vPorts(0), m_strIP
-skPOP3.Listen
-If vPorts(1) <> 0 Then
-    Set skSMTP = New CSocketMaster
-    skSMTP.Bind vPorts(1), m_strIP
-    skSMTP.Listen
-End If
 
 Set c = Nothing
 
@@ -163,17 +156,23 @@ Private Sub skPOP3_CloseSck()
         strUser = Empty
         intState = None
         Set objOWA = Nothing
-    Case BOTH
-        intState = SMTP
+    Case Else
+        Debug.Assert False
     End Select
 End Sub
 
 Private Sub skPOP3_ConnectionRequest(ByVal requestID As Long)
 On Error GoTo ErrHandler
-    skPOP3.CloseSck
-    skPOP3.Accept requestID
-    skPOP3.SendData OK & "POP3 server ready"
-    WriteLog OK & "POP3 server ready", Paranoid
+    If skPOP3.State = sckListening And intState = None Then
+        skPOP3.CloseSck
+        skPOP3.Accept requestID
+        skPOP3.SendData OK & "POP3 server ready"
+        WriteLog OK & "POP3 server ready", Paranoid
+        intState = POP3
+    Else
+        Debug.Assert False
+        WriteLog "POP3 server busy", Fail
+    End If
 Exit Sub
 ErrHandler:
 WriteLog "POP3 ConnectionRequest ->" & Err.Source & vbTab & Err.Description, Fail
@@ -207,14 +206,10 @@ On Error GoTo ErrHandler
         strUser = Mid$(strDataRecived, 6, Len(strDataRecived) - 7)
         strDataToSend = OK & "Password required for " & strUser
     Case "PASS"
-        Select Case intState
-        Case SMTP
-            intState = BOTH
-        Case None
-            intState = POP3
-        End Select
         If objOWA Is Nothing Then
             Set objOWA = New clsOWA
+        Else
+            Debug.Assert False
         End If
         strPassWord = Mid$(strDataRecived, 6, Len(strDataRecived) - 7)
         Select Case objOWA.GetFoldersURL
@@ -326,8 +321,8 @@ Private Sub skSMTP_CloseSck()
         strPassWord = Empty
         strUser = Empty
         Set objOWA = Nothing
-    Case BOTH
-        intState = POP3
+    Case Else
+        Debug.Assert False
     End Select
     'Reopen the socket to put it in listen mode
     'Maybe I need to find other way
@@ -338,10 +333,16 @@ End Sub
 
 Private Sub skSMTP_ConnectionRequest(ByVal requestID As Long)
 On Error GoTo ErrHandler
-    skSMTP.CloseSck
-    skSMTP.Accept requestID
-    skSMTP.SendData "220 " & m_strIP & " Simple Mail Transfer Service Ready"
-    WriteLog "220 " & m_strIP & " Simple Mail Transfer Service Ready", Paranoid
+    If skSMTP.State = sckListening And intState = None Then
+        skSMTP.CloseSck
+        skSMTP.Accept requestID
+        skSMTP.SendData "220 " & m_strIP & " Simple Mail Transfer Service Ready"
+        WriteLog "220 " & m_strIP & " Simple Mail Transfer Service Ready", Paranoid
+        intState = SMTP
+    Else
+        Debug.Assert False
+        WriteLog "SMTP server busy", Fail
+    End If
 Exit Sub
 ErrHandler:
     WriteLog "skSMTP_ConnectionRequest ->" & Err.Source & vbTab & Err.Description, Fail
@@ -383,16 +384,10 @@ On Error GoTo ErrHandler
         strDataToSend = strDataToSend & vbNewLine & "250-AUTH LOGIN PLAIN"
         strDataToSend = strDataToSend & vbNewLine & "250 HELP"
     Case "AUTH"
-        
-        Select Case intState
-        Case POP3
-            intState = BOTH
-        Case None
-            intState = SMTP
-        End Select
-
         If objOWA Is Nothing Then
             Set objOWA = New clsOWA
+        Else
+            Debug.Assert True
         End If
         If strDataRecived = "AUTH LOGIN" & vbCrLf Then
             'cDataToSend.Add "334 " & objBase.Encode(strUser & "@" & Mid(strExchSvrName, InStr(strExchSvrName, "//") + 2))
