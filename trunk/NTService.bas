@@ -96,7 +96,6 @@ On Error GoTo ErrHandler
 Dim bIsNT           As Boolean
 Dim h(0 To 1)       As Long
 Dim hnd             As Long
-Dim oPOP3           As clsPOP3
 
 Const WAIT_TIMEOUT = 258&
 
