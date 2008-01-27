@@ -34,7 +34,6 @@ Attribute skPOP3.VB_VarHelpID = -1
 'Handle WEBDAW commands with OWA server
 Private objOWA As clsOWA
 
-Private m_strIP As String
 Private intState As States
 
 Private Enum States
@@ -62,52 +61,17 @@ End Sub
 Private Sub Start()
 On Error GoTo ErrHandler
 
-Dim c   As cRegistry
-Set c = New cRegistry
+Set Config = New clsConfig
+Config.ReadConfig
 
-'Read values form registry
-    
-'Values are stored in (HKEY_CURRENT_USER\Software\pop2owa)
-With c
-    .ClassKey = HKEY_CURRENT_USER
-    .SectionKey = "Software\pop2owa"
-    .ValueType = REG_SZ
-    'Exchange server
-    .ValueKey = "ExchangeServer"
-    strExchSvrName = .Value
-    If Right$(strExchSvrName, 1) <> "/" Then
-        strExchSvrName = strExchSvrName & "/"
-    End If
-    'IP to listen
-    .ValueKey = "IP"
-    m_strIP = .Value
-    
-    'Port values are integers
-    .ValueType = REG_DWORD
-    'POP3 Port
-    .ValueKey = "POP3"
-    
-    Set skPOP3 = New CSocketMaster
-    skPOP3.Bind .Value, m_strIP
-    skPOP3.Listen
-    
-    'SMTP Port
-    .ValueKey = "SMTPEnabled"
-    If .Value <> 0 Then
-        .ValueKey = "SMTP"
-        Set skSMTP = New CSocketMaster
-        skSMTP.Bind .Value, m_strIP
-        skSMTP.Listen
-    End If
-    'Leave a copy in send folder
-    .ValueKey = "Saveinsent"
-    bSaveinsent = .Value
-    'Form-Based-Authentication on/off
-    .ValueKey = "FormBasedAuth"
-    bAuthentication = .Value
-End With
-
-Set c = Nothing
+Set skPOP3 = New CSocketMaster
+skPOP3.Bind Config.intPOP3Port, Config.strIP
+skPOP3.Listen
+If Config.bSMTPPort Then
+    Set skSMTP = New CSocketMaster
+    skSMTP.Bind Config.intSMTPPort, Config.strIP
+    skSMTP.Listen
+End If
 
 Exit Sub
 ErrHandler:
@@ -148,12 +112,12 @@ Private Sub skPOP3_CloseSck()
     'Reopen the socket to put it in listen mode
     'Maybe I need to find other way
     skPOP3.CloseSck
-    skPOP3.Bind skPOP3.LocalPort, m_strIP
+    skPOP3.Bind skPOP3.LocalPort, Config.strIP
     skPOP3.Listen
     Select Case intState
     Case POP3
-        strPassWord = Empty
-        strUser = Empty
+        Config.Profile.strPassWord = Empty
+        Config.Profile.strUser = Empty
         intState = None
         Set objOWA = Nothing
     Case Else
@@ -203,20 +167,20 @@ On Error GoTo ErrHandler
     End If
     Select Case Left$(strDataRecived, 4)
     Case "USER"
-        strUser = Mid$(strDataRecived, 6, Len(strDataRecived) - 7)
-        strDataToSend = OK & "Password required for " & strUser
+        Config.Profile.strUser = Mid$(strDataRecived, 6, Len(strDataRecived) - 7)
+        strDataToSend = OK & "Password required for " & Config.Profile.strUser
     Case "PASS"
         If objOWA Is Nothing Then
             Set objOWA = New clsOWA
         Else
             Debug.Assert False
         End If
-        strPassWord = Mid$(strDataRecived, 6, Len(strDataRecived) - 7)
+        Config.Profile.strPassWord = Mid$(strDataRecived, 6, Len(strDataRecived) - 7)
         Select Case objOWA.GetFoldersURL
         Case 200 To 299
-            strDataToSend = OK & "mailbox for " & strUser & " ready"
+            strDataToSend = OK & "mailbox for " & Config.Profile.strUser & " ready"
         Case 401
-            strDataToSend = Error & "Invalid Password for " & strUser
+            strDataToSend = Error & "Invalid Password for " & Config.Profile.strUser
         Case Else
             strDataToSend = Error & UNABLETOCONNECT
         End Select
@@ -244,7 +208,7 @@ On Error GoTo ErrHandler
         End With
         strDataToSend = vbCrLf & "."
     Case "QUIT"
-        strDataToSend = OK & m_strIP & " server signing off, 0 messages deleted"
+        strDataToSend = OK & Config.strIP & " server signing off, 0 messages deleted"
     Case "LIST"
         Set oElements = objOWA.objDOMInbox.selectNodes(XMLPATH & "a:getcontentlength")
         If Len(strDataRecived) > 6 Then
@@ -318,8 +282,8 @@ Private Sub skSMTP_CloseSck()
     Select Case intState
     Case SMTP
         intState = None
-        strPassWord = Empty
-        strUser = Empty
+        Config.Profile.strPassWord = Empty
+        Config.Profile.strUser = Empty
         Set objOWA = Nothing
     Case Else
         Debug.Assert False
@@ -327,7 +291,7 @@ Private Sub skSMTP_CloseSck()
     'Reopen the socket to put it in listen mode
     'Maybe I need to find other way
     skSMTP.CloseSck
-    skSMTP.Bind skSMTP.LocalPort, m_strIP
+    skSMTP.Bind skSMTP.LocalPort, Config.strIP
     skSMTP.Listen
 End Sub
 
@@ -336,8 +300,8 @@ On Error GoTo ErrHandler
     If skSMTP.State = sckListening And intState = None Then
         skSMTP.CloseSck
         skSMTP.Accept requestID
-        skSMTP.SendData "220 " & m_strIP & " Simple Mail Transfer Service Ready"
-        WriteLog "220 " & m_strIP & " Simple Mail Transfer Service Ready", Paranoid
+        skSMTP.SendData "220 " & Config.strIP & " Simple Mail Transfer Service Ready"
+        WriteLog "220 " & Config.strIP & " Simple Mail Transfer Service Ready", Paranoid
         intState = SMTP
     Else
         Debug.Assert False
@@ -376,11 +340,11 @@ On Error GoTo ErrHandler
     End If
     Select Case Left$(strDataRecived, 4)
     Case Empty
-        strDataToSend = "220 " & m_strIP & " Simple Mail Transfer Service Ready"
+        strDataToSend = "220 " & Config.strIP & " Simple Mail Transfer Service Ready"
     Case "HELO"
-        strDataToSend = "250 " & m_strIP
+        strDataToSend = "250 " & Config.strIP
     Case "EHLO"
-        strDataToSend = "250-" & m_strIP
+        strDataToSend = "250-" & Config.strIP
         strDataToSend = strDataToSend & vbNewLine & "250-AUTH LOGIN PLAIN"
         strDataToSend = strDataToSend & vbNewLine & "250 HELP"
     Case "AUTH"
@@ -396,8 +360,8 @@ On Error GoTo ErrHandler
         ElseIf Left$(strDataRecived, 10) = "AUTH PLAIN" Then
             strDataRecived = base64_decode(Mid$(strDataRecived, 12))
             If Len(strDataRecived) > 1 Then
-                strUser = Mid$(strDataRecived, 2, InStr(2, strDataRecived, Chr(0)) - 2)
-                strPassWord = Mid$(strDataRecived, InStr(2, strDataRecived, Chr(0)) + 1)
+                Config.Profile.strUser = Mid$(strDataRecived, 2, InStr(2, strDataRecived, Chr(0)) - 2)
+                Config.Profile.strPassWord = Mid$(strDataRecived, InStr(2, strDataRecived, Chr(0)) + 1)
                 strDataToSend = ValidateSMTPAUTH
             Else
                 strDataToSend = "533  Authentication required [AUTH]"
@@ -405,12 +369,12 @@ On Error GoTo ErrHandler
         Else
             Select Case strSMTPState
             Case "LOGIN"
-                strUser = base64_decode(Mid$(strDataRecived, 6))
+                Config.Profile.strUser = base64_decode(Mid$(strDataRecived, 6))
                 strSMTPState = "PASSWORD"
                 strDataToSend = "334 " & base64_encode("Password:")
             
             Case "PASSWORD"
-                strPassWord = base64_decode(Mid$(strDataRecived, 6))
+                Config.Profile.strPassWord = base64_decode(Mid$(strDataRecived, 6))
                 strDataToSend = ValidateSMTPAUTH
                 strSMTPState = ""
             
@@ -419,7 +383,7 @@ On Error GoTo ErrHandler
             End Select
         End If
     Case "MAIL"
-        If strPassWord = Empty Or strUser = Empty Then
+        If Config.Profile.strPassWord = Empty Or Config.Profile.strUser = Empty Then
             strDataToSend = "556 CLIENT AUTHENTICATION REQUIRED. USE ESMTP EHLO AND AUTH"
         Else
             strMailData = strDataRecived
@@ -442,7 +406,7 @@ On Error GoTo ErrHandler
         strSMTPState = ""
         strMailData = ""
         Erase vMailData
-        strDataToSend = "221 " & m_strIP & " Service closing transmission channel"
+        strDataToSend = "221 " & Config.strIP & " Service closing transmission channel"
     Case Else
         If strSMTPState = "DATA" Then
             
