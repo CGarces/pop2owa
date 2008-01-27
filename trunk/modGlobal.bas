@@ -10,11 +10,6 @@ Public Const Service_Name  As String = "POP2OWA"
 Public Const OK    As String = "+OK "
 Public Const Error As String = "-ERR "
 
-
-Public strUser          As String
-Public strPassWord      As String
-Public strExchSvrName   As String
-
 ''
 'Object to handle POP3/STMP commands.
 Public oPOP3            As clsPOP3
@@ -22,7 +17,7 @@ Public oPOP3            As clsPOP3
 
 Public hStopPendingEvent As Long
 
-Private intVerbosity    As Integer
+Public intVerbosity    As Integer
 Public Enum Verbosity
     Fail = 0
     Warning = 1
@@ -30,8 +25,9 @@ Public Enum Verbosity
     Paranoid = 3
 End Enum
 
-Public bSaveinsent      As Boolean
-Public bAuthentication  As Boolean
+
+Public Config As clsConfig
+
 Public IsNTService      As Boolean
 
 ''

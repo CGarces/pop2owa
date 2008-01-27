@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
+Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "mscomctl.ocx"
 Begin VB.Form frmMain 
    BorderStyle     =   1  'Fixed Single
    Caption         =   "POP2OWA"
@@ -180,7 +180,7 @@ End Sub
 ''
 'Apply the changes and reset the program
 Private Sub cmdOk_Click()
-    writeRegistry
+    ReadControls
     Reset
     FillControls
 End Sub
@@ -201,7 +201,9 @@ Dim objFrame As Frame
     Set objFrame = Nothing
 
     Me.Move Me.Left, Me.Top, 2700, 3150
-    'Get values from registry
+    'Get values from config
+    Set Config = New clsConfig
+    Config.ReadConfig
     FillControls
     Reset
     Me.Show
@@ -237,76 +239,32 @@ Private Sub TabStrip1_Click()
 End Sub
 
 ''
-'Fill the control in the form with the registry information.
+'Fill the the form controls with configuration.
 Private Sub FillControls()
-Dim c As cRegistry
-Set c = New cRegistry
-'Values are stored in (HKEY_CURRENT_USER\Software\pop2owa)
-With c
-    .ClassKey = HKEY_CURRENT_USER
-    .SectionKey = "Software\pop2owa"
-    .ValueType = REG_SZ
-    'Exchange server
-    .ValueKey = "ExchangeServer"
-    Me.txtServer.Text = .Value
-    'IP to listen
-    .ValueKey = "IP"
-    Me.txtIP.Text = .Value
-    
-    'Port values are integers
-    .ValueType = REG_DWORD
-    'POP3 Port
-    .ValueKey = "POP3"
-    Me.txtPort(0).Text = .Value
-    'SMTP Port
-    .ValueKey = "SMTP"
-    Me.txtPort(1).Text = .Value
-    .ValueKey = "SMTPEnabled"
-    chkSMTP.Value = .Value
-    'Leave a copy in send folder
-    .ValueKey = "Saveinsent"
-    Me.chkSend.Value = .Value
-    'Form-Based-Authentication on/off
-    .ValueKey = "FormBasedAuth"
-    Me.chkFBA.Value = .Value
-End With
-Set c = Nothing
+    Me.txtServer.Text = Config.Profile.strExchSvrName
+    Me.txtIP.Text = Config.strIP
+    Me.txtPort(0).Text = Config.intPOP3Port
+    Me.txtPort(1).Text = Config.intSMTPPort
+    Me.chkSMTP.Value = IIf(Config.bSMTPPort, vbChecked, vbUnchecked)
+    Me.chkSend.Value = IIf(Config.Profile.bSaveinsent, vbChecked, vbUnchecked)
+    Me.chkFBA.Value = IIf(Config.Profile.Authentication = fba, vbChecked, vbUnchecked)
 End Sub
 ''
-'Fill the registry with the data in the form.
-Private Sub writeRegistry()
-Dim c As cRegistry
-Set c = New cRegistry
-'Values are stored in (HKEY_CURRENT_USER\Software\pop2owa)
-With c
-    .ClassKey = HKEY_CURRENT_USER
-    .SectionKey = "Software\pop2owa"
-    .ValueType = REG_SZ
-    'Exchange server
-    .ValueKey = "ExchangeServer"
-    .Value = Trim(Me.txtServer.Text)
-    'IP to listen
-    .ValueKey = "IP"
-    .Value = Me.txtIP.Text
+'Save configuration with the form data.
+Private Sub ReadControls()
     
-    'Port values are integers
-    .ValueType = REG_DWORD
-    'POP3 Port
-    .ValueKey = "POP3"
-    .Value = CInt(Me.txtPort(0).Text)
-    'SMTP Port
-    .ValueKey = "SMTPEnabled"
-    .Value = chkSMTP.Value
-    .ValueKey = "SMTP"
-    .Value = CInt(Me.txtPort(1).Text)
-    'Leave a copy in send folder
-    .ValueKey = "Saveinsent"
-    .Value = chkSend.Value
-    'Form-Based-Authentication on/off
-    .ValueKey = "FormBasedAuth"
-    .Value = Me.chkFBA.Value
-End With
-Set c = Nothing
+    Config.Profile.strExchSvrName = Me.txtServer.Text
+    Config.strIP = Me.txtIP.Text
+    Config.intPOP3Port = Me.txtPort(0).Text
+    Config.intSMTPPort = Me.txtPort(1).Text
+    Config.bSMTPPort = Me.chkSMTP.Value
+    Config.Profile.bSaveinsent = (Me.chkSend.Value = vbChecked)
+    If Me.chkFBA.Value = vbChecked Then
+        Config.Profile.Authentication = fba
+    Else
+        Config.Profile.Authentication = basic
+    End If
+    Config.WriteConfig
 End Sub
 
 ''
