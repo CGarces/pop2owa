@@ -23,16 +23,6 @@ Option Explicit
 
 Private strCookies  As String
 
-Private Type ExchangeConfig
-    'ExchSvrName As String
-    URLSend     As String
-    URLInbox    As String
-    AuthPage    As String
-    HiddenField As String
-    HiddenValue As String
-End Type
-Private Config As ExchangeConfig
-
 Private vTypes(3, 1)    As String
 
 
@@ -47,15 +37,17 @@ Public intMsgCount As Integer
 Public Sub GetMsg(ByVal strURL As String, ByRef objPOP3 As CSocketMaster)
 On Error GoTo ErrHandler
 
-Dim oXMLHTTP    As XMLHTTP
+'Dim oXMLHTTP    As XMLHTTP
+Dim oXMLHTTP    As ServerXMLHTTP
 Dim lngTimer    As Long
 Dim strMsg      As String
 Const ERRCOMMAND As String = "-ERR no such message"
-Set oXMLHTTP = New XMLHTTP
+'Set oXMLHTTP = New XMLHTTP
+Set oXMLHTTP = New ServerXMLHTTP
 
 With oXMLHTTP
-    '.setOption 3, ""
-    .open "GET", strURL & "?ID=" & (Timer * 100), True, strUser, strPassWord
+    .setOption 3, ""
+    .open "GET", strURL & "?ID=" & (Timer * 100), True, Config.Profile.strUser, Config.Profile.strPassWord
     .setRequestHeader "Content-type", "text/xml"
     .setRequestHeader "Depth", "infinity"
     .setRequestHeader "Translate", "f"
@@ -105,12 +97,14 @@ End Sub
 '@param intMsg  Position of the message in the inbox folder
 Public Function Delete(ByVal intMsg As Integer) As Boolean
 On Error GoTo ErrHandler
-Dim oXMLHTTP    As XMLHTTP
+'Dim oXMLHTTP    As XMLHTTP
+Dim oXMLHTTP    As ServerXMLHTTP
     
-    Set oXMLHTTP = New XMLHTTP
+    'Set oXMLHTTP = New XMLHTTP
+    Set oXMLHTTP = New ServerXMLHTTP
     With oXMLHTTP
-        '.setOption 3, ""
-        .open "DELETE", objDOMInbox.childNodes(1).childNodes(intMsg - 1).selectSingleNode("a:href").Text, True, strUser, strPassWord
+        .setOption 3, ""
+        .open "DELETE", objDOMInbox.childNodes(1).childNodes(intMsg - 1).selectSingleNode("a:href").Text, True, Config.Profile.strUser, Config.Profile.strPassWord
         If strCookies <> Empty Then
             .setRequestHeader "Cookies", "Necessary according to Q234486"
             .setRequestHeader "Cookies", strCookies
@@ -136,12 +130,16 @@ End Function
 '@return Reply to e-mail client
 Public Function GetMsgList() As Boolean
 On Error GoTo ErrHandler
-Dim oXMLHTTP As XMLHTTP
-' Create an instance of the xmlHTTP object
-Set oXMLHTTP = New XMLHTTP
+'Dim oXMLHTTP As XMLHTTP
+Dim oXMLHTTP As ServerXMLHTTP
+
+
+'Set oXMLHTTP = New XMLHTTP
+Set oXMLHTTP = New ServerXMLHTTP
 With oXMLHTTP
+    .setOption 3, ""
     ' Open a request to a particular url
-    .open "SEARCH", Config.URLInbox, True, strUser, strPassWord
+    .open "SEARCH", Config.Profile.URLInbox, True, Config.Profile.strUser, Config.Profile.strPassWord
     ' Set the header type - we want XML
     .setRequestHeader "Content-type", "text/xml"
     .setRequestHeader "Depth", "1"
@@ -157,7 +155,7 @@ With oXMLHTTP
                  "SELECT" & _
                  " ""DAV:id""" & _
                  ",""DAV:getcontentlength""" & _
-                 " FROM scope('shallow traversal of """ & Config.URLInbox & """')" & _
+                 " FROM scope('shallow traversal of """ & Config.Profile.URLInbox & """')" & _
                  " WHERE ""DAV:ishidden""=False" & _
                  " AND ""DAV:isfolder""=False" & _
                  "</a:sql></a:searchrequest>")
@@ -203,41 +201,36 @@ Public Function GetFoldersURL() As Long
 
 On Error GoTo ErrHandler
 Dim query           As String
-Dim strURL          As String
 Dim bFBALoginFail   As Boolean
-Dim oXMLHTTP        As XMLHTTP
+'Dim oXMLHTTP        As XMLHTTP
+Dim oXMLHTTP        As ServerXMLHTTP
 Dim strAccount      As String
 Dim objDOMFolders   As DOMDocument
 
-If InStr(strUser, "^") <> 0 Then
-    strAccount = Mid$(strUser, InStr(strUser, "^") + 1)
-    strUser = Left$(strUser, InStr(strUser, "^") - 1)
-Else
-    strAccount = strUser
-End If
-
-If Right(LCase(strExchSvrName), Len("/exchange/")) = "/exchange/" Then
-    strURL = strExchSvrName & strAccount & "/"
-Else
-   strURL = strExchSvrName & "exchange/" & strAccount & "/"
-End If
-
-If bAuthentication Then
+Select Case Config.Profile.Authentication
+Case basic
+    'Do nothing, is the standard type
+Case fba
     WriteLog "GetFoldersURL : Trying LogingFBA ", Information
     bFBALoginFail = Not (LogingFBA)
-End If
+'Case NTLM
+'    bFBALoginFail = Not (LogingNTLM)
+End Select
+
+
 If bFBALoginFail Then
     GetFoldersURL = -1
 Else
-    Set oXMLHTTP = New XMLHTTP
+    Set oXMLHTTP = New ServerXMLHTTP
     'strURL = strExchSvrName & "/exchange/" & strAccount & "/"
 
     With oXMLHTTP
-        WriteLog "Getting Folders : " & strURL
-        '.setOption 3, ""
-        .open "PROPFIND", strURL, True, strUser, strPassWord
+        WriteLog "Getting Folders : " & Config.Profile.URLUser
+        .setOption 3, ""
+        .open "PROPFIND", Config.Profile.URLUser, True, Config.Profile.strUser, Config.Profile.strPassWord
         .setRequestHeader "Content-Type", "text/xml"
         .setRequestHeader "Depth", "0"
+        .setRequestHeader "Accept-Encoding", "gzip,deflate"
         If strCookies <> Empty Then
             .setRequestHeader "Cookies", "Necessary according to Q234486"
             .setRequestHeader "Cookies", strCookies
@@ -261,8 +254,8 @@ Else
             objDOMFolders.setProperty "SelectionNamespaces", "xmlns:a='DAV:'"
             objDOMFolders.setProperty "SelectionNamespaces", "xmlns:a='DAV:' xmlns:d='urn:schemas:httpmail:'"
             WriteLog "GetFoldersURL: " & vbCrLf & objDOMFolders.xml & vbCrLf, Paranoid
-            Config.URLSend = objDOMFolders.selectSingleNode(XMLPATH & "d:sendmsg").Text
-            Config.URLInbox = objDOMFolders.selectSingleNode(XMLPATH & "d:inbox").Text & "/"
+            Config.Profile.URLSend = objDOMFolders.selectSingleNode(XMLPATH & "d:sendmsg").Text
+            Config.Profile.URLInbox = objDOMFolders.selectSingleNode(XMLPATH & "d:inbox").Text & "/"
             Set objDOMFolders = Nothing
         Else
             WriteLog "GetFoldersURL: " & .Status & vbTab & .statusText, Warning
@@ -287,26 +280,28 @@ On Error GoTo ErrHandler
 Dim vHeaders()  As String
 Dim intCounter  As Integer
 Dim intIndex    As Integer
-Dim oXMLHTTP    As XMLHTTP
+'Dim oXMLHTTP    As XMLHTTP
+Dim oXMLHTTP    As ServerXMLHTTP
 Dim strUsername As String
 Dim strHeaders  As String
 Dim strVersion  As String
 
 
-strUsername = strUser
-If InStr(strUser, "@") <> 0 Then
-    strUsername = Left(strUsername, InStr(strUser, "@") - 1)
+If InStr(Config.Profile.strUser, "@") = 0 Then
+    strUsername = Config.Profile.strUser
+Else
+    strUsername = Left(strUsername, InStr(Config.Profile.strUser, "@") - 1)
 End If
 
-WriteLog "LogingFBA -> Config.AuthPage: " & Config.AuthPage, Information
+WriteLog "LogingFBA -> Config.AuthPage: " & Config.Profile.AuthPage, Information
 
-Set oXMLHTTP = New XMLHTTP
+Set oXMLHTTP = New ServerXMLHTTP
 With oXMLHTTP
-    '.setOption 3, ""
-    .open "POST", Config.AuthPage, True
+    .setOption 3, ""
+    .open "POST", Config.Profile.AuthPage, True
     .setRequestHeader "Content-type", "application/x-www-form-urlencoded"
     'Generate the body for FBA login
-    .send Config.HiddenField & "=" & Config.HiddenValue & "&trusted=0&username=" & URLEncode(strUsername) & "&password=" & URLEncode(strPassWord)
+    .send Config.Profile.HiddenField & "=" & Config.Profile.HiddenValue & "&trusted=0&username=" & URLEncode(strUsername) & "&password=" & URLEncode(Config.Profile.strPassWord)
     While Not .readyState = 4
         MsgWaitObj 100
     Wend
@@ -359,21 +354,23 @@ End Function
 Public Function SendMail(ByVal strMailData As String) As Boolean
 
 On Error GoTo ErrHandler
-Dim oXMLHTTP As XMLHTTP
+'Dim oXMLHTTP As XMLHTTP
+Dim oXMLHTTP As ServerXMLHTTP
 
-    Set oXMLHTTP = New XMLHTTP
+    'Set oXMLHTTP = New XMLHTTP
+    Set oXMLHTTP = New ServerXMLHTTP
      
     'Create the DAV PUT request.
-    'xmlReq.setOption 3, ""
     With oXMLHTTP
-        .open "PUT", Config.URLSend, True, strUser, strPassWord
+        .setOption 3, ""
+        .open "PUT", Config.Profile.URLSend, True, Config.Profile.strUser, Config.Profile.strPassWord
         If strCookies <> Empty Then
             .setRequestHeader "Cookies", "Necessary according to Q234486"
             .setRequestHeader "Cookies", strCookies
         End If
         
         .setRequestHeader "Content-Type", "message/rfc821"
-        If Not bSaveinsent Then
+        If Not Config.Profile.bSaveinsent Then
             .setRequestHeader "Saveinsent", "f"
         End If
         .send strMailData
@@ -484,29 +481,6 @@ Wend
 End Sub
 
 Private Sub Class_Initialize()
-Dim objDOMConfig As DOMDocument
-Dim objNodeElement As IXMLDOMElement
-Dim objNodeList As IXMLDOMNodeList
-
-Set objDOMConfig = New DOMDocument
-objDOMConfig.async = False
-objDOMConfig.Load App.Path & "\config.xml"
-If objDOMConfig.parseError.errorCode = 0 Then
-    Config.AuthPage = strExchSvrName & objDOMConfig.selectSingleNode("/xml/Form_Based_Auth/AuthPage").Text
-    Set objNodeElement = objDOMConfig.selectSingleNode("xml/Form_Based_Auth/Main_Hidden_Field")
-    Config.HiddenField = objNodeElement.getAttribute("Name")
-    Config.HiddenValue = objNodeElement.getAttribute("Value")
-    Set objNodeList = objDOMConfig.selectNodes("xml/Form_Based_Auth/Hidden_Field")
-    For Each objNodeElement In objNodeList
-        Config.HiddenValue = Config.HiddenValue & "&" & objNodeElement.getAttribute("Name") & "=" & URLEncode(objNodeElement.getAttribute("Value"))
-    Next
-Else
-    Err.Raise 51, "clsOwa", "Error parsing config file"
-End If
-
-Set objDOMConfig = Nothing
-Set objNodeElement = Nothing
-Set objNodeList = Nothing
 
 vTypes(0, 0) = "image/jpeg"
 vTypes(0, 1) = "/9j/"
@@ -523,7 +497,6 @@ Private Sub Class_Terminate()
 Set objDOMInbox = Nothing
 Erase vTypes
 End Sub
-
 
 ''
 'Encode one string to send it as url parameter.
