@@ -9,7 +9,7 @@
 Var STARTMENU_FOLDER
 Var ALREADY_INSTALLED
 !define PRODUCT "pop2owa"
-!define VERSION "v1.2.2"
+!define VERSION "v1.3.0"
 Name "${PRODUCT} ${VERSION}"
 OutFile "${PRODUCT}_${VERSION}.exe"
 InstallDir "$PROGRAMFILES\${PRODUCT}"
@@ -86,7 +86,7 @@ Section "Principal" SEC01
   new_installation:
 
   File "${PRODUCT}.exe"
-  File "config.xml"
+  File /oname=$INSTDIR\config.xml sample_config.xml
 
   !insertmacro InstallLib REGDLL    $ALREADY_INSTALLED REBOOT_PROTECTED     "mscomctl.ocx" "$SYSDIR\mscomctl.ocx" "$SYSDIR"
 
@@ -96,20 +96,7 @@ Section "Principal" SEC01
   CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\Uninstall.lnk" "$INSTDIR\uninst.exe"
   !insertmacro MUI_STARTMENU_WRITE_END
 
-  ;Test the last value inserted (v0.8)
-  ReadRegStr $R0 HKCU "Software\${PRODUCT}" "FormBasedAuth"
-  StrCmp $R0 "" write done
 
-write:
-; Write defalut aplication values
-  WriteRegStr HKCU "Software\${PRODUCT}" "ExchangeServer" "http://mail.yourcompany.com"
-  WriteRegStr HKCU "Software\${PRODUCT}" "IP" "127.0.0.1"
-  WriteRegDWORD HKCU "Software\${PRODUCT}" "POP3" 0x6E
-  WriteRegDWORD HKCU "Software\${PRODUCT}" "SMTP" 0x19
-  WriteRegDWORD HKCU "Software\${PRODUCT}" "Saveinsent" 0x1
-  WriteRegDWORD HKCU "Software\${PRODUCT}" "FormBasedAuth" 0x1
-
-done:
 
 SectionEnd
 
