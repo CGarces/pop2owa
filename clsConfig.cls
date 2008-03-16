@@ -32,7 +32,7 @@ Public Property Get Profiles() As Variant
 End Property
 
 Public Sub ReadConfig()
-
+On Error GoTo ErrHandler
 Dim objDOMConfig    As DOMDocument
 Dim objNodeElement  As IXMLDOMElement
 Dim objNodeProfile  As IXMLDOMElement
@@ -98,7 +98,9 @@ Set objNodeList = Nothing
 Set objProfileList = Nothing
 
 Set objDOMConfig = Nothing
-
+Exit Sub
+ErrHandler:
+    Err.Raise 51, "clsOwa", "Error parsing config file"
 End Sub
 
 Public Sub WriteConfig()
