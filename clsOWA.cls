@@ -20,14 +20,22 @@ Attribute VB_Exposed = False
 
 Option Explicit
 
-
+''
+'Cookies used for autentication
 Private strCookies  As String
-
+''
+'Array for image types
 Private vTypes(3, 1)    As String
 
-
-Public objDOMInbox As DOMDocument
-Public intMsgCount As Integer
+''
+'Dom object with inbox messages
+Public objDOMInbox  As DOMDocument
+''
+'Number of messages in inbox folder
+Public intMsgCount  As Integer
+''
+'Size of messages in inbox folder
+Public lngSize As Long
 
 ''
 'Retrieve message in RFC 821 format and send it to the client.
@@ -37,35 +45,23 @@ Public intMsgCount As Integer
 Public Sub GetMsg(ByVal strURL As String, ByRef objPOP3 As CSocketMaster)
 On Error GoTo ErrHandler
 
-'Dim oXMLHTTP    As XMLHTTP
 Dim oXMLHTTP    As ServerXMLHTTP
 Dim lngTimer    As Long
 Dim strMsg      As String
 Const ERRCOMMAND As String = "-ERR no such message"
-'Set oXMLHTTP = New XMLHTTP
-Set oXMLHTTP = New ServerXMLHTTP
+
+Set oXMLHTTP = OpenXML("GET", strURL & "?ID=" & (Timer * 100))
 
 With oXMLHTTP
-    .setOption 3, ""
-    .open "GET", strURL & "?ID=" & (Timer * 100), True, Config.Profile.strUser, Config.Profile.strPassWord
     .setRequestHeader "Content-type", "text/xml"
     .setRequestHeader "Depth", "infinity"
     .setRequestHeader "Translate", "f"
-    
-    If strCookies <> Empty Then
-        .setRequestHeader "Cookies", "Necessary according to Q234486"
-        .setRequestHeader "Cookies", strCookies
-    End If
     WriteLog "Getting " & vbTab & strURL, Information
     .send
-    lngTimer = Timer
     While Not .readyState = 4
-        MsgWaitObj 100
-        If Timer - lngTimer > 30 Then
+        If Not .waitForResponse(25) Then
             WriteLog "Donwloading readyState  " & .readyState & vbTab & strURL, Warning
             objPOP3.SendData "X-POP2OWA-Header: Header to avoid timeout" & vbCrLf
-            lngTimer = Timer
-'            Debug.Assert False
         End If
     Wend
     WriteLog "Download Status " & .Status & vbTab & strURL, Information
@@ -78,10 +74,10 @@ With oXMLHTTP
             ParseHeader strMsg
         End If
         objPOP3.SendData strMsg
+        strMsg = vbNull
     Else
         WriteLog "GetMsg.Status " & .statusText, Warning
         objPOP3.SendData ERRCOMMAND
-
     End If
 End With
 Set oXMLHTTP = Nothing
@@ -97,27 +93,18 @@ End Sub
 '@param intMsg  Position of the message in the inbox folder
 Public Function Delete(ByVal intMsg As Integer) As Boolean
 On Error GoTo ErrHandler
-'Dim oXMLHTTP    As XMLHTTP
+
 Dim oXMLHTTP    As ServerXMLHTTP
     
-    'Set oXMLHTTP = New XMLHTTP
-    Set oXMLHTTP = New ServerXMLHTTP
-    With oXMLHTTP
-        .setOption 3, ""
-        .open "DELETE", objDOMInbox.childNodes(1).childNodes(intMsg - 1).selectSingleNode("a:href").Text, True, Config.Profile.strUser, Config.Profile.strPassWord
-        If strCookies <> Empty Then
-            .setRequestHeader "Cookies", "Necessary according to Q234486"
-            .setRequestHeader "Cookies", strCookies
-        End If
-        .setRequestHeader "Depth", "infinity"
-        .send
-        While Not .readyState = 4
-            MsgWaitObj 100
-        Wend
-
-    '    Debug.Print .Status
-    End With
-    Delete = True
+Set oXMLHTTP = OpenXML("DELETE", objDOMInbox.childNodes(1).childNodes(intMsg - 1).selectSingleNode("a:href").Text)
+With oXMLHTTP
+    .setRequestHeader "Depth", "infinity"
+    .send
+    While Not .readyState = 4
+        .waitForResponse 25
+    Wend
+End With
+Delete = True
 Set oXMLHTTP = Nothing
 Exit Function
 ErrHandler:
@@ -125,55 +112,40 @@ ErrHandler:
     Set oXMLHTTP = Nothing
 End Function
 ''
-'Get the list of al messages in the inbox folder.
+'Get the list of messages in the inbox folder.
 '
-'@return Reply to e-mail client
+'@return Reply to e-mail client, true if success
 Public Function GetMsgList() As Boolean
 On Error GoTo ErrHandler
-'Dim oXMLHTTP As XMLHTTP
+
 Dim oXMLHTTP As ServerXMLHTTP
 
-
-'Set oXMLHTTP = New XMLHTTP
-Set oXMLHTTP = New ServerXMLHTTP
+Set oXMLHTTP = OpenXML("SEARCH", Config.Profile.URLInbox)
 With oXMLHTTP
-    .setOption 3, ""
-    ' Open a request to a particular url
-    .open "SEARCH", Config.Profile.URLInbox, True, Config.Profile.strUser, Config.Profile.strPassWord
     ' Set the header type - we want XML
     .setRequestHeader "Content-type", "text/xml"
     .setRequestHeader "Depth", "1"
-    If strCookies <> Empty Then
-        .setRequestHeader "Cookies", "Necessary according to Q234486"
-        .setRequestHeader "Cookies", strCookies
-    End If
     ' Send the request
-    MsgWaitObj 100
     WriteLog "Getting msg list ", Information
     Call .send("<?xml version='1.0' ?>" & _
                 "<a:searchrequest xmlns:a='DAV:'><a:sql>" & _
                  "SELECT" & _
-                 " ""DAV:id""" & _
+                 " ""DAV:uid""" & _
                  ",""DAV:getcontentlength""" & _
                  " FROM scope('shallow traversal of """ & Config.Profile.URLInbox & """')" & _
                  " WHERE ""DAV:ishidden""=False" & _
                  " AND ""DAV:isfolder""=False" & _
                  "</a:sql></a:searchrequest>")
-    
     While Not .readyState = 4
-        MsgWaitObj 100
+        .waitForResponse 30
     Wend
     
     If .Status = 207 Then
-
         Set objDOMInbox = .responseXML
         objDOMInbox.setProperty "SelectionLanguage", "XPath"
         objDOMInbox.setProperty "SelectionNamespaces", "xmlns:a='DAV:'"
         intMsgCount = objDOMInbox.childNodes(1).childNodes.Length
         WriteLog "msg list fetch " & intMsgCount & " messages", Information
-        #If DEBUG_MODE = 1 Then
-            objDOMInbox.save App.Path & "\listado.XML"
-        #End If
     Else
         WriteLog "Reciving msg list " & .statusText, Warning
         Err.Raise vbObjectError + 1, "Reciving msg", .statusText
@@ -202,7 +174,6 @@ Public Function GetFoldersURL() As Long
 On Error GoTo ErrHandler
 Dim query           As String
 Dim bFBALoginFail   As Boolean
-'Dim oXMLHTTP        As XMLHTTP
 Dim oXMLHTTP        As ServerXMLHTTP
 Dim strAccount      As String
 Dim objDOMFolders   As DOMDocument
@@ -213,28 +184,23 @@ Case basic
 Case fba
     WriteLog "GetFoldersURL : Trying LogingFBA ", Information
     bFBALoginFail = Not (LogingFBA)
-'Case NTLM
-'    bFBALoginFail = Not (LogingNTLM)
+#If TEST = 1 Then
+Case NTLM
+    bFBALoginFail = Not (LogingNTLM)
+#End If
 End Select
 
 
 If bFBALoginFail Then
     GetFoldersURL = -1
 Else
-    Set oXMLHTTP = New ServerXMLHTTP
+    WriteLog "Getting Folders : " & Config.Profile.URLUser
+    Set oXMLHTTP = OpenXML("PROPFIND", Config.Profile.URLUser)
     'strURL = strExchSvrName & "/exchange/" & strAccount & "/"
 
     With oXMLHTTP
-        WriteLog "Getting Folders : " & Config.Profile.URLUser
-        .setOption 3, ""
-        .open "PROPFIND", Config.Profile.URLUser, True, Config.Profile.strUser, Config.Profile.strPassWord
         .setRequestHeader "Content-Type", "text/xml"
         .setRequestHeader "Depth", "0"
-        .setRequestHeader "Accept-Encoding", "gzip,deflate"
-        If strCookies <> Empty Then
-            .setRequestHeader "Cookies", "Necessary according to Q234486"
-            .setRequestHeader "Cookies", strCookies
-        End If
         .send "<?xml version='1.0'?>" & _
             "<a:propfind xmlns:a='DAV:'>" & _
             "<a:prop xmlns:m='urn:schemas:httpmail:'>" & _
@@ -244,9 +210,8 @@ Else
             "</a:propfind>"
 
         While Not .readyState = 4
-            MsgWaitObj 100
+            .waitForResponse 30
         Wend
-    
         ' process the result
         If (.Status >= 200 And .Status < 300) Then
             Set objDOMFolders = .responseXML
@@ -267,7 +232,7 @@ Set oXMLHTTP = Nothing
 Exit Function
 ErrHandler:
     WriteLog "GetFoldersURL: " & Err.Number & vbTab & Err.Description, Fail
-    GetFoldersURL = -1
+    GetFoldersURL = Err.Number
     Debug.Assert False
 End Function
 
@@ -280,12 +245,10 @@ On Error GoTo ErrHandler
 Dim vHeaders()  As String
 Dim intCounter  As Integer
 Dim intIndex    As Integer
-'Dim oXMLHTTP    As XMLHTTP
 Dim oXMLHTTP    As ServerXMLHTTP
 Dim strUsername As String
 Dim strHeaders  As String
 Dim strVersion  As String
-
 
 If InStr(Config.Profile.strUser, "@") = 0 Then
     strUsername = Config.Profile.strUser
@@ -295,15 +258,13 @@ End If
 
 WriteLog "LogingFBA -> Config.AuthPage: " & Config.Profile.AuthPage, Information
 
-Set oXMLHTTP = New ServerXMLHTTP
+Set oXMLHTTP = OpenXML("POST", Config.Profile.AuthPage, False)
 With oXMLHTTP
-    .setOption 3, ""
-    .open "POST", Config.Profile.AuthPage, True
     .setRequestHeader "Content-type", "application/x-www-form-urlencoded"
     'Generate the body for FBA login
     .send Config.Profile.HiddenField & "=" & Config.Profile.HiddenValue & "&trusted=0&username=" & URLEncode(strUsername) & "&password=" & URLEncode(Config.Profile.strPassWord)
     While Not .readyState = 4
-        MsgWaitObj 100
+        .waitForResponse 30
     Wend
     If (.Status >= 200 And .Status < 300) Then
         strHeaders = .getAllResponseHeaders()
@@ -354,39 +315,29 @@ End Function
 Public Function SendMail(ByVal strMailData As String) As Boolean
 
 On Error GoTo ErrHandler
-'Dim oXMLHTTP As XMLHTTP
 Dim oXMLHTTP As ServerXMLHTTP
 
-    'Set oXMLHTTP = New XMLHTTP
-    Set oXMLHTTP = New ServerXMLHTTP
-     
-    'Create the DAV PUT request.
-    With oXMLHTTP
-        .setOption 3, ""
-        .open "PUT", Config.Profile.URLSend, True, Config.Profile.strUser, Config.Profile.strPassWord
-        If strCookies <> Empty Then
-            .setRequestHeader "Cookies", "Necessary according to Q234486"
-            .setRequestHeader "Cookies", strCookies
-        End If
-        
-        .setRequestHeader "Content-Type", "message/rfc821"
-        If Not Config.Profile.bSaveinsent Then
-            .setRequestHeader "Saveinsent", "f"
-        End If
-        .send strMailData
-        While Not oXMLHTTP.readyState = 4
-             MsgWaitObj 100
-        Wend
-        
-        'Process the results.
-        If (.Status >= 200 And .Status < 300) Then
-           SendMail = True
-        Else
-           WriteLog "SendMail: " & .Status & vbTab & .statusText, Warning
-           SendMail = False
-        End If
-    End With
-    Set oXMLHTTP = Nothing
+Set oXMLHTTP = OpenXML("PUT", Config.Profile.URLSend)
+ 
+'Create the DAV PUT request.
+With oXMLHTTP
+    .setRequestHeader "Content-Type", "message/rfc821"
+    If Not Config.Profile.bSaveinsent Then
+        .setRequestHeader "Saveinsent", "f"
+    End If
+    .send strMailData
+    While Not .readyState = 4
+        .waitForResponse 30
+    Wend
+    'Process the results.
+    If (.Status >= 200 And .Status < 300) Then
+       SendMail = True
+    Else
+       WriteLog "SendMail: " & .Status & vbTab & .statusText, Warning
+       SendMail = False
+    End If
+End With
+Set oXMLHTTP = Nothing
 Exit Function
 ErrHandler:
     WriteLog "SendMail: " & Err.Number & vbTab & Err.Description, Fail
@@ -400,7 +351,7 @@ End Function
 '=?iso-8859-1?Q?   Martin_Sacrist=E1n=2C_C=2E   ?= <XXXX>
 'Should be:<BR>
 '=?iso-8859-1?Q?=22Martin_Sacrist=E1n=2C_C=2E=22?= <XXXX>
-'Quotes are missing and some email clientes fails.
+'Quotes are missing and some email clientes fails parsing it.
 '@param strMsg Email message in RFC 821 format
 Private Sub ParseHeader(ByRef strMsg As String)
 Dim strHeader       As String
@@ -409,7 +360,7 @@ Dim lngPos          As Long
 Dim lngPosHeader    As Long
 Dim lngPosEnd       As Long
 Dim bModified       As Boolean
-Const STARTQUOTED As String = "?q"
+Const STARTQUOTED   As String = "?q"
 
 lngPosHeader = InStr(1, strMsg, vbCrLf & vbCrLf)
 If lngPosHeader <> 0 Then
@@ -429,10 +380,10 @@ If lngPosHeader <> 0 Then
         End If
         Debug.Assert InStr(lngPos + 1, LCase(strHeader), STARTQUOTED) = InStr(lngPosEnd + 1, LCase(strHeader), STARTQUOTED)
         lngPos = InStr(lngPosEnd + 1, LCase(strHeader), STARTQUOTED)
-        
     Wend
     If bModified Then
         strMsg = strHeader & Mid$(strMsg, lngPosHeader)
+        strHeader = vbNull
     End If
 End If
 
@@ -450,8 +401,9 @@ Dim strBoundary         As String
 Dim lngBoundary         As Long
 Dim lngContentTypeStart As Long
 Dim intType             As Integer
+Const BOUNDARY          As String = "boundary="""
 
-lngPos = InStr(1, LCase(strMsg), "boundary=""")
+lngPos = InStr(1, LCase(strMsg), BOUNDARY)
     
 While lngPos <> 0
     lngPosEnd = InStr(lngPos + 10, strMsg, """")
@@ -472,11 +424,10 @@ While lngPos <> 0
                     End If
                 Next
             End If
-
         End If
         lngPos = InStr(lngPos + 1, LCase(strMsg), strBoundary)
     Wend
-    lngPos = InStr(lngBoundary + 1, LCase(strMsg), "boundary=""")
+    lngPos = InStr(lngBoundary + 1, LCase(strMsg), BOUNDARY)
 Wend
 End Sub
 
@@ -504,8 +455,8 @@ End Sub
 '@param Text String to encode
 '@return Encoded string
 Function URLEncode(ByVal Text As String) As String
-Dim i As Integer
-Dim acode As Integer
+Dim i       As Integer
+Dim acode   As Integer
 
 URLEncode = Text
 
@@ -525,3 +476,35 @@ Next
     
 End Function
 
+''
+'Open one WebDav connexion.
+'
+'@param bstrMethod  Method used in open command
+'@param bstrUrl     URL used in open command
+'@param bAuth       User and password from configuration
+'@return            WebDav object
+Private Function OpenXML(ByVal bstrMethod As String, ByVal bstrUrl As String, Optional ByVal bAuth As Boolean = True) As Object
+
+Set OpenXML = New ServerXMLHTTP
+If Config.Profile.strProxyUser = Empty Then
+    Set OpenXML = CreateObject("MSXML2.ServerXMLHTTP")
+Else
+    Set OpenXML = CreateObject("Msxml2.ServerXMLHTTP.4.0")
+End If
+OpenXML.setOption 3, ""
+If bAuth Then
+    OpenXML.open bstrMethod, bstrUrl, True, Config.Profile.strUser, Config.Profile.strPassWord
+Else
+    OpenXML.open bstrMethod, bstrUrl, True
+End If
+OpenXML.setRequestHeader "Accept-Encoding", "gzip,deflate"
+If strCookies <> Empty Then
+    OpenXML.setRequestHeader "Cookies", "Necessary according to Q234486"
+    OpenXML.setRequestHeader "Cookies", strCookies
+End If
+With Config.Profile
+    If .strProxyUser <> Empty Then
+        OpenXML.setProxyCredentials .strProxyUser, .strProxyPassword
+    End If
+End With
+End Function
