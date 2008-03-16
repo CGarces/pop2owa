@@ -15,7 +15,7 @@ Option Explicit
 
 Public URLSend      As String
 Public URLInbox     As String
-Public URLUser     As String
+Public URLUser      As String
 
 Public AuthPage     As String
 Public HiddenField  As String
@@ -24,9 +24,13 @@ Public strAccount   As String
 Public strPassWord  As String
 Public strExchSvrName   As String
 Public bSaveinsent      As Boolean
-Public Authentication  As AuthTypes
+Public Authentication   As AuthTypes
 
-Private m_strUser      As String
+Private m_strUser   As String
+
+'Proxy Settings
+Public strProxyUser     As String
+Public strProxyPassword As String
 
 
 Public Enum AuthTypes
@@ -54,5 +58,3 @@ Property Let strUser(ByVal user As String)
        Me.URLUser = Me.strExchSvrName & "exchange/" & Me.strAccount & "/"
     End If
 End Property
-
-
