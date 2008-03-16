@@ -34,24 +34,21 @@ Attribute skPOP3.VB_VarHelpID = -1
 'Handle WEBDAW commands with OWA server
 Private objOWA As clsOWA
 
-Private intState As States
+Private bBusy As Boolean
 
-Private Enum States
-    None = 0
-    POP3 = 1
-    SMTP = 2
-    BOTH = 3
-End Enum
+Private Const ENDMAIL As String = vbCrLf & "." & vbCrLf
 
 ''
 'Close al sockets and call to WSACleanup API
 Private Sub Disconnect()
-    If Not (skPOP3 Is Nothing) Then
-        skPOP3.CloseSck
-    End If
-    If Not (skSMTP Is Nothing) Then
-        skSMTP.CloseSck
-    End If
+'    If Not (skPOP3 Is Nothing) Then
+'        skPOP3.CloseSck
+        Set skPOP3 = Nothing
+'    End If
+'    If Not (skSMTP Is Nothing) Then
+'        skSMTP.CloseSck
+        Set skSMTP = Nothing
+'    End If
     Set objOWA = Nothing
 End Sub
 
@@ -60,10 +57,8 @@ End Sub
 '
 Private Sub Start()
 On Error GoTo ErrHandler
-
 Set Config = New clsConfig
 Config.ReadConfig
-
 Set skPOP3 = New CSocketMaster
 skPOP3.Bind Config.intPOP3Port, Config.strIP
 skPOP3.Listen
@@ -109,34 +104,12 @@ Private Sub Class_Terminate()
 End Sub
 
 Private Sub skPOP3_CloseSck()
-    'Reopen the socket to put it in listen mode
-    'Maybe I need to find other way
-    skPOP3.CloseSck
-    skPOP3.Bind skPOP3.LocalPort, Config.strIP
-    skPOP3.Listen
-    Select Case intState
-    Case POP3
-        Config.Profile.strPassWord = Empty
-        Config.Profile.strUser = Empty
-        intState = None
-        Set objOWA = Nothing
-    Case Else
-        Debug.Assert False
-    End Select
+    Socket_CloseSck skPOP3
 End Sub
 
 Private Sub skPOP3_ConnectionRequest(ByVal requestID As Long)
 On Error GoTo ErrHandler
-    If skPOP3.State = sckListening And intState = None Then
-        skPOP3.CloseSck
-        skPOP3.Accept requestID
-        skPOP3.SendData OK & "POP3 server ready"
-        WriteLog OK & "POP3 server ready", Paranoid
-        intState = POP3
-    Else
-        Debug.Assert False
-        WriteLog "POP3 server busy", Fail
-    End If
+    Socket_ConnectionRequest skPOP3, requestID, OK & "POP3 server ready"
 Exit Sub
 ErrHandler:
 WriteLog "POP3 ConnectionRequest ->" & Err.Source & vbTab & Err.Description, Fail
@@ -149,38 +122,40 @@ End Sub
 Private Sub skPOP3_DataArrival(ByVal bytesTotal As Long)
 On Error GoTo ErrHandler
       
-    Dim oElement        As IXMLDOMElement
-    Dim oElements       As IXMLDOMNodeList
-    Dim strDataToSend   As String
-    Dim intMsg          As Integer
-    Dim lngSize         As Long
-    Dim strDataRecived  As String
-    
+Dim oElement        As IXMLDOMElement
+Dim oElements       As IXMLDOMNodeList
+Dim strDataToSend   As String
+Dim intMsg          As Integer
+Dim strDataRecived  As String
+Dim vData()         As String
+Dim strCommand      As String
+
     Const UNABLETOCONNECT As String = "Unable to connect with mailbox "
     WriteLog "skPOP3_DataArrival." & bytesTotal & "Bytes", Paranoid
     skPOP3.GetData strDataRecived
-    '
-    If Left$(strDataRecived, 4) = "PASS" Then
+    'Strip last chars (13+10)
+    strDataRecived = Mid$(strDataRecived, 1, Len(strDataRecived) - 2)
+    vData = Split(strDataRecived, " ")
+    strCommand = vData(0)
+    If strCommand = "PASS" Then
         WriteLog "PASS **********", Paranoid
     Else
         WriteLog strDataRecived, Paranoid
     End If
-    Select Case Left$(strDataRecived, 4)
+    Select Case strCommand
     Case "USER"
-        Config.Profile.strUser = Mid$(strDataRecived, 6, Len(strDataRecived) - 7)
+        Config.Profile.strUser = vData(1)
         strDataToSend = OK & "Password required for " & Config.Profile.strUser
     Case "PASS"
-        If objOWA Is Nothing Then
-            Set objOWA = New clsOWA
-        Else
-            Debug.Assert False
-        End If
-        Config.Profile.strPassWord = Mid$(strDataRecived, 6, Len(strDataRecived) - 7)
+        SetOWAObject
+        Config.Profile.strPassWord = vData(1)
         Select Case objOWA.GetFoldersURL
         Case 200 To 299
             strDataToSend = OK & "mailbox for " & Config.Profile.strUser & " ready"
         Case 401
             strDataToSend = Error & "Invalid Password for " & Config.Profile.strUser
+        Case -2147012889
+            strDataToSend = Error & "The server name or address could not be resolved"
         Case Else
             strDataToSend = Error & UNABLETOCONNECT
         End Select
@@ -188,73 +163,56 @@ On Error GoTo ErrHandler
         If objOWA.GetMsgList Then
             Set oElements = objOWA.objDOMInbox.selectNodes(XMLPATH & "a:getcontentlength")
             For Each oElement In oElements
-                'strDataToSend = strDataToSend & intMsg & " 1 " & vbCrLf
-                lngSize = lngSize + oElement.Text
+                objOWA.lngSize = objOWA.lngSize + oElement.Text
             Next
-            strDataToSend = OK & objOWA.intMsgCount & " " & lngSize
+            strDataToSend = OK & objOWA.intMsgCount & " " & objOWA.lngSize
         Else
             strDataToSend = Error & UNABLETOCONNECT
         End If
     Case "RETR", "TOP "
-        'strDataToSend = GetMsg(objDOMInbox.childNodes(1).childNodes(CInt(Mid$(strDataRecived, 6)) - 1).selectSingleNode("a:propstat/a:prop/a:href").Text)
-        If Left$(strDataRecived, 4) = "RETR" Then
-            intMsg = CInt(Mid$(strDataRecived, 6))
-        Else
-            intMsg = CInt(Mid$(strDataRecived, 5, InStr(5, strDataRecived, " ") - 5))
-        End If
+        intMsg = CInt(vData(1))
         With objOWA.objDOMInbox.childNodes(1).childNodes(intMsg - 1)
             skPOP3.SendData OK & .selectSingleNode("a:propstat/a:prop/a:getcontentlength").Text & " octets"
             objOWA.GetMsg .selectSingleNode("a:href").Text, skPOP3
         End With
-        strDataToSend = vbCrLf & "."
+        strDataToSend = ENDMAIL
     Case "QUIT"
         strDataToSend = OK & Config.strIP & " server signing off, 0 messages deleted"
-    Case "LIST"
-        Set oElements = objOWA.objDOMInbox.selectNodes(XMLPATH & "a:getcontentlength")
-        If Len(strDataRecived) > 6 Then
-            intMsg = CInt(Mid$(strDataRecived, 6))
-            strDataToSend = OK & intMsg & " " & oElements(intMsg - 1).Text & vbCrLf
-        Else
-            strDataToSend = OK & intMsg & " messages (" & lngSize & ") octets" & vbCrLf
-            For Each oElement In oElements
-                'strDataToSend = strDataToSend & intMsg & " 1 " & vbCrLf
-                intMsg = intMsg + 1
-                lngSize = lngSize + oElement.Text
-                strDataToSend = strDataToSend & intMsg & " " & oElement.Text & vbCrLf
-            Next
-            strDataToSend = strDataToSend & "." & vbCrLf
-        End If
     Case "NOOP"
         strDataToSend = OK
-    Case "UIDL"
-        Set oElements = objOWA.objDOMInbox.selectNodes(XMLPATH & "a:id")
-        If Len(strDataRecived) > 6 Then
-            intMsg = CInt(Mid$(strDataRecived, 6))
-            strDataToSend = OK & intMsg & " " & oElements(intMsg - 1).Text & vbCrLf
+    Case "UIDL", "LIST"
+        If strCommand = "UIDL" Then
+            Set oElements = objOWA.objDOMInbox.selectNodes(XMLPATH & "a:uid")
         Else
-            strDataToSend = OK & vbCrLf
+            Set oElements = objOWA.objDOMInbox.selectNodes(XMLPATH & "a:getcontentlength")
+        End If
+        If Len(strDataRecived) > 6 Then
+            strDataToSend = OK & vData(1) & " " & oElements(vData(1) - 1).Text & vbCrLf
+        Else
+            strDataToSend = OK & objOWA.intMsgCount & " messages (" & objOWA.lngSize & ") octets"
             For Each oElement In oElements
                 intMsg = intMsg + 1
-                strDataToSend = strDataToSend & intMsg & " " & oElement.Text & " " & vbCrLf
+                strDataToSend = strDataToSend & vbCrLf & intMsg & " " & oElement.Text
             Next
-            strDataToSend = strDataToSend & "."
+            strDataToSend = strDataToSend & ENDMAIL
+            WriteLog strDataToSend, Paranoid
         End If
     Case "CAPA"
         strDataToSend = OK & "Capability list follows" & vbCrLf & _
                         "USER" & vbCrLf & _
-                        "UIDL" & vbCrLf & _
-                        "."
+                        "UIDL" & _
+                        ENDMAIL
     Case "DELE"
-        intMsg = CInt(Mid$(strDataRecived, 6))
+        intMsg = CInt(vData(1))
         If objOWA.Delete(intMsg) Then
             strDataToSend = OK & "message " & intMsg & " deleted"
             'Additional Sleep, My Outlook 2000 fails if delete msg faster
             MsgWaitObj 500
         Else
-            strDataToSend = Error & "deleting message " & Mid$(strDataRecived, 6)
+            strDataToSend = Error & "deleting message " & intMsg
         End If
     Case "AUTH"
-        strDataToSend = Error & Left$(strDataRecived, 4) & " unsuported feature "
+        strDataToSend = Error & strCommand & " unsuported feature "
     Case Else
         Debug.Assert False
         WriteLog "Unknow data: " & strDataRecived, Warning
@@ -278,35 +236,12 @@ End Sub
 
 
 Private Sub skSMTP_CloseSck()
-    'Socket closed by email client
-    Select Case intState
-    Case SMTP
-        intState = None
-        Config.Profile.strPassWord = Empty
-        Config.Profile.strUser = Empty
-        Set objOWA = Nothing
-    Case Else
-        Debug.Assert False
-    End Select
-    'Reopen the socket to put it in listen mode
-    'Maybe I need to find other way
-    skSMTP.CloseSck
-    skSMTP.Bind skSMTP.LocalPort, Config.strIP
-    skSMTP.Listen
+    Socket_CloseSck skSMTP
 End Sub
 
 Private Sub skSMTP_ConnectionRequest(ByVal requestID As Long)
 On Error GoTo ErrHandler
-    If skSMTP.State = sckListening And intState = None Then
-        skSMTP.CloseSck
-        skSMTP.Accept requestID
-        skSMTP.SendData "220 " & Config.strIP & " Simple Mail Transfer Service Ready"
-        WriteLog "220 " & Config.strIP & " Simple Mail Transfer Service Ready", Paranoid
-        intState = SMTP
-    Else
-        Debug.Assert False
-        WriteLog "SMTP server busy", Fail
-    End If
+    Socket_ConnectionRequest skSMTP, requestID, "220 " & Config.strIP & " Simple Mail Transfer Service Ready"
 Exit Sub
 ErrHandler:
     WriteLog "skSMTP_ConnectionRequest ->" & Err.Source & vbTab & Err.Description, Fail
@@ -319,7 +254,6 @@ End Sub
 Private Sub skSMTP_DataArrival(ByVal bytesTotal As Long)
 On Error GoTo ErrHandler
     
-    Const ENDMAIL   As String = vbCrLf & "." & vbCrLf
     Const CODEOK    As String = "250 OK"
     
     Dim strDataToSend   As String
@@ -348,11 +282,7 @@ On Error GoTo ErrHandler
         strDataToSend = strDataToSend & vbNewLine & "250-AUTH LOGIN PLAIN"
         strDataToSend = strDataToSend & vbNewLine & "250 HELP"
     Case "AUTH"
-        If objOWA Is Nothing Then
-            Set objOWA = New clsOWA
-        Else
-            Debug.Assert True
-        End If
+        SetOWAObject
         If strDataRecived = "AUTH LOGIN" & vbCrLf Then
             'cDataToSend.Add "334 " & objBase.Encode(strUser & "@" & Mid(strExchSvrName, InStr(strExchSvrName, "//") + 2))
             strDataToSend = "334 " & base64_encode("Username:")
@@ -403,16 +333,14 @@ On Error GoTo ErrHandler
         ReDim vMailData(1 To 1)
         strMailData = strMailData & vbCrLf
     Case "QUIT"
-        strSMTPState = ""
-        strMailData = ""
+        strSMTPState = vbNull
+        strMailData = vbNull
         Erase vMailData
         strDataToSend = "221 " & Config.strIP & " Service closing transmission channel"
     Case Else
         If strSMTPState = "DATA" Then
-            
+            lngTotal = UBound(vMailData)
             If Right$(strDataRecived, 5) = ENDMAIL Then
-                'strMailData = strMailData & Left$(strDataRecived, Len(strDataRecived) - 3)
-                lngTotal = UBound(vMailData)
                 vMailData(lngTotal) = Left$(strDataRecived, Len(strDataRecived) - 5)
                 strMailData = strMailData & Join(vMailData, Empty)
                 Erase vMailData
@@ -422,11 +350,9 @@ On Error GoTo ErrHandler
                  Else
                      strDataToSend = "500 Syntax error, command unrecognized"
                 End If
-                strSMTPState = Empty
-                strMailData = Empty
+                strSMTPState = vbNull
+                strMailData = vbNull
             Else
-                'strMailData = strMailData & strDataRecived
-                lngTotal = UBound(vMailData)
                 vMailData(lngTotal) = strDataRecived
                 ReDim Preserve vMailData(1 To lngTotal + 1)
             End If
@@ -446,7 +372,7 @@ ErrHandler:
 End Sub
 
 Private Sub skSMTP_Error(ByVal Number As Long, Description As String, ByVal sCode As Long, ByVal Source As String, ByVal HelpFile As String, ByVal HelpContext As Long, CancelDisplay As Boolean)
-    WriteLog "skPOP3_Error " & Number & "->" & Description, Fail
+    WriteLog "skSMTP_Error " & Number & "->" & Description, Fail
 End Sub
 
 ''
@@ -458,18 +384,19 @@ Private Function base64_encode(ByVal strString As String) As String
 Dim objXMLDoc   As DOMDocument
 Dim bArray()    As Byte
 
-    Set objXMLDoc = New DOMDocument
-    bArray() = StrConv(strString, vbFromUnicode)
-    
-    With objXMLDoc
-        .async = False
-        .validateOnParse = False
-        .loadXML "<xml/>"
-        .documentElement.dataType = "bin.base64"
-        .documentElement.nodeTypedValue = bArray
-        base64_encode = .Text
-    End With
-    Set objXMLDoc = Nothing
+Set objXMLDoc = New DOMDocument
+bArray() = StrConv(strString, vbFromUnicode)
+
+With objXMLDoc
+    .async = False
+    .validateOnParse = False
+    .loadXML "<xml/>"
+    .documentElement.dataType = "bin.base64"
+    .documentElement.nodeTypedValue = bArray
+    base64_encode = .Text
+End With
+Set objXMLDoc = Nothing
+
 End Function
 
 ''
@@ -480,14 +407,62 @@ End Function
 Private Function base64_decode(ByVal strString As String) As String
 Dim objXMLDoc   As DOMDocument
 
-    Set objXMLDoc = New DOMDocument
-    With objXMLDoc
-        .async = False
-        .validateOnParse = False
-        .loadXML "<xml/>"
-        .documentElement.dataType = "bin.base64"
-        .documentElement.Text = strString
-        base64_decode = StrConv(.documentElement.nodeTypedValue, vbUnicode)
-    End With
-    Set objXMLDoc = Nothing
+Set objXMLDoc = New DOMDocument
+With objXMLDoc
+    .async = False
+    .validateOnParse = False
+    .loadXML "<xml/>"
+    .documentElement.dataType = "bin.base64"
+    .documentElement.Text = strString
+    base64_decode = StrConv(.documentElement.nodeTypedValue, vbUnicode)
+End With
+Set objXMLDoc = Nothing
+
 End Function
+
+''
+'Initializate the OWA object
+'
+'@see clsOWA
+Private Sub SetOWAObject()
+    If objOWA Is Nothing Then
+        Set objOWA = New clsOWA
+    Else
+        Debug.Assert False
+    End If
+End Sub
+
+Private Sub Socket_ConnectionRequest(ByRef oSocket As CSocketMaster, ByVal requestID As Long, ByVal strMessage As String)
+On Error GoTo ErrHandler
+
+    If oSocket.State = sckListening And Not bBusy Then
+        oSocket.CloseSck
+        oSocket.Accept requestID
+        oSocket.SendData strMessage
+        WriteLog strMessage, Paranoid
+        bBusy = True
+    Else
+        Debug.Assert False
+        WriteLog "server busy", Fail
+    End If
+Exit Sub
+ErrHandler:
+    WriteLog "Socket_ConnectionRequest ->" & Err.Source & vbTab & Err.Description, Fail
+End Sub
+
+Private Sub Socket_CloseSck(ByRef oSocket As CSocketMaster)
+    'Reopen the socket to put it in listen mode
+    'Maybe I need to find other way
+    oSocket.CloseSck
+    oSocket.Bind oSocket.LocalPort, Config.strIP
+    oSocket.Listen
+    If bBusy Then
+        Config.Profile.strPassWord = vbNull
+        Config.Profile.strUser = vbNull
+        bBusy = False
+        Set objOWA = Nothing
+    Else
+        Debug.Assert False
+    End If
+End Sub
+
