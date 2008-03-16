@@ -33,14 +33,14 @@ End Property
 
 Public Sub ReadConfig()
 
-Dim objDOMConfig As DOMDocument
-Dim objNodeElement As IXMLDOMElement
-Dim objNodeProfile As IXMLDOMElement
-Dim objNodeList As IXMLDOMNodeList
-Dim objProfileList As IXMLDOMNodeList
-Dim strProfile As String
-Dim objProfile As clsProfile
-Dim intCont     As Integer
+Dim objDOMConfig    As DOMDocument
+Dim objNodeElement  As IXMLDOMElement
+Dim objNodeProfile  As IXMLDOMElement
+Dim objNodeList     As IXMLDOMNodeList
+Dim objProfileList  As IXMLDOMNodeList
+Dim strProfile      As String
+Dim objProfile      As clsProfile
+Dim intCont         As Integer
 
 Set objDOMConfig = New DOMDocument
 Set colProfiles = New Collection
@@ -85,18 +85,26 @@ For Each objNodeProfile In objProfileList
         For Each objNodeElement In objNodeList
             Config.Profile.HiddenValue = Config.Profile.HiddenValue & "&" & objNodeElement.getAttribute("Name") & "=" & objNodeElement.getAttribute("Value")
         Next
-        Set objNodeElement = Nothing
+        objProfile.strProxyUser = objDOMConfig.selectSingleNode("xml/profile[@name='" & strProfile & "']/proxy/@user").Text
+        objProfile.strProxyPassword = objDOMConfig.selectSingleNode("xml/profile[@name='" & strProfile & "']/proxy/@password").Text
         colProfiles.Add objProfile, strProfile
     End If
 Next
+
+Set objProfile = Nothing
+Set objNodeElement = Nothing
+Set objNodeProfile = Nothing
+Set objNodeList = Nothing
+Set objProfileList = Nothing
+
 Set objDOMConfig = Nothing
 
 End Sub
 
 Public Sub WriteConfig()
 
-Dim objDOMConfig As DOMDocument
-Dim objNodeElement As IXMLDOMElement
+Dim objDOMConfig    As DOMDocument
+Dim objNodeElement  As IXMLDOMElement
 
 Set objDOMConfig = New DOMDocument
 objDOMConfig.async = False
@@ -112,14 +120,14 @@ objNodeElement.setAttribute "smtp_enabled", IIf(bSMTPPort, "yes", "no")
 If bSMTPPort Then
     objNodeElement.setAttribute "smtp", intSMTPPort
 End If
-
-Set objNodeElement = objDOMConfig.selectSingleNode("xml/profile [@name='default']/server")
-objNodeElement.Text = Me.Profile.strExchSvrName
-Set objNodeElement = objDOMConfig.selectSingleNode("xml/profile [@name='default']/options")
-objNodeElement.setAttribute "savesent", IIf(Me.Profile.bSaveinsent, "yes", "no")
-objNodeElement.setAttribute "auth", Me.Profile.Authentication
-objDOMConfig.save App.Path & "\config.xml"
-
+With Me.Profile
+    Set objNodeElement = objDOMConfig.selectSingleNode("xml/profile [@name='default']/server")
+    objNodeElement.Text = .strExchSvrName
+    Set objNodeElement = objDOMConfig.selectSingleNode("xml/profile [@name='default']/options")
+    objNodeElement.setAttribute "savesent", IIf(.bSaveinsent, "yes", "no")
+    objNodeElement.setAttribute "auth", .Authentication
+    objDOMConfig.save App.Path & "\config.xml"
+End With
 Set objNodeElement = Nothing
 Set objDOMConfig = Nothing
 
@@ -127,4 +135,9 @@ End Sub
 
 Private Sub Class_Initialize()
 strActiveProfile = "default"
+End Sub
+
+Private Sub Class_Terminate()
+Erase vProfiles()
+Set colProfiles = Nothing
 End Sub
