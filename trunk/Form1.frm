@@ -201,11 +201,8 @@ Dim objFrame As Frame
     Set objFrame = Nothing
 
     Me.Move Me.Left, Me.Top, 2700, 3150
-    'Get values from config
-    Set Config = New clsConfig
-    Config.ReadConfig
+    Set oPOP3 = New clsPOP3
     FillControls
-    Reset
     Me.Show
 End Sub
 
@@ -233,9 +230,11 @@ End Sub
 
 Private Sub TabStrip1_Click()
     Frame1(2 - TabStrip1.SelectedItem.Index).Visible = False
-    Frame1(TabStrip1.SelectedItem.Index - 1).Visible = True
-    Frame1(TabStrip1.SelectedItem.Index - 1).ZOrder 0
-    Frame1(TabStrip1.SelectedItem.Index - 1).Refresh
+    With Frame1(TabStrip1.SelectedItem.Index - 1)
+        .Visible = True
+        .ZOrder 0
+        .Refresh
+    End With
 End Sub
 
 ''
@@ -252,18 +251,21 @@ End Sub
 ''
 'Save configuration with the form data.
 Private Sub ReadControls()
-    
-    Config.Profile.strExchSvrName = Me.txtServer.Text
-    Config.strIP = Me.txtIP.Text
-    Config.intPOP3Port = Me.txtPort(0).Text
-    Config.intSMTPPort = Me.txtPort(1).Text
-    Config.bSMTPPort = Me.chkSMTP.Value
-    Config.Profile.bSaveinsent = (Me.chkSend.Value = vbChecked)
-    If Me.chkFBA.Value = vbChecked Then
-        Config.Profile.Authentication = fba
-    Else
-        Config.Profile.Authentication = basic
-    End If
+    With Config
+        .strIP = Me.txtIP.Text
+        .intPOP3Port = Me.txtPort(0).Text
+        .intSMTPPort = Me.txtPort(1).Text
+        .bSMTPPort = Me.chkSMTP.Value
+    End With
+    With Config.Profile
+        .strExchSvrName = Me.txtServer.Text
+        .bSaveinsent = (Me.chkSend.Value = vbChecked)
+        If Me.chkFBA.Value = vbChecked Then
+            .Authentication = fba
+        Else
+            .Authentication = basic
+        End If
+    End With
     Config.WriteConfig
 End Sub
 

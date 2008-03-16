@@ -14,7 +14,6 @@ Public Const Error As String = "-ERR "
 'Object to handle POP3/STMP commands.
 Public oPOP3            As clsPOP3
 
-
 Public hStopPendingEvent As Long
 
 Public intVerbosity    As Integer
@@ -97,7 +96,7 @@ Const ERROR_ALREADY_EXISTS = 183&
 
 
 'Test enviroment to detect if is running into VB
-If bIsEXE = True Then
+If bIsEXE Then
     'Create an individual mutex value for the application
     mutexvalue = CreateMutex(ByVal 0&, 1, App.EXEName & " " & App.Major & "." & App.Minor & "." & App.Revision)
     
