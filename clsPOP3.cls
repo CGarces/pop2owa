@@ -82,6 +82,7 @@ End Sub
 '@see clsOWA.GetFoldersURL
 '@date 2006/03/31
 Private Function ValidateSMTPAUTH() As String
+    SetOWAObject
     Select Case objOWA.GetFoldersURL
     Case 200 To 299
         ValidateSMTPAUTH = "235 AUTHENTICATION SUCCESSFUL"
@@ -282,7 +283,6 @@ On Error GoTo ErrHandler
         strDataToSend = strDataToSend & vbNewLine & "250-AUTH LOGIN PLAIN"
         strDataToSend = strDataToSend & vbNewLine & "250 HELP"
     Case "AUTH"
-        SetOWAObject
         If strDataRecived = "AUTH LOGIN" & vbCrLf Then
             'cDataToSend.Add "334 " & objBase.Encode(strUser & "@" & Mid(strExchSvrName, InStr(strExchSvrName, "//") + 2))
             strDataToSend = "334 " & base64_encode("Username:")
