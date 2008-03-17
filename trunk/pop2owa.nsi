@@ -9,9 +9,10 @@
 Var STARTMENU_FOLDER
 Var ALREADY_INSTALLED
 !define PRODUCT "pop2owa"
-!define VERSION "v1.3.0"
-Name "${PRODUCT} ${VERSION}"
-OutFile "${PRODUCT}_${VERSION}.exe"
+;!define VERSION "v1.3.0"
+;Name "${PRODUCT} ${VERSION}"
+Name "${PRODUCT}"
+;OutFile "${PRODUCT}_${VERSION}.exe"
 InstallDir "$PROGRAMFILES\${PRODUCT}"
 ShowInstDetails show
 ShowUnInstDetails show
@@ -103,10 +104,10 @@ SectionEnd
 
 Section -Post
   WriteUninstaller "$INSTDIR\uninst.exe"
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT}" "DisplayName" "${PRODUCT} ${VERSION}"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT}" "DisplayName" "${PRODUCT}"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT}" "UninstallString" "$INSTDIR\uninst.exe"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT}" "DisplayIcon" "$INSTDIR\makensis.exe"
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT}" "DisplayVersion" "${VERSION}"
+  ;WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT}" "DisplayVersion" "${VERSION}"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT}" "URLInfoAbout" "http://pop2owa.sourceforge.net"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT}" "Publisher" "Carlos Garcés"
 SectionEnd
@@ -138,8 +139,8 @@ Section Uninstall
   noshortcuts:
   RMDir "$INSTDIR"
 
-  DeleteRegKey HKCU "Software\${PRODUCT}"
-  DeleteRegKey HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT}"
+  DeleteRegKey HKLM "Software\${PRODUCT}"
+  DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT}"
 
 ;  SetAutoClose true
 SectionEnd
