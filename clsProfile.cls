@@ -32,6 +32,7 @@ Private m_strUser   As String
 Public strProxyUser     As String
 Public strProxyPassword As String
 
+Public bForceXMLHTTP As Boolean
 
 Public Enum AuthTypes
     basic = 0
@@ -52,7 +53,7 @@ Property Let strUser(ByVal user As String)
         strAccount = m_strUser
     End If
     
-    If Right(LCase(Me.strExchSvrName), Len("/exchange/")) = "/exchange/" Then
+    If Right$(LCase$(Me.strExchSvrName), Len("/exchange/")) = "/exchange/" Then
         Me.URLUser = Me.strExchSvrName & Me.strAccount & "/"
     Else
        Me.URLUser = Me.strExchSvrName & "exchange/" & Me.strAccount & "/"
