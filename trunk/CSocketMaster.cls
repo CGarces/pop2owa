@@ -24,12 +24,9 @@ Option Explicit
 'API FUNCTIONS
 
 Private Declare Function api_socket Lib "ws2_32.dll" Alias "socket" (ByVal af As Long, ByVal s_type As Long, ByVal Protocol As Long) As Long
-Private Declare Function api_GlobalLock Lib "kernel32" Alias "GlobalLock" (ByVal hMem As Long) As Long
-Private Declare Function api_GlobalUnlock Lib "kernel32" Alias "GlobalUnlock" (ByVal hMem As Long) As Long
 Private Declare Function api_htons Lib "ws2_32.dll" Alias "htons" (ByVal hostshort As Integer) As Integer
 Private Declare Function api_ntohs Lib "ws2_32.dll" Alias "ntohs" (ByVal netshort As Integer) As Integer
 Private Declare Function api_connect Lib "ws2_32.dll" Alias "connect" (ByVal s As Long, ByRef name As sockaddr_in, ByVal namelen As Long) As Long
-Private Declare Function api_gethostname Lib "ws2_32.dll" Alias "gethostname" (ByVal host_name As String, ByVal namelen As Long) As Long
 Private Declare Function api_gethostbyname Lib "ws2_32.dll" Alias "gethostbyname" (ByVal host_name As String) As Long
 Private Declare Function api_bind Lib "ws2_32.dll" Alias "bind" (ByVal s As Long, ByRef name As sockaddr_in, ByVal namelen As Long) As Long
 Private Declare Function api_getsockname Lib "ws2_32.dll" Alias "getsockname" (ByVal s As Long, ByRef name As sockaddr_in, ByRef namelen As Long) As Long
@@ -170,40 +167,6 @@ End Sub
 
 'PROPERTIES
 
-Public Property Get RemotePort() As Long
-RemotePort = m_lngRemotePort
-End Property
-
-Public Property Let RemotePort(ByVal lngPort As Long)
-'If m_enmProtocol = sckTCPProtocol And m_enmState <> sckClosed Then
-If m_enmState <> sckClosed Then
-    Err.Raise sckInvalidOp, "CSocketMaster.RemotePort", "Invalid operation at current state"
-End If
-
-If lngPort < 0 Or lngPort > 65535 Then
-    Err.Raise sckInvalidArg, "CSocketMaster.RemotePort", "The argument passed to a function was not in the correct format or in the specified range."
-Else
-    m_lngRemotePort = lngPort
-End If
-End Property
-
-Public Property Get RemoteHost() As String
-RemoteHost = m_strRemoteHost
-End Property
-
-Public Property Let RemoteHost(ByVal strHost As String)
-'If m_enmProtocol = sckTCPProtocol And m_enmState <> sckClosed Then
-If m_enmState <> sckClosed Then
-    Err.Raise sckInvalidOp, "CSocketMaster.RemoteHost", "Invalid operation at current state"
-End If
-
-m_strRemoteHost = strHost
-End Property
-
-Public Property Get RemoteHostIP() As String
-RemoteHostIP = m_strRemoteHostIP
-End Property
-
 Public Property Get LocalPort() As Long
 If m_lngLocalPortBind = 0 Then
     LocalPort = m_lngLocalPort
@@ -225,18 +188,6 @@ End Property
 
 Public Property Get State() As SockState
 State = m_enmState
-End Property
-
-Public Property Get LocalHostName() As String
-LocalHostName = GetLocalHostName
-End Property
-
-Public Property Get LocalIP() As String
-If m_enmState = sckConnected Then
-    LocalIP = m_strLocalIP
-Else
-    LocalIP = GetLocalIP
-End If
 End Property
 
 Public Property Get BytesReceived() As Long
@@ -336,66 +287,6 @@ If m_lngSocketHandle = INVALID_SOCKET Then
     End If
 End If
 End Function
-
-''
-'Tries to connect to RemoteHost if it was passed, or uses
-'m_strRemoteHost instead. If it is a hostname tries to
-'resolve it first.
-'
-'@param RemoteHost Host to connect
-'@param RemotePort Remote port to make the connexion
-Public Sub Connect(Optional RemoteHost As String, Optional RemotePort As String)
-If m_enmState <> sckClosed Then
-    Err.Raise sckInvalidOp, "CSocketMaster.Connect", "Invalid operation at current state"
-End If
-
-If Not IsMissing(RemoteHost) Then
-        m_strRemoteHost = RemoteHost
-End If
-
-'for some reason we get a GPF if we try to
-'resolve a null string, so we replace it with
-'an empty string
-If m_strRemoteHost = vbNullString Then
-    m_strRemoteHost = ""
-End If
-
-'check if RemotePort is a number between 1 and 65535
-If Not IsMissing(RemotePort) Then
-    If IsNumeric(RemotePort) Then
-        If CLng(RemotePort) > 65535 Or CLng(RemotePort) < 1 Then
-            Err.Raise sckInvalidArg, "CSocketMaster.Connect", "The argument passed to a function was not in the correct format or in the specified range."
-        Else
-            m_lngRemotePort = CLng(RemotePort)
-        End If
-    Else
-        Err.Raise sckUnsupported, "CSocketMaster.Connect", "Unsupported variant type."
-    End If
-End If
-
-'create a socket if there isn't one yet
-If Not SocketExists Then Exit Sub
-
-'Here we bind the socket
-If Not BindInternal Then Exit Sub
-
-'try to get a 32 bits long that is used to identify a host
-Dim lngAddress As Long
-lngAddress = ResolveIfHostname(m_strRemoteHost)
-
-'We've got two options here:
-'1) m_strRemoteHost was an IP, so a resolution wasn't
-'   necessary, and now lngAddress is a 32 bits long and
-'   we proceed to connect.
-'2) m_strRemoteHost was a hostname, so a resolution was
-'   necessary and it's taking place right now. We leave
-'   silently.
-
-If lngAddress <> vbNull Then
-    ConnectToIP lngAddress, 0
-End If
-
-End Sub
 
 ''
 'When the system resolves a hostname in asynchronous way we
@@ -691,7 +582,7 @@ End Sub
 '
 '@param varLocalPort
 '@param varLocalIP
-'@return Retunrs TRUE if it has success.
+'@return Returns TRUE if it has success.
 Private Function BindInternal(Optional ByVal varLocalPort As Long, Optional ByVal varLocalIP As String) As Boolean
 If m_enmState = sckOpen Then
     BindInternal = True
@@ -789,31 +680,6 @@ End If
 End Function
 
 ''
-'Allocate some memory for HOSTEN structure and returns
-'a pointer to this buffer if no error occurs.
-'
-'@return Returns 0 if it fails.
-Private Function AllocateMemory() As Long
-m_lngMemoryHandle = api_GlobalAlloc(GMEM_FIXED, MAXGETHOSTSTRUCT)
-
-If m_lngMemoryHandle <> 0 Then
-    m_lngMemoryPointer = api_GlobalLock(m_lngMemoryHandle)
-    
-    If m_lngMemoryPointer <> 0 Then
-        api_GlobalUnlock (m_lngMemoryHandle)
-        AllocateMemory = m_lngMemoryPointer
-    Else
-        api_GlobalFree (m_lngMemoryHandle)
-        AllocateMemory = m_lngMemoryPointer '0
-    End If
-
-Else
-    AllocateMemory = m_lngMemoryHandle '0
-End If
-End Function
-
-
-''
 'Free memory allocated by AllocateMemory
 Private Sub FreeMemory()
 If m_lngMemoryHandle <> 0 Then
@@ -823,109 +689,6 @@ If m_lngMemoryHandle <> 0 Then
     Debug.Print "OK Freed resolution memory"
 End If
 End Sub
-
-Private Function GetLocalHostName() As String
-Dim strHostNameBuf As String * LOCAL_HOST_BUFF
-Dim lngResult As Long
-
-lngResult = api_gethostname(strHostNameBuf, LOCAL_HOST_BUFF)
-
-If lngResult = SOCKET_ERROR Then
-    GetLocalHostName = vbNullString
-    Dim lngErrorCode As Long
-    lngErrorCode = Err.LastDllError
-    Err.Raise lngErrorCode, "CSocketMaster.GetLocalHostName", GetErrorDescription(lngErrorCode)
-Else
-    GetLocalHostName = Left$(strHostNameBuf, InStr(1, strHostNameBuf, vbNullChar) - 1)
-End If
-End Function
-
-
-''
-'Get local IP when the socket isn't connected yet
-'
-'@return Local IP
-Private Function GetLocalIP() As String
-Dim lngResult As Long
-Dim lngPtrToIP As Long
-Dim strLocalHost As String
-Dim arrIpAddress(1 To 4) As Byte
-Dim Count As Integer
-Dim udtHostent As HOSTENT
-Dim strIpAddress As String
-
-strLocalHost = GetLocalHostName
-
-lngResult = api_gethostbyname(strLocalHost)
-
-If lngResult = 0 Then
-    GetLocalIP = vbNullString
-    Dim lngErrorCode As Long
-    lngErrorCode = Err.LastDllError
-    Err.Raise lngErrorCode, "CSocketMaster.GetLocalIP", GetErrorDescription(lngErrorCode)
-Else
-    api_CopyMemory udtHostent, ByVal lngResult, LenB(udtHostent)
-    api_CopyMemory lngPtrToIP, ByVal udtHostent.hAddrList, 4
-    api_CopyMemory arrIpAddress(1), ByVal lngPtrToIP, 4
-   
-    For Count = 1 To 4
-        strIpAddress = strIpAddress & arrIpAddress(Count) & "."
-    Next
-   
-    strIpAddress = Left$(strIpAddress, Len(strIpAddress) - 1)
-    GetLocalIP = strIpAddress
-End If
-End Function
-
-
-''
-'If Host is an IP doesn't resolve anything and returns a
-'a 32 bits long IP.
-'If Host isn't an IP then returns vbNull, tries to resolve it
-'in asynchronous way.
-'
-'@param Host Host to resolve
-'@return 32 bits long IP
-Private Function ResolveIfHostname(ByVal Host As String) As Long
-Dim lngAddress As Long
-lngAddress = api_inet_addr(Host)
-
-If lngAddress = INADDR_NONE Then 'if Host isn't an IP
-    
-    ResolveIfHostname = vbNull
-    m_enmState = sckResolvingHost: Debug.Print "STATE: sckResolvingHost"
-    
-    If AllocateMemory Then
-        
-        Dim lngAsynHandle As Long
-        lngAsynHandle = modSocketMaster.ResolveHost(Host, m_lngMemoryPointer, ObjPtr(Me))
-        
-        If lngAsynHandle = 0 Then
-            FreeMemory
-            m_enmState = sckError: Debug.Print "STATE: sckError"
-            Dim lngErrorCode As Long
-            lngErrorCode = Err.LastDllError
-            Dim blnCancelDisplay As Boolean
-            blnCancelDisplay = True
-            RaiseEvent Error(lngErrorCode, GetErrorDescription(lngErrorCode), 0, "CSocketMaster.ResolveIfHostname", "", 0, blnCancelDisplay)
-            If blnCancelDisplay = False Then MsgBox GetErrorDescription(lngErrorCode), vbOKOnly, "CSocketMaster.ResolveIfHostname"
-        Else
-            m_colWaitingResolutions.Add lngAsynHandle, "R" & lngAsynHandle
-            Debug.Print "Resolving host " & Host; " with handle " & lngAsynHandle
-        End If
-        
-    Else
-        
-        m_enmState = sckError: Debug.Print "STATE: sckError"
-        Debug.Print "Error trying to allocate memory"
-        Err.Raise sckOutOfMemory, "CSocketMaster.ResolveIfHostname", "Out of memory"
-        
-    End If
-    
-Else 'if Host is an IP doen't need to resolve anything
-    ResolveIfHostname = lngAddress
-End If
-End Function
 
 ''
 'Resolves a host (if necessary) in synchronous way
@@ -1162,10 +925,10 @@ Dim blnClassMiss As Boolean
 
 blnClassMiss = IsMissing(varClass)
 'Select type of data
-If varType(Data) = vbEmpty Then
+If VarType(Data) = vbEmpty Then
     If blnClassMiss Then varClass = vbArray + vbByte
 Else
-    varClass = varType(Data)
+    varClass = VarType(Data)
 End If
 
 

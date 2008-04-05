@@ -116,7 +116,7 @@ If bIsNT Then
     
     h(0) = hnd
     h(1) = hStartEvent
-    'Waiting for one of two events: sucsessful service start (1) or Terminaton of service thread (0)
+    'Waiting for one of two events: successful service start (1) or Termination of service thread (0)
     IsNTService = MsgWaitObj(INFINITE, h(0), 2&) = 1&
     If Not IsNTService Then
         CloseHandle hnd

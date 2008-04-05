@@ -13,6 +13,9 @@ Public Const Error As String = "-ERR "
 ''
 'Object to handle POP3/STMP commands.
 Public oPOP3            As clsPOP3
+''
+'Cookies used for authentication
+Public strCookies  As String
 
 Public hStopPendingEvent As Long
 
@@ -67,7 +70,7 @@ Private Declare Function TerminateProcess Lib "kernel32.dll" (ByVal ApphProcess 
 'Write a pop2owa.log file with errors, warnings and log messages.
 '
 '@param strText Text to write in the log
-'@param intVerbose Versosity
+'@param intVerbose Verbosity
 Public Sub WriteLog(ByVal strText As String, Optional ByVal intVerbose As Verbosity = Fail)
 Dim intFile As Integer
 If intVerbose <= intVerbosity Then
@@ -85,9 +88,6 @@ End Sub
 Public Sub Main()
 On Error GoTo ErrHandler
 
-Dim strParametro    As String
-Dim hProcess        As Long
-Dim RetVal          As Long
 Dim mutexvalue      As Long
 
 ''
@@ -95,12 +95,12 @@ Dim mutexvalue      As Long
 Const ERROR_ALREADY_EXISTS = 183&
 
 
-'Test enviroment to detect if is running into VB
+'Test environment to detect if is running into VB
 If bIsEXE Then
     'Create an individual mutex value for the application
     mutexvalue = CreateMutex(ByVal 0&, 1, App.EXEName & " " & App.Major & "." & App.Minor & "." & App.Revision)
     
-    'If an error occured creating the mutex, that means it
+    'If an error occurred creating the mutex, that means it
     'must have already existed, therefore your application
     'is already running
     If (Err.LastDllError = ERROR_ALREADY_EXISTS) Then
@@ -134,12 +134,12 @@ ErrHandler:
 End Sub
 
 ''
-'Get the Windows version instaled.
+'Get the Windows version installed.
 '
 '@param lMajor  Major version number
 '@param lMinor  Minor version number
 '@param lRevision Revision number
-'@param lBuildNumber Bulid number
+'@param lBuildNumber Build number
 '@param bIsNT True if have NT kernel
 Public Sub GetWindowsVersion( _
       Optional ByRef lMajor As Integer = 0, _
@@ -278,7 +278,7 @@ Private Sub ParseCommandLine(ByVal cmdline As String)
 End Sub
 
 ''
-'Funcion to parse Command Line string.
+'Function to parse Command Line string.
 '
 '@param c   String with the Command Line
 '@return String First parameter in the command line
@@ -327,7 +327,7 @@ If NameProcess <> "" Then
    hSnapshot = CreateToolhelpSnapshot(TH32CS_SNAPPROCESS, 0&)
    RProcessFound = ProcessFirst(hSnapshot, uProcess)
    Do
-     i = InStr(1, uProcess.szexeFile, Chr(0))
+     i = InStr(1, uProcess.szexeFile, Chr$(0))
      SzExename = LCase$(Left$(uProcess.szexeFile, i - 1))
      If Left$(SzExename, Len(NameProcess)) = LCase$(NameProcess) Then
         MyProcess = OpenProcess(PROCESS_ALL_ACCESS, False, uProcess.th32ProcessID)
@@ -342,7 +342,7 @@ End If
 End Sub
 
 ''
-'Evaluate if the process is runing under IDE enviroment.
+'Evaluate if the process is running under IDE environment.
 '
 '@return Return False if is under IDE
 Private Function bIsEXE() As Boolean

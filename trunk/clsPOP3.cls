@@ -70,14 +70,13 @@ End If
 
 Exit Sub
 ErrHandler:
-    Disconnect
     Err.Raise Err.Number, "Start " & Err.Source, Err.Description
 End Sub
 
 ''
 'Validate the current user & password, using GetFoldersURL
 '
-'@return SMTP comand with the result of the operation
+'@return SMTP command with the result of the operation
 '
 '@see clsOWA.GetFoldersURL
 '@date 2006/03/31
@@ -90,7 +89,7 @@ Private Function ValidateSMTPAUTH() As String
         'Wrong password
         ValidateSMTPAUTH = "535 5.7.0 Authentication failed"
     Case Else
-        'Unknow error
+        'Unknown error
         ValidateSMTPAUTH = "533  Authentication required [AUTH]"
     End Select
 End Function
@@ -119,7 +118,7 @@ End Sub
 'Evaluate a POP3 command  (<A HREF='http://www.faqs.org/rfcs/rfc1939.html' target='_blank'>RFC1939</A>)
 'and send a reply to the email client
 '
-'@param bytesTotal bytes recived
+'@param bytesTotal bytes received
 Private Sub skPOP3_DataArrival(ByVal bytesTotal As Long)
 On Error GoTo ErrHandler
       
@@ -132,7 +131,7 @@ Dim vData()         As String
 Dim strCommand      As String
 
     Const UNABLETOCONNECT As String = "Unable to connect with mailbox "
-    WriteLog "skPOP3_DataArrival." & bytesTotal & "Bytes", Paranoid
+    
     skPOP3.GetData strDataRecived
     'Strip last chars (13+10)
     strDataRecived = Mid$(strDataRecived, 1, Len(strDataRecived) - 2)
@@ -196,7 +195,6 @@ Dim strCommand      As String
                 strDataToSend = strDataToSend & vbCrLf & intMsg & " " & oElement.Text
             Next
             strDataToSend = strDataToSend & ENDMAIL
-            WriteLog strDataToSend, Paranoid
         End If
     Case "CAPA"
         strDataToSend = OK & "Capability list follows" & vbCrLf & _
@@ -251,7 +249,7 @@ End Sub
 'Evaluate a STMP command (<A HREF='http://www.faqs.org/rfcs/rfc2821.html' target='_blank'>RFC2821</A>)
 'and send a reply to the email client
 '
-'@param bytesTotal Bytes recived
+'@param bytesTotal Bytes received
 Private Sub skSMTP_DataArrival(ByVal bytesTotal As Long)
 On Error GoTo ErrHandler
     
@@ -290,8 +288,8 @@ On Error GoTo ErrHandler
         ElseIf Left$(strDataRecived, 10) = "AUTH PLAIN" Then
             strDataRecived = base64_decode(Mid$(strDataRecived, 12))
             If Len(strDataRecived) > 1 Then
-                Config.Profile.strUser = Mid$(strDataRecived, 2, InStr(2, strDataRecived, Chr(0)) - 2)
-                Config.Profile.strPassWord = Mid$(strDataRecived, InStr(2, strDataRecived, Chr(0)) + 1)
+                Config.Profile.strUser = Mid$(strDataRecived, 2, InStr(2, strDataRecived, Chr$(0)) - 2)
+                Config.Profile.strPassWord = Mid$(strDataRecived, InStr(2, strDataRecived, Chr$(0)) + 1)
                 strDataToSend = ValidateSMTPAUTH
             Else
                 strDataToSend = "533  Authentication required [AUTH]"
@@ -378,7 +376,7 @@ End Sub
 ''
 'Encode one string in Base64 Format
 '
-'@param strString String to be formated
+'@param strString String to be formatted
 '@return Output String in Base64 format
 Private Function base64_encode(ByVal strString As String) As String
 Dim objXMLDoc   As DOMDocument
@@ -421,14 +419,12 @@ Set objXMLDoc = Nothing
 End Function
 
 ''
-'Initializate the OWA object
+'Initialize the OWA object
 '
 '@see clsOWA
 Private Sub SetOWAObject()
     If objOWA Is Nothing Then
         Set objOWA = New clsOWA
-    Else
-        Debug.Assert False
     End If
 End Sub
 
