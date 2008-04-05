@@ -11,9 +11,19 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
+''
+'Encapsulate Msxml2 objects
+'
+'@author Carlos B
+
 Option Explicit
+''
+'Msxml2 object
 Private objXMLRequest As Object
+''
+'True if ServerXMLHTTP is used
 Private bServerObject As Boolean
+
 Private Sub Class_Initialize()
 
 If Not Config.Profile.strProxyUser = Empty Then

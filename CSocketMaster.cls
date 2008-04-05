@@ -773,8 +773,8 @@ If m_enmState <> sckConnected Then
 End If
 
 'Add CRLF if needed
-If Right$(strData, 2) <> vbCrLf Then
-    strData = strData & vbCrLf
+If Right$(strData, 2) <> vbNewLine Then
+    strData = strData & vbNewLine
 End If
 
 'We need to convert data into a byte array

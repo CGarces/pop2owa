@@ -34,6 +34,7 @@ Public intMsgCount  As Integer
 'Size of messages in inbox folder
 Public lngSize As Long
 
+Const TWO_NEWLINES = vbNewLine & vbNewLine
 ''
 'Retrieve message in RFC 821 format and send it to the client.
 '
@@ -44,7 +45,7 @@ On Error GoTo ErrHandler
 
 Dim oXMLHTTP    As clsXMLRequest
 Dim strMsg      As String
-Const ERRCOMMAND As String = "-ERR no such message"
+Const ERRCOMMAND As String = Error & "no such message"
 
 Set oXMLHTTP = New clsXMLRequest
 Call oXMLHTTP.OpenXML("GET", strURL & "?ID=" & (Timer * 100))
@@ -58,7 +59,7 @@ With oXMLHTTP
     While Not .readyState = 4
         If Not .waitForResponse(25) Then
             WriteLog "Donwloading readyState  " & .readyState & vbTab & strURL, Warning
-            objPOP3.SendData "X-POP2OWA-Header: Header to avoid timeout" & vbCrLf
+            objPOP3.SendData "X-POP2OWA-Header: Header to avoid timeout" & vbNewLine
         End If
     Wend
     WriteLog "Download Status " & .Status & vbTab & strURL, Information
@@ -71,7 +72,7 @@ With oXMLHTTP
             ParseHeader strMsg
         End If
         objPOP3.SendData strMsg
-        strMsg = vbNull
+        strMsg = vbNullString
     Else
         .WriteWarning "GetMsg.Status"
         objPOP3.SendData ERRCOMMAND
@@ -253,7 +254,7 @@ With oXMLHTTP
     .send Config.Profile.HiddenField & "=" & Config.Profile.HiddenValue & "&trusted=0&username=" & strUsername & "&password=" & URLEncode(Config.Profile.strPassWord)
     WriteLog "LogingFBA -> Send info: " & Config.Profile.HiddenField & "=" & Config.Profile.HiddenValue & "&trusted=0&username=" & strUsername & "&password=******", Information
     .waitUntilReady
-    WriteLog "GetCookies -> Headers: " & vbCrLf & .getAllResponseHeaders(), Paranoid
+    WriteLog "GetCookies -> Headers: " & vbNewLine & .getAllResponseHeaders(), Paranoid
     If (.Status >= 200 And .Status < 300) Then
         .GetCookies
         LogingFBA = True
@@ -295,6 +296,7 @@ With oXMLHTTP
 'Process the results.
     If (.Status >= 200 And .Status < 300) Then
         SendMail = True
+        WriteLog "Mail send", Paranoid
     Else
         .WriteWarning "SendMail"
         SendMail = False
@@ -325,7 +327,7 @@ Dim lngPosEnd       As Long
 Dim bModified       As Boolean
 Const STARTQUOTED   As String = "?q"
 
-lngPosHeader = InStr(1, strMsg, vbCrLf & vbCrLf)
+lngPosHeader = InStr(1, strMsg, TWO_NEWLINES)
 If lngPosHeader <> 0 Then
     'Extract the header, faster than work with the entire msg
     strHeader = Left$(strMsg, lngPosHeader)
@@ -346,7 +348,7 @@ If lngPosHeader <> 0 Then
     Wend
     If bModified Then
         strMsg = strHeader & Mid$(strMsg, lngPosHeader)
-        strHeader = vbNull
+        strHeader = vbNullString
     End If
 End If
 
@@ -378,7 +380,7 @@ While lngPos <> 0
         lngContentTypeStart = InStr(lngPos, LCase$(strMsg), "application/octet-stream")
         If lngContentTypeStart > 0 Then
             lngPos = lngContentTypeStart
-            lngPosEnd = InStr(lngContentTypeStart, strMsg, vbCrLf & vbCrLf)
+            lngPosEnd = InStr(lngContentTypeStart, strMsg, TWO_NEWLINES)
             If lngPosEnd <> 0 Then
                 For intType = 0 To UBound(vTypes, 1)
                     If Mid$(strMsg, lngPosEnd + 4, Len(vTypes(intType, 1))) = vTypes(intType, 1) Then

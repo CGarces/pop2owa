@@ -128,7 +128,7 @@ Public Property Get ToolTip() As String
 Dim sTip As String
 Dim iPos As Long
     sTip = nfIconDataA.szTip
-    iPos = InStr(sTip, Chr$(0))
+    iPos = InStr(sTip, vbNullChar)
     If (iPos <> 0) Then
         sTip = Left$(sTip, iPos - 1)
     End If
@@ -140,8 +140,8 @@ Public Property Let ToolTip(ByVal sTip As String)
       nfIconDataW.uFlags = NIF_TIP
       Shell_NotifyIconW NIM_MODIFY, nfIconDataW
    Else
-      If (sTip & Chr$(0) <> nfIconDataA.szTip) Then
-         nfIconDataA.szTip = sTip & Chr$(0)
+      If (sTip & vbNullChar <> nfIconDataA.szTip) Then
+         nfIconDataA.szTip = sTip & vbNullChar
          nfIconDataA.uFlags = NIF_TIP
          Shell_NotifyIconA NIM_MODIFY, nfIconDataA
       End If
@@ -279,7 +279,7 @@ Private Sub Form_Load()
          .uFlags = NIF_ICON Or NIF_MESSAGE Or NIF_TIP
          .uCallbackMessage = WM_MOUSEMOVE
          .hIcon = Me.Icon.Handle
-         .szTip = App.FileDescription & Chr$(0)
+         .szTip = App.FileDescription & vbNullChar
          If (m_bSupportsNewVersion) Then
             .uTimeOutOrVersion = NOTIFYICON_VERSION
          End If
