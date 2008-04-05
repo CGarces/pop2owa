@@ -3,7 +3,7 @@
 	<pop2owa ip="127.0.0.1" pop3="110" smtp="25" smtp_enabled="yes"/>
 	<profile name="default">
 		<server>https://mail.mycompany.com/</server>
-		<options savesent="no" auth="0" ForceNewVersion="no"/>
+		<options savesent="no" auth="0" ForceNewVersion="yes"/>
 		<Form_Based_Auth>
 			<AuthPage>exchweb/bin/auth/owaauth.dll</AuthPage>
 			<Main_Hidden_Field Name="destination" Value="Z2Fexchange"/>
