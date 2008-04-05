@@ -16,8 +16,6 @@ Public Declare Function api_GlobalAlloc Lib "kernel32" Alias "GlobalAlloc" (ByVa
 Public Declare Function api_GlobalFree Lib "kernel32" Alias "GlobalFree" (ByVal hMem As Long) As Long
 Private Declare Function api_WSAStartup Lib "ws2_32.dll" Alias "WSAStartup" (ByVal wVersionRequired As Long, lpWSADATA As WSAData) As Long
 Private Declare Function api_WSACleanup Lib "ws2_32.dll" Alias "WSACleanup" () As Long
-'FIXIT: As Any no se admite en Visual Basic .NET. Utilice un tipo específico.              FixIT90210ae-R5608-H1984
-Private Declare Function api_WSAAsyncGetHostByName Lib "ws2_32.dll" Alias "WSAAsyncGetHostByName" (ByVal hwnd As Long, ByVal wMsg As Long, ByVal strHostName As String, buf As Any, ByVal buflen As Long) As Long
 Private Declare Function api_WSAAsyncSelect Lib "ws2_32.dll" Alias "WSAAsyncSelect" (ByVal s As Long, ByVal hwnd As Long, ByVal wMsg As Long, ByVal lEvent As Long) As Long
 'FIXIT: As Any no se admite en Visual Basic .NET. Utilice un tipo específico.              FixIT90210ae-R5608-H1984
 Private Declare Function api_CreateWindowEx Lib "user32" Alias "CreateWindowExA" (ByVal dwExStyle As Long, ByVal lpClassName As String, ByVal lpWindowName As String, ByVal dwStyle As Long, ByVal x As Long, ByVal y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hWndParent As Long, ByVal hMenu As Long, ByVal hInstance As Long, lpParam As Any) As Long
@@ -44,8 +42,6 @@ Private Enum WinsockVersion
     SOCKET_VERSION_22 = &H202
 End Enum
 
-Public Const MAXGETHOSTSTRUCT As Long = 1024
-
 Public Const AF_INET        As Long = 2
 Public Const SOCK_STREAM    As Long = 1
 Public Const SOCK_DGRAM     As Long = 2
@@ -61,15 +57,12 @@ Public Const FD_CLOSE   As Integer = &H20&
 Private Const OFFSET_2 As Long = 65536
 Private Const MAXINT_2 As Long = 32767
 
-Public Const GMEM_FIXED As Integer = &H0
-Public Const LOCAL_HOST_BUFF As Integer = 256
-
 Public Const SOL_SOCKET         As Long = 65535
 Public Const SO_SNDBUF          As Long = &H1001&
 Public Const SO_RCVBUF          As Long = &H1002&
 'Public Const SO_MAX_MSG_SIZE    As Long = &H2003
 'Public Const SO_BROADCAST       As Long = &H20
-Public Const FIONREAD           As Long = &H4004667F
+'Public Const FIONREAD           As Long = &H4004667F
 
 'ERROR CODES
 
@@ -226,16 +219,14 @@ End Function
 
 ''
 'This function initiate the winsock service calling
-'the api_WSAStartup funtion.
+'the api_WSAStartup function.
 '
 '@return Resulting value of WSAStartup call
 Private Function InitiateService() As Long
 On Error GoTo ErrHandler
 Dim udtWSAData As WSAData
-Dim lngResult As Long
 
-lngResult = api_WSAStartup(SOCKET_VERSION_11, udtWSAData)
-InitiateService = lngResult
+InitiateService = api_WSAStartup(SOCKET_VERSION_11, udtWSAData)
 Exit Function
 ErrHandler:
     Err.Raise Err.Number, "InitiateService ->" & Err.Source, Err.Description
@@ -413,28 +404,6 @@ ErrHandler:
 End Function
 
 ''
-'When a socket needs to resolve a hostname in asynchronous way
-'it calls this function. If it has success it returns a nonzero
-'number that represents the async task handle and register this
-'number in the TableA list.
-'
-'
-'@param strHost Host to resolve
-'@param lngHOSTENBuf
-'@param lngObjectPointer
-'@return Returns 0 if it fails.
-Public Function ResolveHost(ByVal strHost As String, ByVal lngHOSTENBuf As Long, ByVal lngObjectPointer As Long) As Long
-On Error GoTo ErrHandler
-Dim lngAsynHandle As Long
-lngAsynHandle = api_WSAAsyncGetHostByName(m_lngWindowHandle, RESOLVE_MESSAGE, strHost, ByVal lngHOSTENBuf, MAXGETHOSTSTRUCT)
-If lngAsynHandle <> 0 Then Subclass_AddResolveMessage lngAsynHandle, lngObjectPointer
-ResolveHost = lngAsynHandle
-Exit Function
-ErrHandler:
-    Err.Raise Err.Number, "ResolveHost ->" & Err.Source, Err.Description
-End Function
-
-''
 'Returns the hi word from a double word.
 '
 '@param lngValue double word to translate
@@ -574,9 +543,9 @@ End Function
 ''
 'Removes the socket from the m_colSocketsInst collection
 'If it is the last socket in that collection, the window
-'and colection will be destroyed as well.
+'and collection will be destroyed as well.
 '
-'@param lngSocket Sockect to remove
+'@param lngSocket Socket to remove
 Public Sub UnregisterSocket(ByVal lngSocket As Long)
 Subclass_DelSocketMessage lngSocket
 On Error Resume Next
@@ -618,7 +587,7 @@ Subclass_DelResolveMessage lngAsynHandle
 End Sub
 
 ''
-'Assing a temporal instance of CSocketMaster to a
+'Assign a temporal instance of CSocketMaster to a
 'socket and register this socket to the accept list.
 '
 '@param lngSocket Socket to accept
@@ -897,35 +866,6 @@ Private Function Subclass_SetTrue(bValue As Boolean) As Boolean
   Subclass_SetTrue = True
   bValue = True
 End Function
-
-Private Sub Subclass_AddResolveMessage(ByVal lngAsync As Long, ByVal lngObjectPointer As Long)
-On Error GoTo ErrHandler
-Dim Count As Long
-For Count = 1 To lngMsgCntA
-    Select Case lngTableA1(Count)
-    
-    Case -1
-        lngTableA1(Count) = lngAsync
-        lngTableA2(Count) = lngObjectPointer
-        Exit Sub
-    Case lngAsync
-        Debug.Print "WARNING: Async already registered!"
-        Exit Sub
-    End Select
-Next Count
-
-lngMsgCntA = lngMsgCntA + 1
-ReDim Preserve lngTableA1(1 To lngMsgCntA)
-ReDim Preserve lngTableA2(1 To lngMsgCntA)
- 
-lngTableA1(lngMsgCntA) = lngAsync
-lngTableA2(lngMsgCntA) = lngObjectPointer
-Subclass_PatchTableA
-Exit Sub
-ErrHandler:
-    Err.Raise Err.Number, "Subclass_AddResolveMessage ->" & Err.Source, Err.Description
-End Sub
-
 Private Sub Subclass_AddSocketMessage(ByVal lngSocket As Long, ByVal lngObjectPointer As Long)
 On Error GoTo ErrHandler
 Dim Count As Long
@@ -982,19 +922,6 @@ Next Count
 Exit Sub
 ErrHandler:
     Err.Raise Err.Number, "Subclass_DelSocketMessage ->" & Err.Source, Err.Description
-End Sub
-
-Private Sub Subclass_PatchTableA()
-On Error GoTo ErrHandler
-Const PATCH_0A As Long = 127
-Const PATCH_0B As Long = 143
-
-Call Subclass_PatchVal(PATCH_09, lngMsgCntA)
-Call Subclass_PatchVal(PATCH_0A, Subclass_AddrMsgTbl(lngTableA1))
-Call Subclass_PatchVal(PATCH_0B, Subclass_AddrMsgTbl(lngTableA2))
-Exit Sub
-ErrHandler:
-    Err.Raise Err.Number, "Subclass_PatchTableA ->" & Err.Source, Err.Description
 End Sub
 
 Private Sub Subclass_PatchTableB()

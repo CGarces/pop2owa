@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "mscomctl.ocx"
+Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
 Begin VB.Form frmMain 
    BorderStyle     =   1  'Fixed Single
    Caption         =   "POP2OWA"
@@ -187,7 +187,7 @@ End Sub
 
 
 ''
-'Main function to start the aplication in form mode.
+'Main function to start the application in form mode.
 Public Sub Init()
 Dim objFrame As Frame
     Me.Caption = App.EXEName & " " & App.Major & "." & App.Minor & "." & App.Revision
@@ -207,7 +207,7 @@ Dim objFrame As Frame
 End Sub
 
 ''
-'Event used to finish the aplication.
+'Event used to finish the application.
 Private Sub Form_QueryUnload(Cancel As Integer, UnloadMode As Integer)
 If Not (m_frmSysTray Is Nothing) Then
     Unload m_frmSysTray
