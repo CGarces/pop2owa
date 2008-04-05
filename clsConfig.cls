@@ -72,7 +72,9 @@ For Each objNodeProfile In objProfileList
         Set objNodeElement = objDOMConfig.selectSingleNode("xml/profile[@name='" & strProfile & "']/options")
         objProfile.bSaveinsent = (objNodeElement.getAttribute("savesent") = "yes")
         objProfile.Authentication = objNodeElement.getAttribute("auth")
-        #If TEST = 1 Then
+        objProfile.bForceXMLHTTP = (objNodeElement.getAttribute("ForceNewVersion") = "yes")
+
+        #If test = 1 Then
             objProfile.strUser = objNodeElement.getAttribute("user")
             objProfile.strPassWord = objNodeElement.getAttribute("password")
         #End If
@@ -83,10 +85,11 @@ For Each objNodeProfile In objProfileList
         objProfile.HiddenValue = objNodeElement.getAttribute("Value")
         Set objNodeList = objDOMConfig.selectNodes("xml/profile[@name='" & strProfile & "']/Form_Based_Auth/Hidden_Field")
         For Each objNodeElement In objNodeList
-            Config.Profile.HiddenValue = Config.Profile.HiddenValue & "&" & objNodeElement.getAttribute("Name") & "=" & objNodeElement.getAttribute("Value")
+            objProfile.HiddenValue = objProfile.HiddenValue & "&" & objNodeElement.getAttribute("Name") & "=" & objNodeElement.getAttribute("Value")
         Next
         objProfile.strProxyUser = objDOMConfig.selectSingleNode("xml/profile[@name='" & strProfile & "']/proxy/@user").Text
         objProfile.strProxyPassword = objDOMConfig.selectSingleNode("xml/profile[@name='" & strProfile & "']/proxy/@password").Text
+        
         colProfiles.Add objProfile, strProfile
     End If
 Next
@@ -100,7 +103,7 @@ Set objProfileList = Nothing
 Set objDOMConfig = Nothing
 Exit Sub
 ErrHandler:
-    Err.Raise 51, "clsOwa", "Error parsing config file"
+    Err.Raise 51, "clsOwa", "Error parsing config file, " & Err.Description
 End Sub
 
 Public Sub WriteConfig()
