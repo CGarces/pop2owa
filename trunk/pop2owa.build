@@ -47,6 +47,7 @@
 	        <include name="modSocketMaster.bas"/>
 	        <include name="NTService.bas"/>
 	        <include name="NTVBSvcW.tlb"/>
+	        <include name="pop2owa.build"/>
 	        <include name="pop2owa.nsi"/>
 	        <include name="pop2owa.vbp"/>
 	        <include name="sample_config.xml"/>
