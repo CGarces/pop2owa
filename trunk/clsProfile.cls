@@ -45,17 +45,21 @@ Property Get strUser() As String
 End Property
 
 Property Let strUser(ByVal user As String)
-    m_strUser = user
-    If InStr(m_strUser, "^") <> 0 Then
-        strAccount = Mid$(m_strUser, InStr(m_strUser, "^") + 1)
-        m_strUser = Left$(m_strUser, InStr(m_strUser, "^") - 1)
-    Else
-        strAccount = m_strUser
-    End If
+Dim intPos As Integer
+intPos = InStr(user, "^")
     
-    If Right$(LCase$(Me.strExchSvrName), Len("/exchange/")) = "/exchange/" Then
-        Me.URLUser = Me.strExchSvrName & Me.strAccount & "/"
-    Else
-       Me.URLUser = Me.strExchSvrName & "exchange/" & Me.strAccount & "/"
-    End If
+If intPos = 0 Then
+    strAccount = user
+    m_strUser = user
+Else
+    strAccount = Mid$(user, intPos + 1)
+    m_strUser = Left$(user, intPos - 1)
+End If
+    
+If Right$(LCase$(Me.strExchSvrName), 10) = "/exchange/" Then
+    Me.URLUser = Me.strExchSvrName & Me.strAccount & "/"
+Else
+    Me.URLUser = Me.strExchSvrName & "exchange/" & Me.strAccount & "/"
+End If
+
 End Property

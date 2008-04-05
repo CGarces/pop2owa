@@ -327,7 +327,7 @@ If NameProcess <> "" Then
    hSnapshot = CreateToolhelpSnapshot(TH32CS_SNAPPROCESS, 0&)
    RProcessFound = ProcessFirst(hSnapshot, uProcess)
    Do
-     i = InStr(1, uProcess.szexeFile, Chr$(0))
+     i = InStr(1, uProcess.szexeFile, vbNullChar)
      SzExename = LCase$(Left$(uProcess.szexeFile, i - 1))
      If Left$(SzExename, Len(NameProcess)) = LCase$(NameProcess) Then
         MyProcess = OpenProcess(PROCESS_ALL_ACCESS, False, uProcess.th32ProcessID)

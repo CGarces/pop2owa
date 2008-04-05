@@ -36,7 +36,7 @@ Private objOWA As clsOWA
 
 Private bBusy As Boolean
 
-Private Const ENDMAIL As String = vbCrLf & "." & vbCrLf
+Private Const ENDMAIL As String = vbNewLine & "." & vbNewLine
 
 ''
 'Close al sockets and call to WSACleanup API
@@ -187,18 +187,18 @@ Dim strCommand      As String
             Set oElements = objOWA.objDOMInbox.selectNodes(XMLPATH & "a:getcontentlength")
         End If
         If Len(strDataRecived) > 6 Then
-            strDataToSend = OK & vData(1) & " " & oElements(vData(1) - 1).Text & vbCrLf
+            strDataToSend = OK & vData(1) & " " & oElements(vData(1) - 1).Text & vbNewLine
         Else
             strDataToSend = OK & objOWA.intMsgCount & " messages (" & objOWA.lngSize & ") octets"
             For Each oElement In oElements
                 intMsg = intMsg + 1
-                strDataToSend = strDataToSend & vbCrLf & intMsg & " " & oElement.Text
+                strDataToSend = strDataToSend & (vbNewLine & intMsg & " " & oElement.Text)
             Next
             strDataToSend = strDataToSend & ENDMAIL
         End If
     Case "CAPA"
-        strDataToSend = OK & "Capability list follows" & vbCrLf & _
-                        "USER" & vbCrLf & _
+        strDataToSend = OK & "Capability list follows" & vbNewLine & _
+                        "USER" & vbNewLine & _
                         "UIDL" & _
                         ENDMAIL
     Case "DELE"
@@ -277,19 +277,19 @@ On Error GoTo ErrHandler
     Case "HELO"
         strDataToSend = "250 " & Config.strIP
     Case "EHLO"
-        strDataToSend = "250-" & Config.strIP
-        strDataToSend = strDataToSend & vbNewLine & "250-AUTH LOGIN PLAIN"
-        strDataToSend = strDataToSend & vbNewLine & "250 HELP"
+        strDataToSend = "250-" & Config.strIP & vbNewLine & _
+                        "250-AUTH LOGIN PLAIN" & vbNewLine & _
+                        "250 HELP"
     Case "AUTH"
-        If strDataRecived = "AUTH LOGIN" & vbCrLf Then
+        If strDataRecived = "AUTH LOGIN" & vbNewLine Then
             'cDataToSend.Add "334 " & objBase.Encode(strUser & "@" & Mid(strExchSvrName, InStr(strExchSvrName, "//") + 2))
             strDataToSend = "334 " & base64_encode("Username:")
             strSMTPState = "LOGIN"
         ElseIf Left$(strDataRecived, 10) = "AUTH PLAIN" Then
             strDataRecived = base64_decode(Mid$(strDataRecived, 12))
             If Len(strDataRecived) > 1 Then
-                Config.Profile.strUser = Mid$(strDataRecived, 2, InStr(2, strDataRecived, Chr$(0)) - 2)
-                Config.Profile.strPassWord = Mid$(strDataRecived, InStr(2, strDataRecived, Chr$(0)) + 1)
+                Config.Profile.strUser = Mid$(strDataRecived, 2, InStr(2, strDataRecived, vbNullChar) - 2)
+                Config.Profile.strPassWord = Mid$(strDataRecived, InStr(2, strDataRecived, vbNullChar) + 1)
                 strDataToSend = ValidateSMTPAUTH
             Else
                 strDataToSend = "533  Authentication required [AUTH]"
@@ -329,10 +329,10 @@ On Error GoTo ErrHandler
         strDataToSend = "354 Start mail input; end with <CRLF>.<CRLF>"
         strSMTPState = "DATA"
         ReDim vMailData(1 To 1)
-        strMailData = strMailData & vbCrLf
+        strMailData = strMailData & vbNewLine
     Case "QUIT"
-        strSMTPState = vbNull
-        strMailData = vbNull
+        strSMTPState = vbNullString
+        strMailData = vbNullString
         Erase vMailData
         strDataToSend = "221 " & Config.strIP & " Service closing transmission channel"
     Case Else
@@ -348,8 +348,8 @@ On Error GoTo ErrHandler
                  Else
                      strDataToSend = "500 Syntax error, command unrecognized"
                 End If
-                strSMTPState = vbNull
-                strMailData = vbNull
+                strSMTPState = vbNullString
+                strMailData = vbNullString
             Else
                 vMailData(lngTotal) = strDataRecived
                 ReDim Preserve vMailData(1 To lngTotal + 1)
@@ -453,8 +453,8 @@ Private Sub Socket_CloseSck(ByRef oSocket As CSocketMaster)
     oSocket.Bind oSocket.LocalPort, Config.strIP
     oSocket.Listen
     If bBusy Then
-        Config.Profile.strPassWord = vbNull
-        Config.Profile.strUser = vbNull
+        Config.Profile.strPassWord = vbNullString
+        Config.Profile.strUser = vbNullString
         bBusy = False
         Set objOWA = Nothing
     Else
