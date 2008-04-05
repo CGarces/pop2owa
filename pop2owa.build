@@ -1,0 +1,100 @@
+<?xml version="1.0"?>
+<project name="pop2owa" default="build">
+    <description>Nant script for build and deploy pop2owa.</description>
+    <property name="dependencies.nsis" value="C:\Program Files\NSIS"/>
+    <property name="dependencies.vbdox" value="C:\Program Files\VBDOX"/>
+
+    <property name="BaseDir" value="."/>
+    <property name="out.path" value="${BaseDir}\build"/>
+
+    <target name="clean" description="remove all generated files">
+        <delete failonerror="false">
+		<fileset>
+			<include name="${out.path}\pop2owa_v*"/>
+		</fileset>
+		</delete>
+    </target>
+
+	<target name="version" description="Get version number from last compiled project" depends="compile">
+	<!--
+		Due inexplicable bug in VB, build number is set to 0
+		<property name="project.version" value="${fileversioninfo::get-file-version(fileversioninfo::get-version-info('pop2owa.exe'))}"/>
+	-->
+		<property name="project.version" value="${version::get-major(fileversioninfo::get-file-version(fileversioninfo::get-version-info('pop2owa.exe')))}.${version::get-minor(fileversioninfo::get-file-version(fileversioninfo::get-version-info('pop2owa.exe')))}.${version::get-revision(fileversioninfo::get-file-version(fileversioninfo::get-version-info('pop2owa.exe')))}"/>
+		<property name="out.zipfile" value="${out.path}\pop2owa_v${project.version}_src.zip"/>
+		<property name="out.exefile" value="${out.path}\pop2owa_v${project.version}.exe"/>
+	</target>
+	
+    <target name="compile" description="Compile pop2owa">
+		<vb6 project="pop2owa.vbp"/>
+	</target>
+	
+    <target name="zipsource" description="Create one ZIP file with pop2owa sources" depends="version">
+	<zip zipfile="${out.zipfile}" verbose="true" ziplevel="9">
+	    <fileset>
+	        <include name="Be Mail.ico"/>
+	        <include name="clsConfig.cls"/>
+	        <include name="clsOWA.cls"/>
+	        <include name="clsPOP3.cls"/>
+	        <include name="clsProfile.cls"/>
+	        <include name="cRegistry.cls"/>
+	        <include name="CSocketMaster.cls"/>
+	        <include name="Form1.frm"/>
+	        <include name="Form1.frx"/>
+	        <include name="fSysTray.frm"/>
+	        <include name="gpl.txt"/>
+	        <include name="modGlobal.bas"/>
+	        <include name="modSocketMaster.bas"/>
+	        <include name="NTService.bas"/>
+	        <include name="NTVBSvcW.tlb"/>
+	        <include name="pop2owa.nsi"/>
+	        <include name="pop2owa.vbp"/>
+	        <include name="sample_config.xml"/>
+	    </fileset>
+	</zip>
+    </target>
+
+    <target name="BuildInstaller" depends="compile, version" description="Build NSIS Installer">
+		<exec program="${dependencies.nsis}\makensis.exe">
+			<arg value="/XOutFile ${out.exefile}"/>
+			<arg value="/X!define VERSION 'v${project.version}'"/>
+			<arg value="/v1"/>
+			<arg value="pop2owa.nsi"/>
+		</exec>	
+	</target>    
+
+    <target name="BuildDoc" description="Build VBDOX documentation">
+		<exec program="${dependencies.vbdox}\VBDOX.exe">
+			<arg value="pop2owa.vbp"/>
+		</exec>	
+	</target>    
+	
+    <target name="build" depends="BuildDoc, zipsource, BuildInstaller" description="Build all files, without upload it"/>
+
+    <target name="deploy" depends="build"  description="Build all files and upload it to FTP">
+        <loadtasks assembly="C:\Program Files\NAnt-Gui\bin\ftptask.dll" />
+		<connection id="pop2owa" server="pop2owa.com" username="pop2owa" />
+		<ftp connection="pop2owa"> 
+		    <put type="ascii" localdir="${BaseDir}\html\en" remotedir="public_html/en/">
+		       <include name="Change_Log.html" />
+		    </put>
+		    <put type="ascii" localdir="${BaseDir}\html\es" remotedir="public_html/es/">
+		       <include name="Change_Log.html" />
+		    </put>
+		    <put type="bin" localdir="${BaseDir}\doc" remotedir="public_html/VBDOX/">
+		       <include name="*.gif" />
+		    </put>
+		    <put type="ascii" localdir="${BaseDir}\doc" remotedir="public_html/VBDOX/">
+		       <include name="*.html" />
+		       <include name="*.css" />
+			</put>
+		</ftp>
+		<connection id="sourceforge" server="upload.sourceforge.net" username="anonymous" />
+		<ftp connection="sourceforge" >
+		  <put type="bin" localdir="." remotedir="incoming" flatten="true">
+			  <include name="${out.exefile}"/>
+			  <include name="${out.zipfile}"/>
+		  </put>
+		</ftp>
+	</target>
+</project>
