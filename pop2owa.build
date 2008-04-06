@@ -15,7 +15,7 @@
 		</delete>
     </target>
 
-	<target name="version" description="Get version number from last compiled project" depends="compile">
+	<target name="version" description="Get version number from last compiled project">
 	<!--
 		Due inexplicable bug in VB, build number is set to 0
 		<property name="project.version" value="${fileversioninfo::get-file-version(fileversioninfo::get-version-info('pop2owa.exe'))}"/>
@@ -69,11 +69,34 @@
 			<arg value="pop2owa.vbp"/>
 		</exec>	
 	</target>    
-	
-    <target name="build" depends="BuildDoc, zipsource, BuildInstaller" description="Build all files, without upload it"/>
 
-    <target name="deploy" depends="build"  description="Build all files and upload it to FTP">
-        <loadtasks assembly="C:\Program Files\NAnt-Gui\bin\ftptask.dll" />
+	<target name="loadexternaltasks" description="Load NANT tasks">
+        <loadtasks assembly="C:\Program Files\NAnt\bin\ftptask.dll" />
+	</target>
+
+	<target name="uploadsf" depends="loadexternaltasks, version"  description="Build all files and upload it to FTP">
+		<connection id="sourceforge" server="upload.sourceforge.net" username="anonymous" />
+		<ftp connection="sourceforge" >
+		  <put type="bin" localdir="." remotedir="incoming" flatten="true">
+			  <include name="${out.exefile}"/>
+			  <include name="${out.zipfile}"/>
+		  </put>
+		</ftp>
+	</target>
+
+	<target name="uploadchangelog" depends="loadexternaltasks"  description="Build all files and upload it to FTP">
+		<connection id="pop2owa" server="pop2owa.com" username="pop2owa" />
+		<ftp connection="pop2owa"> 
+		    <put type="ascii" localdir="${BaseDir}\html\en" remotedir="public_html/en/">
+		       <include name="Change_Log.html" />
+		    </put>
+		    <put type="ascii" localdir="${BaseDir}\html\es" remotedir="public_html/es/">
+		       <include name="Change_Log.html" />
+		    </put>
+		</ftp>
+	</target>
+
+	<target name="uploaddoc" depends="loadexternaltasks"  description="Build all files and upload it to FTP">
 		<connection id="pop2owa" server="pop2owa.com" username="pop2owa" />
 		<ftp connection="pop2owa"> 
 		    <put type="ascii" localdir="${BaseDir}\html\en" remotedir="public_html/en/">
@@ -90,12 +113,8 @@
 		       <include name="*.css" />
 			</put>
 		</ftp>
-		<connection id="sourceforge" server="upload.sourceforge.net" username="anonymous" />
-		<ftp connection="sourceforge" >
-		  <put type="bin" localdir="." remotedir="incoming" flatten="true">
-			  <include name="${out.exefile}"/>
-			  <include name="${out.zipfile}"/>
-		  </put>
-		</ftp>
 	</target>
+
+    <target name="build" depends="BuildDoc, zipsource, BuildInstaller" description="Build all files, without upload it"/>
+    <target name="deploy" depends="build, uploadsf, uploadchangelog,  uploaddoc"  description="Build all files and upload it to FTP"/>
 </project>
