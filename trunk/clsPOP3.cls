@@ -144,11 +144,11 @@ Dim strCommand      As String
     End If
     Select Case strCommand
     Case "USER"
-        Config.Profile.strUser = vData(1)
+        Config.Profile.strUser = Mid$(strDataRecived, InStr(strDataRecived, " ") + 1)
         strDataToSend = OK & "Password required for " & Config.Profile.strUser
     Case "PASS"
         SetOWAObject
-        Config.Profile.strPassWord = vData(1)
+        Config.Profile.strPassWord = Mid$(strDataRecived, InStr(strDataRecived, " ") + 1)
         Select Case objOWA.GetFoldersURL
         Case 200 To 299
             strDataToSend = OK & "mailbox for " & Config.Profile.strUser & " ready"
