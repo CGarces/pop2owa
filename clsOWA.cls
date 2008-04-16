@@ -175,7 +175,7 @@ Case basic
     'Do nothing, is the standard type
 Case fba
     WriteLog "GetFoldersURL : Trying LogingFBA ", Information
-    bFBALoginFail = LogingFBA
+    bFBALoginFail = Not LogingFBA
 #If test = 1 Then
 Case NTLM
 '    bFBALoginFail = Not (LogingNTLM)
@@ -251,8 +251,8 @@ Call oXMLHTTP.OpenXML("POST", Config.Profile.AuthPage, False)
 With oXMLHTTP
     .setRequestHeader "Content-type", "application/x-www-form-urlencoded"
     'Generate the body for FBA login
-    .send Config.Profile.HiddenField & "=" & Config.Profile.HiddenValue & "&trusted=0&username=" & strUsername & "&password=" & URLEncode(Config.Profile.strPassWord)
-    WriteLog "LogingFBA -> Send info: " & Config.Profile.HiddenField & "=" & Config.Profile.HiddenValue & "&trusted=0&username=" & strUsername & "&password=******", Information
+    .send Config.Profile.HiddenField & "=" & Config.Profile.HiddenValue & "&trusted=0&username=" & URLEncode(strUsername) & "&password=" & URLEncode(Config.Profile.strPassWord)
+    WriteLog "LogingFBA -> Send info: " & Config.Profile.HiddenField & "=" & Config.Profile.HiddenValue & "&trusted=0&username=" & URLEncode(strUsername) & "&password=******", Information
     .waitUntilReady
     WriteLog "GetCookies -> Headers: " & vbNewLine & .getAllResponseHeaders(), Paranoid
     If (.Status >= 200 And .Status < 300) Then
