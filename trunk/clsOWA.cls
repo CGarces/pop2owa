@@ -58,7 +58,7 @@ With oXMLHTTP
     .send
     While Not .readyState = 4
         If Not .waitForResponse(25) Then
-            WriteLog "Donwloading readyState  " & .readyState & vbTab & strURL, Warning
+            WriteLog "Downloading readyState  " & .readyState & vbTab & strURL, Warning
             objPOP3.SendData "X-POP2OWA-Header: Header to avoid timeout" & vbNewLine
         End If
     Wend
@@ -141,8 +141,8 @@ With oXMLHTTP
         intMsgCount = objDOMInbox.childNodes(1).childNodes.Length
         WriteLog "msg list fetch " & intMsgCount & " messages", Information
     Else
-        .WriteWarning "Reciving msg list"
-        Err.Raise vbObjectError + 1, "Reciving msg", .statusText
+        .WriteWarning "Receiving msg list"
+        Err.Raise vbObjectError + 1, "Receiving msg", .statusText
     End If
 End With
 Set oXMLHTTP = Nothing
@@ -318,33 +318,37 @@ End Function
 '=?iso-8859-1?Q?=22Martin_Sacrist=E1n=2C_C=2E=22?= <XXXX>
 'Quotes are missing and some email clients fails parsing it.
 '@param strMsg Email message in RFC 821 format
+#If test = 1 Then
+Public Sub ParseHeader(ByRef strMsg As String)
+#Else
 Private Sub ParseHeader(ByRef strMsg As String)
+#End If
 Dim strHeader       As String
 Dim strQuotedText   As String
 Dim lngPos          As Long
 Dim lngPosHeader    As Long
 Dim lngPosEnd       As Long
 Dim bModified       As Boolean
-Const STARTQUOTED   As String = "?q"
+Const START_ENCODED   As String = "?q"
+Const ENCODED_QUOTE   As String = "=22"
 
 lngPosHeader = InStr(1, strMsg, TWO_NEWLINES)
 If lngPosHeader <> 0 Then
     'Extract the header, faster than work with the entire msg
-    strHeader = Left$(strMsg, lngPosHeader)
+    strHeader = Left$(strMsg, lngPosHeader - 1)
     'Look for quoted string
-    lngPos = InStr(1, LCase$(strHeader), STARTQUOTED)
+    lngPos = InStr(1, LCase$(strHeader), START_ENCODED)
     While lngPos <> 0
         'Look for end quoted string
         lngPosEnd = InStr(lngPos + 3, strHeader, "?=")
         strQuotedText = Mid$(strHeader, lngPos + 3, lngPosEnd - lngPos - 3)
         If InStr(1, LCase$(strQuotedText), "=2c") <> 0 Then
-            If Not Left$(strQuotedText, 3) = "=22" Then
-                strHeader = Left$(strHeader, lngPos + 2) & "=22" & strQuotedText & "=22" & Mid$(strHeader, lngPosEnd)
+            If Not Left$(strQuotedText, 3) = ENCODED_QUOTE Then
+                strHeader = Left$(strHeader, lngPos + 2) & (ENCODED_QUOTE & strQuotedText & ENCODED_QUOTE) & Mid$(strHeader, lngPosEnd)
                 bModified = True
             End If
         End If
-        Debug.Assert InStr(lngPos + 1, LCase$(strHeader), STARTQUOTED) = InStr(lngPosEnd + 1, LCase$(strHeader), STARTQUOTED)
-        lngPos = InStr(lngPosEnd + 1, LCase$(strHeader), STARTQUOTED)
+        lngPos = InStr(lngPosEnd + 1, LCase$(strHeader), START_ENCODED)
     Wend
     If bModified Then
         strMsg = strHeader & Mid$(strMsg, lngPosHeader)
@@ -358,8 +362,11 @@ End Sub
 'Parse the mail attachments to fix image files mark as application/octet-stream.
 '
 '@param strMsg Email message in RFC 821 format
+#If test = 1 Then
+Public Sub ParseAtachment(ByRef strMsg As String)
+#Else
 Private Sub ParseAtachment(ByRef strMsg As String)
-
+#End If
 Dim lngPos              As Long
 Dim lngPosEnd           As Long
 Dim strBoundary         As String
@@ -371,11 +378,11 @@ Const BOUNDARY          As String = "boundary="""
 lngPos = InStr(1, LCase$(strMsg), BOUNDARY)
     
 While lngPos <> 0
-    lngPosEnd = InStr(lngPos + 10, strMsg, """")
+    lngPos = lngPos + 10
+    lngPosEnd = InStr(lngPos, strMsg, """")
     'Get the Boundary string to identify the attachments
-    strBoundary = LCase$(Mid$(strMsg, lngPos + 10, lngPosEnd - lngPos - 10))
-    lngBoundary = InStr(lngPosEnd, LCase$(strMsg), strBoundary)
-    lngPos = lngBoundary
+    strBoundary = LCase$(Mid$(strMsg, lngPos, lngPosEnd - lngPos))
+    lngPos = InStr(lngPosEnd, LCase$(strMsg), strBoundary)
     While lngPos <> 0
         lngContentTypeStart = InStr(lngPos, LCase$(strMsg), "application/octet-stream")
         If lngContentTypeStart > 0 Then
@@ -390,7 +397,7 @@ While lngPos <> 0
                 Next
             End If
         End If
-        lngPos = InStr(lngPos + 1, LCase$(strMsg), strBoundary)
+        lngPos = InStr(lngPos + 1, LCase$(strMsg), lngPos)
     Wend
     lngPos = InStr(lngBoundary + 1, LCase$(strMsg), BOUNDARY)
 Wend
@@ -435,9 +442,8 @@ For i = Len(URLEncode) To 1 Step -1
         Mid$(URLEncode, i, 1) = "+"
     Case Else
         ' replace punctuation chars with "%hex"
-        URLEncode = Left$(URLEncode, i - 1) & "%" & Hex$(acode) & Mid$(URLEncode, i + 1)
+        URLEncode = Left$(URLEncode, i - 1) & ("%" & Hex$(acode)) & Mid$(URLEncode, i + 1)
     End Select
 Next
     
 End Function
-

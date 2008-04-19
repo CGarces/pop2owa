@@ -29,7 +29,7 @@ End Function
 ' The ServiceThread sub starts the service.
 ' This sub returns control only after service termination.
 '
-'@param dummy Descripción_del_parámetro
+'@param dummy
 Private Sub ServiceThread(ByVal dummy As Long)
     Dim ServiceTableEntry As SERVICE_TABLE
     ServiceTableEntry.lpServiceName = ServiceNamePtr
@@ -137,8 +137,8 @@ If IsNTService Then
     Loop While MsgWaitObj(100, hStopPendingEvent, 1&) = WAIT_TIMEOUT
     Set oPOP3 = Nothing
     SetServiceState SERVICE_STOPPED
-    WriteLog "Ask for Stoping Service", Information
-    App.LogEvent "Stoping Service: " & Service_Name
+    WriteLog "Ask for Stopping Service", Information
+    App.LogEvent "Stopping Service: " & Service_Name
     SetEvent hStopEvent
     ' Waiting for service thread termination
     MsgWaitObj INFINITE, hnd, 1&

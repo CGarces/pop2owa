@@ -33,12 +33,13 @@ Public Config As clsConfig
 Public IsNTService      As Boolean
 
 ''
-' API go get the OS version
+' API to get the OS version
 Private Declare Function GetVersion Lib "kernel32" () As Long
 Private Declare Function GetTickCount Lib "kernel32" () As Long
 
 ''
-'API para provocar un retardo del sistema
+'Waits until one or all of the specified objects are in the signaled state or the time-out interval elapses<BR/>
+'<A HREF="http://msdn2.microsoft.com/en-us/library/ms684242(VS.85).aspx">Windows API</A>
 Private Declare Function MsgWaitForMultipleObjects Lib "user32" _
         (ByVal nCount As Long, pHandles As Long, _
         ByVal fWaitAll As Long, ByVal dwMilliseconds _
@@ -160,18 +161,18 @@ End Sub
 
 ''
 ' The MsgWaitObj function replaces Sleep,
-' WaitForSingleObject, WaitForMultipleObjects functions.
+' WaitForSingleObject, WaitForMultipleObjects functions.<BR/>
 ' Unlike these functions, it
-' doesn't block thread messages processing.
+' doesn't block thread messages processing.<BR/>
 '
-' Using instead Sleep:
-'     MsgWaitObj dwMilliseconds
-' Using instead WaitForSingleObject:
-'     retval = MsgWaitObj(dwMilliseconds, hObj, 1&)
-' Using instead WaitForMultipleObjects:
-'     retval = MsgWaitObj(dwMilliseconds, hObj(0&), n),
-'     where n - wait objects quantity,
-'     hObj() - their handles array.
+' <UL><LI>Using instead Sleep:</LI>
+' <UL><LI>MsgWaitObj dwMilliseconds</LI></UL>
+' <LI>Using instead WaitForSingleObject:</LI>
+' <UL><LI>retval = MsgWaitObj(dwMilliseconds, hObj, 1&)</LI></UL>
+' <LI>Using instead WaitForMultipleObjects:</LI>
+' <UL><LI>retval = MsgWaitObj(dwMilliseconds, hObj(0&), n),</LI>
+'     <LI>where n - wait objects quantity,</LI>
+'     <LI>hObj() - their handles array.</LI></UL></UL>
 '
 '@param Interval Milliseconds
 '@param hObj
@@ -257,7 +258,7 @@ End Function
 
 
 ''
-'Function to parse de command line pased by the user.
+'Function to parse de command line passed by the user.
 '
 '@param cmdline String with the command line
 Private Sub ParseCommandLine(ByVal cmdline As String)
@@ -306,7 +307,7 @@ Private Function GetNextBlock(ByRef c As String) As String
 End Function    '   GetNextBlock
 
 ''
-'Kill the process that match with the name pased.
+'Kill the process that match with the name passed.
 '
 '@param NameProcess Name of the process to kill
 Private Sub KillProcess(NameProcess As String)

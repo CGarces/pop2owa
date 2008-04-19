@@ -519,6 +519,9 @@ End Sub
 
 ''
 'Connect to a given 32 bits long ip
+'
+'@param lngRemoteHostAddress IP to connect
+'@param lngErrorCode Contains an error code.
 Private Sub ConnectToIP(ByVal lngRemoteHostAddress As Long, ByVal lngErrorCode As Long)
 
 Dim blnCancelDisplay As Boolean
@@ -1112,7 +1115,6 @@ End Sub
 'Clean resolution system that is in charge of
 'asynchronous hostname resolutions.
 Private Sub CleanResolutionSystem()
-'FIXIT: Declare 'varAsynHandle' con un tipo de datos de enlace en tiempo de compilación     FixIT90210ae-R1672-R1B8ZE
 Dim varAsynHandle As Variant
 Dim lngResult As Long
 
