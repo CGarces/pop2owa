@@ -211,10 +211,10 @@ Dim strCommand      As String
             strDataToSend = Error & "deleting message " & intMsg
         End If
     Case "AUTH"
-        strDataToSend = Error & strCommand & " unsuported feature "
+        strDataToSend = Error & strCommand & " unsupported feature "
     Case Else
         Debug.Assert False
-        WriteLog "Unknow data: " & strDataRecived, Warning
+        WriteLog "Unknown data: " & strDataRecived, Warning
         strDataToSend = Error & "Syntax error"
     End Select
     If skPOP3.State = sckConnected Then skPOP3.SendData strDataToSend
@@ -283,10 +283,10 @@ On Error GoTo ErrHandler
     Case "AUTH"
         If strDataRecived = "AUTH LOGIN" & vbNewLine Then
             'cDataToSend.Add "334 " & objBase.Encode(strUser & "@" & Mid(strExchSvrName, InStr(strExchSvrName, "//") + 2))
-            strDataToSend = "334 " & base64_encode("Username:")
+            strDataToSend = "334 " & base64_handler("Username:", True)
             strSMTPState = "LOGIN"
         ElseIf Left$(strDataRecived, 10) = "AUTH PLAIN" Then
-            strDataRecived = base64_decode(Mid$(strDataRecived, 12))
+            strDataRecived = base64_handler(Mid$(strDataRecived, 12), False)
             If Len(strDataRecived) > 1 Then
                 Config.Profile.strUser = Mid$(strDataRecived, 2, InStr(2, strDataRecived, vbNullChar) - 2)
                 Config.Profile.strPassWord = Mid$(strDataRecived, InStr(2, strDataRecived, vbNullChar) + 1)
@@ -297,12 +297,12 @@ On Error GoTo ErrHandler
         Else
             Select Case strSMTPState
             Case "LOGIN"
-                Config.Profile.strUser = base64_decode(Mid$(strDataRecived, 6))
+                Config.Profile.strUser = base64_handler(Mid$(strDataRecived, 6), False)
                 strSMTPState = "PASSWORD"
-                strDataToSend = "334 " & base64_encode("Password:")
+                strDataToSend = "334 " & base64_handler("Password:", True)
             
             Case "PASSWORD"
-                Config.Profile.strPassWord = base64_decode(Mid$(strDataRecived, 6))
+                Config.Profile.strPassWord = base64_handler(Mid$(strDataRecived, 6), False)
                 strDataToSend = ValidateSMTPAUTH
                 strSMTPState = ""
             
@@ -372,51 +372,38 @@ End Sub
 Private Sub skSMTP_Error(ByVal Number As Long, Description As String, ByVal sCode As Long, ByVal Source As String, ByVal HelpFile As String, ByVal HelpContext As Long, CancelDisplay As Boolean)
     WriteLog "skSMTP_Error " & Number & "->" & Description, Fail
 End Sub
-
 ''
-'Encode one string in Base64 Format
+'Encode/Decode one string in Base64 Format
 '
-'@param strString String to be formatted
-'@return Output String in Base64 format
-Private Function base64_encode(ByVal strString As String) As String
+'@param strString String to handle
+'@param bEncode True to encode the string, false to decode
+'
+'@return Output Decoded/Encoded string
+Private Function base64_handler(ByVal strString As String, ByVal bEncode As Boolean) As String
 Dim objXMLDoc   As DOMDocument
 Dim bArray()    As Byte
 
 Set objXMLDoc = New DOMDocument
-bArray() = StrConv(strString, vbFromUnicode)
 
 With objXMLDoc
     .async = False
     .validateOnParse = False
     .loadXML "<xml/>"
     .documentElement.dataType = "bin.base64"
-    .documentElement.nodeTypedValue = bArray
-    base64_encode = .Text
+    If bEncode Then
+        bArray() = StrConv(strString, vbFromUnicode)
+        .documentElement.nodeTypedValue = bArray
+        base64_handler = .Text
+    Else
+        .documentElement.Text = strString
+        base64_handler = StrConv(.documentElement.nodeTypedValue, vbUnicode)
+    End If
 End With
 Set objXMLDoc = Nothing
 
 End Function
 
-''
-'Decode one string in Base64 Format
-'
-'@param strString String in Base64 format
-'@return Output Decoded string
-Private Function base64_decode(ByVal strString As String) As String
-Dim objXMLDoc   As DOMDocument
 
-Set objXMLDoc = New DOMDocument
-With objXMLDoc
-    .async = False
-    .validateOnParse = False
-    .loadXML "<xml/>"
-    .documentElement.dataType = "bin.base64"
-    .documentElement.Text = strString
-    base64_decode = StrConv(.documentElement.nodeTypedValue, vbUnicode)
-End With
-Set objXMLDoc = Nothing
-
-End Function
 
 ''
 'Initialize the OWA object
