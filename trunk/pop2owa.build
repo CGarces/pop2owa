@@ -115,6 +115,6 @@
 		</ftp>
 	</target>
 
-    <target name="build" depends="BuildDoc, zipsource, BuildInstaller" description="Build all files, without upload it"/>
-    <target name="deploy" depends="build, uploadsf, uploadchangelog,  uploaddoc"  description="Build all files and upload it to FTP"/>
+    <target name="build" depends="BuildInstaller, BuildDoc, zipsource" description="Build all files, without upload it"/>
+    <target name="deploy" depends="build, uploadsf, uploadchangelog,  uploaddoc" description="Build all files and upload it to FTP"/>
 </project>
