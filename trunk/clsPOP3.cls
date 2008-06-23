@@ -286,13 +286,18 @@ On Error GoTo ErrHandler
             strDataToSend = "334 " & base64_handler("Username:", True)
             strSMTPState = "LOGIN"
         ElseIf Left$(strDataRecived, 10) = "AUTH PLAIN" Then
-            strDataRecived = base64_handler(Mid$(strDataRecived, 12), False)
-            If Len(strDataRecived) > 1 Then
-                Config.Profile.strUser = Mid$(strDataRecived, 2, InStr(2, strDataRecived, vbNullChar) - 2)
-                Config.Profile.strPassWord = Mid$(strDataRecived, InStr(2, strDataRecived, vbNullChar) + 1)
-                strDataToSend = ValidateSMTPAUTH
+            Debug.Print Len(strDataRecived)
+            If Len(strDataRecived) = 12 Then
+                strDataToSend = "534 Authentication mechanism is too weak"
             Else
-                strDataToSend = "533  Authentication required [AUTH]"
+                strDataRecived = base64_handler(Mid$(strDataRecived, 12), False)
+                If Len(strDataRecived) > 1 Then
+                    Config.Profile.strUser = Mid$(strDataRecived, 2, InStr(2, strDataRecived, vbNullChar) - 2)
+                    Config.Profile.strPassWord = Mid$(strDataRecived, InStr(2, strDataRecived, vbNullChar) + 1)
+                    strDataToSend = ValidateSMTPAUTH
+                Else
+                    strDataToSend = "534 Authentication mechanism is too weak"
+                End If
             End If
         Else
             Select Case strSMTPState
@@ -312,7 +317,7 @@ On Error GoTo ErrHandler
         End If
     Case "MAIL"
         If Config.Profile.strPassWord = Empty Or Config.Profile.strUser = Empty Then
-            strDataToSend = "556 CLIENT AUTHENTICATION REQUIRED. USE ESMTP EHLO AND AUTH"
+            strDataToSend = "530 Authentication required"
         Else
             strMailData = strDataRecived
             strDataToSend = CODEOK
