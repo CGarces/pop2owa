@@ -375,10 +375,10 @@ Dim lngContentTypeStart As Long
 Dim intType             As Integer
 Const BOUNDARY          As String = "boundary="""
 
-lngPos = InStr(1, LCase$(strMsg), BOUNDARY)
+lngBoundary = InStr(1, LCase$(strMsg), BOUNDARY)
     
-While lngPos <> 0
-    lngPos = lngPos + 10
+While lngBoundary <> 0
+    lngPos = lngBoundary + 10
     lngPosEnd = InStr(lngPos, strMsg, """")
     'Get the Boundary string to identify the attachments
     strBoundary = LCase$(Mid$(strMsg, lngPos, lngPosEnd - lngPos))
@@ -399,7 +399,7 @@ While lngPos <> 0
         End If
         lngPos = InStr(lngPos + 1, LCase$(strMsg), lngPos)
     Wend
-    lngPos = InStr(lngBoundary + 1, LCase$(strMsg), BOUNDARY)
+    lngBoundary = InStr(lngBoundary + 1, LCase$(strMsg), BOUNDARY)
 Wend
 End Sub
 
