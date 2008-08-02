@@ -90,7 +90,7 @@ Private Function ValidateSMTPAUTH() As String
         ValidateSMTPAUTH = "535 5.7.0 Authentication failed"
     Case Else
         'Unknown error
-        ValidateSMTPAUTH = "533  Authentication required [AUTH]"
+        ValidateSMTPAUTH = "533 Authentication required [AUTH]"
     End Select
 End Function
 
@@ -169,7 +169,7 @@ Dim strCommand      As String
         Else
             strDataToSend = Error & UNABLETOCONNECT
         End If
-    Case "RETR", "TOP "
+    Case "RETR", "TOP"
         intMsg = CInt(vData(1))
         With objOWA.objDOMInbox.childNodes(1).childNodes(intMsg - 1)
             skPOP3.SendData OK & .selectSingleNode("a:propstat/a:prop/a:getcontentlength").Text & " octets"
@@ -186,7 +186,7 @@ Dim strCommand      As String
         Else
             Set oElements = objOWA.objDOMInbox.selectNodes(XMLPATH & "a:getcontentlength")
         End If
-        If Len(strDataRecived) > 6 Then
+        If Len(strDataRecived) > 5 Then
             strDataToSend = OK & vData(1) & " " & oElements(vData(1) - 1).Text & vbNewLine
         Else
             strDataToSend = OK & objOWA.intMsgCount & " messages (" & objOWA.lngSize & ") octets"
