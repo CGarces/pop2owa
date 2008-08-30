@@ -367,13 +367,17 @@ Public Sub ParseAtachment(ByRef strMsg As String)
 #Else
 Private Sub ParseAtachment(ByRef strMsg As String)
 #End If
+On Error GoTo ErrHandler
+
 Dim lngPos              As Long
 Dim lngPosEnd           As Long
 Dim strBoundary         As String
 Dim lngBoundary         As Long
 Dim lngContentTypeStart As Long
 Dim intType             As Integer
+Dim strType             As String
 Const BOUNDARY          As String = "boundary="""
+Const STREAM          As String = "application/octet-stream"
 
 lngBoundary = InStr(1, LCase$(strMsg), BOUNDARY)
     
@@ -384,23 +388,28 @@ While lngBoundary <> 0
     strBoundary = LCase$(Mid$(strMsg, lngPos, lngPosEnd - lngPos))
     lngPos = InStr(lngPosEnd, LCase$(strMsg), strBoundary)
     While lngPos <> 0
-        lngContentTypeStart = InStr(lngPos, LCase$(strMsg), "application/octet-stream")
+        'Find one header with application/octet-stream object
+        lngContentTypeStart = InStr(lngPos, LCase$(strMsg), STREAM)
         If lngContentTypeStart > 0 Then
             lngPos = lngContentTypeStart
             lngPosEnd = InStr(lngContentTypeStart, strMsg, TWO_NEWLINES)
             If lngPosEnd <> 0 Then
                 For intType = 0 To UBound(vTypes, 1)
-                    If Mid$(strMsg, lngPosEnd + 4, Len(vTypes(intType, 1))) = vTypes(intType, 1) Then
+                    strType = vTypes(intType, 1)
+                    If Mid$(strMsg, lngPosEnd + 4, Len(strType)) = strType Then
                         strMsg = Left$(strMsg, lngContentTypeStart - 1) & vTypes(intType, 0) & Mid$(strMsg, lngContentTypeStart + 24)
                         Exit For
                     End If
                 Next
             End If
         End If
-        lngPos = InStr(lngPos + 1, LCase$(strMsg), lngPos)
+        lngPos = InStr(lngPos + 1, LCase$(strMsg), STREAM)
     Wend
     lngBoundary = InStr(lngBoundary + 1, LCase$(strMsg), BOUNDARY)
 Wend
+Exit Sub
+ErrHandler:
+    Err.Raise Err.Number, "ParseAtachment->" & Err.Source, Err.Description
 End Sub
 
 Private Sub Class_Initialize()
