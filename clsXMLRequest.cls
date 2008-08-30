@@ -56,8 +56,8 @@ End If
 objXMLRequest.setRequestHeader "Accept-Encoding", "gzip,deflate"
 'objXMLRequest.setRequestHeader "Man", bstrMethod & " " & bstrUrl & " HTTP/1.1"
 If strCookies <> Empty Then
-    objXMLRequest.setRequestHeader "Cookies", "Necessary according to Q234486"
-    objXMLRequest.setRequestHeader "Cookies", strCookies
+    objXMLRequest.setRequestHeader "Cookie", "Necessary according to Q234486"
+    objXMLRequest.setRequestHeader "Cookie", strCookies
 End If
 With Config.Profile
     If .strProxyUser <> Empty Then
@@ -121,11 +121,10 @@ End Sub
 
 Public Sub GetCookies()
 Dim vHeaders()  As String
-Dim strHeaders  As String
 Dim intIndex    As Integer
 
-strHeaders = objXMLRequest.getAllResponseHeaders()
-vHeaders = Split(strHeaders, vbNewLine)
+strCookies = vbEmpty
+vHeaders = Split(objXMLRequest.getAllResponseHeaders(), vbNewLine)
 For intIndex = 0 To UBound(vHeaders) - 1
     If Left$(vHeaders(intIndex), 10) = "Set-Cookie" Then
         strCookies = strCookies & Mid$(vHeaders(intIndex), 12) & ";"
