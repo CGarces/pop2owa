@@ -58,8 +58,23 @@ Public Enum SockState
     sckError
 End Enum
 
-'EVENTS
+'STRUCTURES
+Private Type HOSTENT
+    hName     As Long
+    hAliases  As Long
+    hAddrType As Integer
+    hLength   As Integer
+    hAddrList As Long
+End Type
 
+Private Type sockaddr_in
+    sin_family       As Integer
+    sin_port         As Integer
+    sin_addr         As Long
+    sin_zero(1 To 8) As Byte
+End Type
+
+'EVENTS
 Public Event CloseSck()
 Public Event Connect()
 Public Event ConnectionRequest(ByVal requestID As Long)
@@ -121,6 +136,22 @@ Private m_blnAcceptClass As Boolean
 ''
 'hosts waiting to be resolved by the system
 Private m_colWaitingResolutions As Collection
+
+
+Private Const AF_INET         As Long = 2
+Private Const SOCK_STREAM     As Long = 1
+Private Const SOCK_DGRAM      As Long = 2
+Private Const IPPROTO_TCP     As Long = 6
+'Private  Const IPPROTO_UDP    As Long = 17
+
+Private Const SOL_SOCKET          As Long = 65535
+Private Const SO_SNDBUF           As Long = &H1001&
+Private Const SO_RCVBUF           As Long = &H1002&
+'Private  Const SO_MAX_MSG_SIZE    As Long = &H2003
+'Private  Const SO_BROADCAST       As Long = &H20
+'Private  Const FIONREAD           As Long = &H4004667F
+
+
 
 ''
 'This sub receives system messages from our WndProc.<BR>
@@ -197,14 +228,14 @@ End Property
 Public Property Get SocketHandle() As Long
 SocketHandle = m_lngSocketHandle
 End Property
-
-Public Property Get Tag() As String
-Tag = m_strTag
-End Property
-
-Public Property Let Tag(ByVal strTag As String)
-m_strTag = strTag
-End Property
+'
+'Public Property Get Tag() As String
+'Tag = m_strTag
+'End Property
+'
+'Public Property Let Tag(ByVal strTag As String)
+'m_strTag = strTag
+'End Property
 
 ''
 'Destroys the socket if it exists and unregisters it

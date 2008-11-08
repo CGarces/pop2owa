@@ -9,8 +9,6 @@ Attribute VB_Name = "modSocketMaster"
 Option Explicit
 
 'API FUNCTIONS
-
-'FIXIT: As Any no se admite en Visual Basic .NET. Utilice un tipo específico.              FixIT90210ae-R5608-H1984
 Public Declare Sub api_CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (Destination As Any, Source As Any, ByVal Length As Long)
 Public Declare Function api_GlobalAlloc Lib "kernel32" Alias "GlobalAlloc" (ByVal wFlags As Long, ByVal dwBytes As Long) As Long
 Public Declare Function api_GlobalFree Lib "kernel32" Alias "GlobalFree" (ByVal hMem As Long) As Long
@@ -29,6 +27,11 @@ Private Declare Function api_KillTimer Lib "user32" Alias "KillTimer" (ByVal hwn
 
 
 'CONSTANTS
+Public Const FD_READ     As Integer = &H1&
+Public Const FD_WRITE    As Integer = &H2&
+Public Const FD_ACCEPT   As Integer = &H8&
+Public Const FD_CONNECT As Integer = &H10&
+Public Const FD_CLOSE    As Integer = &H20&
 
 Public Const SOCKET_ERROR   As Integer = -1
 Public Const INVALID_SOCKET As Integer = -1
@@ -42,31 +45,12 @@ Private Enum WinsockVersion
     SOCKET_VERSION_22 = &H202
 End Enum
 
-Public Const AF_INET        As Long = 2
-Public Const SOCK_STREAM    As Long = 1
-Public Const SOCK_DGRAM     As Long = 2
-Public Const IPPROTO_TCP    As Long = 6
-'Public Const IPPROTO_UDP    As Long = 17
-
-Public Const FD_READ    As Integer = &H1&
-Public Const FD_WRITE   As Integer = &H2&
-Public Const FD_ACCEPT  As Integer = &H8&
-Public Const FD_CONNECT As Integer = &H10&
-Public Const FD_CLOSE   As Integer = &H20&
-
 Private Const OFFSET_2 As Long = 65536
 Private Const MAXINT_2 As Long = 32767
 
-Public Const SOL_SOCKET         As Long = 65535
-Public Const SO_SNDBUF          As Long = &H1001&
-Public Const SO_RCVBUF          As Long = &H1002&
-'Public Const SO_MAX_MSG_SIZE    As Long = &H2003
-'Public Const SO_BROADCAST       As Long = &H20
-'Public Const FIONREAD           As Long = &H4004667F
-
 'ERROR CODES
 
-Public Const WSABASEERR         As Long = 10000
+Private Const WSABASEERR         As Long = 10000
 Public Const WSAEINTR           As Long = (WSABASEERR + 4)
 Public Const WSAEACCES          As Long = (WSABASEERR + 13)
 Public Const WSAEFAULT          As Long = (WSABASEERR + 14)
@@ -126,21 +110,6 @@ Private Type WSAData
    iMaxSockets    As Integer
    iMaxUdpDg      As Integer
    lpVendorInfo   As Long
-End Type
-
-Public Type HOSTENT
-    hName     As Long
-    hAliases  As Long
-    hAddrType As Integer
-    hLength   As Integer
-    hAddrList As Long
-End Type
-
-Public Type sockaddr_in
-    sin_family       As Integer
-    sin_port         As Integer
-    sin_addr         As Long
-    sin_zero(1 To 8) As Byte
 End Type
 
 'MEMBER VARIABLES
