@@ -71,7 +71,11 @@ With oXMLHTTP
         If InStr(strMsg, "X-MimeOLE: Produced By Microsoft") <> 0 Then
             ParseHeader strMsg
         End If
+        If InStr(strMsg, vbNewLine & "." & vbNewLine) > 0 Then
+            strMsg = Replace(strMsg, vbNewLine & "." & vbNewLine, vbNewLine & ".." & vbNewLine)
+        End If
         objPOP3.SendData strMsg
+        objPOP3.SendData "."
         strMsg = vbNullString
     Else
         .WriteWarning "GetMsg.Status"
@@ -238,11 +242,11 @@ On Error GoTo ErrHandler
 Dim oXMLHTTP    As clsXMLRequest
 Dim strUsername As String
 
-If InStr(Config.Profile.strUser, "@") = 0 Then
+'If InStr(Config.Profile.strUser, "@") = 0 Then
     strUsername = Config.Profile.strUser
-Else
-    strUsername = Left$(strUsername, InStr(Config.Profile.strUser, "@") - 1)
-End If
+'Else
+'    strUsername = Left$(Config.Profile.strUser, InStr(Config.Profile.strUser, "@") - 1)
+'End If
 
 WriteLog "LogingFBA -> Config.AuthPage: " & Config.Profile.AuthPage, Information
 
@@ -267,7 +271,7 @@ Set oXMLHTTP = Nothing
 
 Exit Function
 ErrHandler:
-    WriteLog "GetFoldersURL: " & Err.Number & vbTab & Err.Description, Fail
+    WriteLog "LogingFBA: " & Err.Number & vbTab & Err.Description, Fail
     Set oXMLHTTP = Nothing
     LogingFBA = False
 End Function
