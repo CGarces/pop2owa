@@ -120,7 +120,9 @@ End If
 
 intVerbosity = 0
 Call ParseCommandLine(Command$)
-WriteLog "Inicio v " & intVerbosity & " NT " & IsNTService, Information
+WriteLog "Starting " & App.EXEName & " " & App.Major & "." & App.Minor & "." & App.Revision & "(" & Command$ & ")", Information
+
+
 If IsNTService Then
     StartService
 Else
