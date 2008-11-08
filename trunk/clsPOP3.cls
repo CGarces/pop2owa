@@ -36,7 +36,7 @@ Private objOWA As clsOWA
 
 Private bBusy As Boolean
 
-Private Const ENDMAIL As String = vbNewLine & "." & vbNewLine
+Private Const ENDMAIL As String = "." & vbNewLine
 
 ''
 'Close al sockets and call to WSACleanup API
@@ -144,11 +144,11 @@ Dim strCommand      As String
     End If
     Select Case strCommand
     Case "USER"
-        Config.Profile.strUser = Mid$(strDataRecived, InStr(strDataRecived, " ") + 1)
+        Config.Profile.strUser = vData(1)
         strDataToSend = OK & "Password required for " & Config.Profile.strUser
     Case "PASS"
         SetOWAObject
-        Config.Profile.strPassWord = Mid$(strDataRecived, InStr(strDataRecived, " ") + 1)
+        Config.Profile.strPassWord = vData(1)
         Select Case objOWA.GetFoldersURL
         Case 200 To 299
             strDataToSend = OK & "mailbox for " & Config.Profile.strUser & " ready"
@@ -175,7 +175,6 @@ Dim strCommand      As String
             skPOP3.SendData OK & .selectSingleNode("a:propstat/a:prop/a:getcontentlength").Text & " octets"
             objOWA.GetMsg .selectSingleNode("a:href").Text, skPOP3
         End With
-        strDataToSend = ENDMAIL
     Case "QUIT"
         strDataToSend = OK & Config.strIP & " server signing off, 0 messages deleted"
     Case "NOOP"
@@ -194,12 +193,12 @@ Dim strCommand      As String
                 intMsg = intMsg + 1
                 strDataToSend = strDataToSend & (vbNewLine & intMsg & " " & oElement.Text)
             Next
-            strDataToSend = strDataToSend & ENDMAIL
+            strDataToSend = strDataToSend & vbNewLine & ENDMAIL
         End If
     Case "CAPA"
         strDataToSend = OK & "Capability list follows" & vbNewLine & _
                         "USER" & vbNewLine & _
-                        "UIDL" & _
+                        "UIDL" & vbNewLine & _
                         ENDMAIL
     Case "DELE"
         intMsg = CInt(vData(1))
@@ -217,8 +216,7 @@ Dim strCommand      As String
         WriteLog "Unknown data: " & strDataRecived, Warning
         strDataToSend = Error & "Syntax error"
     End Select
-    If skPOP3.State = sckConnected Then skPOP3.SendData strDataToSend
-    
+    If LenB(strDataToSend) > 0 and skPOP3.State = sckConnected Then skPOP3.SendData strDataToSend
     Set oElement = Nothing
     Set oElements = Nothing
 Exit Sub
@@ -258,112 +256,111 @@ On Error GoTo ErrHandler
     Dim strDataToSend   As String
     Dim lngTotal        As Long
     Dim strDataRecived  As String
-    
+    Dim strSTMPCommmad  As String
     Static strSMTPState As String
     Static strMailData  As String
     Static vMailData()  As String
 
     skSMTP.GetData strDataRecived
+    strSTMPCommmad = Left$(strDataRecived, 4)
     '
-    If Left$(strDataRecived, 4) <> "PASS" And strSMTPState <> "DATA" Then
+    If strSTMPCommmad <> "PASS" And strSMTPState <> "DATA" Then
         WriteLog strDataRecived, Paranoid
     End If
-    If strSMTPState = "LOGIN" Or strSMTPState = "PASSWORD" Then
-        strDataRecived = "AUTH " & strDataRecived
-    End If
-    Select Case Left$(strDataRecived, 4)
-    Case Empty
-        strDataToSend = "220 " & Config.strIP & " Simple Mail Transfer Service Ready"
-    Case "HELO"
-        strDataToSend = "250 " & Config.strIP
-    Case "EHLO"
-        strDataToSend = "250-" & Config.strIP & vbNewLine & _
-                        "250-AUTH LOGIN PLAIN" & vbNewLine & _
-                        "250 HELP"
-    Case "AUTH"
-        If strDataRecived = "AUTH LOGIN" & vbNewLine Then
-            'cDataToSend.Add "334 " & objBase.Encode(strUser & "@" & Mid(strExchSvrName, InStr(strExchSvrName, "//") + 2))
-            strDataToSend = "334 " & base64_handler("Username:", True)
-            strSMTPState = "LOGIN"
-        ElseIf Left$(strDataRecived, 10) = "AUTH PLAIN" Then
-            Debug.Print Len(strDataRecived)
-            If Len(strDataRecived) = 12 Then
-                strDataToSend = "534 Authentication mechanism is too weak"
-            Else
-                strDataRecived = base64_handler(Mid$(strDataRecived, 12), False)
-                If Len(strDataRecived) > 1 Then
-                    Config.Profile.strUser = Mid$(strDataRecived, 2, InStr(2, strDataRecived, vbNullChar) - 2)
-                    Config.Profile.strPassWord = Mid$(strDataRecived, InStr(2, strDataRecived, vbNullChar) + 1)
-                    strDataToSend = ValidateSMTPAUTH
-                Else
-                    strDataToSend = "534 Authentication mechanism is too weak"
-                End If
-            End If
-        Else
-            Select Case strSMTPState
-            Case "LOGIN"
-                Config.Profile.strUser = base64_handler(Mid$(strDataRecived, 6), False)
-                strSMTPState = "PASSWORD"
-                strDataToSend = "334 " & base64_handler("Password:", True)
-            
-            Case "PASSWORD"
-                Config.Profile.strPassWord = base64_handler(Mid$(strDataRecived, 6), False)
-                strDataToSend = ValidateSMTPAUTH
-                strSMTPState = ""
-            
-            Case Else
-                strDataToSend = "504 Unrecognized authentication type."
-            End Select
-        End If
-    Case "MAIL"
-        If Config.Profile.strPassWord = Empty Or Config.Profile.strUser = Empty Then
-            strDataToSend = "530 Authentication required"
-        Else
-            strMailData = strDataRecived
-            strDataToSend = CODEOK
-        End If
-    Case "RCPT"
-        strMailData = strMailData & strDataRecived
-        strDataToSend = CODEOK
-    Case "RSET"
-        strSMTPState = ""
-        strMailData = ""
-        Erase vMailData
-        strDataToSend = CODEOK
-    Case "DATA"
-        strDataToSend = "354 Start mail input; end with <CRLF>.<CRLF>"
-        strSMTPState = "DATA"
-        ReDim vMailData(1 To 1)
-        strMailData = strMailData & vbNewLine
-    Case "QUIT"
+    
+    Select Case strSMTPState
+    'TODO Check the correct value of strSMTPState at RFC
+    Case "LOGIN"
+        Config.Profile.strUser = base64_handler(strDataRecived)
+        strSMTPState = "PASSWORD"
+        '"Password:" base64 encoded
+        strDataToSend = "334 UGFzc3dvcmQ6"
+    
+    Case "PASSWORD"
+        Config.Profile.strPassWord = base64_handler(strDataRecived)
+        strDataToSend = ValidateSMTPAUTH
         strSMTPState = vbNullString
-        strMailData = vbNullString
-        Erase vMailData
-        strDataToSend = "221 " & Config.strIP & " Service closing transmission channel"
-    Case Else
-        If strSMTPState = "DATA" Then
-            lngTotal = UBound(vMailData)
-            If Right$(strDataRecived, 5) = ENDMAIL Then
-                vMailData(lngTotal) = Left$(strDataRecived, Len(strDataRecived) - 5)
-                strMailData = strMailData & Join(vMailData, Empty)
-                Erase vMailData
-                Debug.Assert Not (objOWA Is Nothing)
-                If objOWA.SendMail(strMailData) Then
-                     strDataToSend = CODEOK
-                 Else
-                     strDataToSend = "500 Syntax error, command unrecognized"
-                End If
-                strSMTPState = vbNullString
-                strMailData = vbNullString
-            Else
-                vMailData(lngTotal) = strDataRecived
-                ReDim Preserve vMailData(1 To lngTotal + 1)
+    
+    Case "DATA"
+        lngTotal = UBound(vMailData)
+        'If Msg end with CRLF+"." + CRLF, send the mail to the server
+        If Right$(strDataRecived, 5) = vbNewLine & ENDMAIL Then
+            vMailData(lngTotal) = Left$(strDataRecived, Len(strDataRecived) - 5)
+            Debug.Assert Not (objOWA Is Nothing)
+            If objOWA.SendMail(Join(vMailData, Empty)) Then
+                 strDataToSend = CODEOK
+             Else
+                 strDataToSend = "500 Syntax error, command unrecognized"
             End If
+            Erase vMailData
+            strSMTPState = vbNullString
         Else
-            Debug.Assert False
+            'Store Msg in the buffer
+            vMailData(lngTotal) = strDataRecived
+            ReDim Preserve vMailData(1 To lngTotal + 1)
         End If
+    Case Else
+        Select Case strSTMPCommmad
+        Case Empty
+            strDataToSend = "220 " & Config.strIP & " Simple Mail Transfer Service Ready"
+        Case "HELO"
+            strDataToSend = "250 " & Config.strIP
+        Case "EHLO"
+            strDataToSend = "250-" & Config.strIP & vbNewLine & _
+                            "250-AUTH LOGIN PLAIN" & vbNewLine & _
+                            "250 HELP"
+        Case "AUTH"
+            If strDataRecived = "AUTH LOGIN" & vbNewLine Then
+                '"Username:" as base64 encoded
+                strDataToSend = "334 VXNlcm5hbWU6"
+                strSMTPState = "LOGIN"
+            ElseIf Left$(strDataRecived, 10) = "AUTH PLAIN" Then
+                If Len(strDataRecived) = 12 Then
+                    strDataToSend = "534 Authentication mechanism is too weak"
+                Else
+                    strDataRecived = base64_handler(Mid$(strDataRecived, 12))
+                    If Len(strDataRecived) > 1 Then
+                        Config.Profile.strUser = Mid$(strDataRecived, 2, InStr(2, strDataRecived, vbNullChar) - 2)
+                        Config.Profile.strPassWord = Mid$(strDataRecived, InStr(2, strDataRecived, vbNullChar) + 1)
+                        strDataToSend = ValidateSMTPAUTH
+                    Else
+                        strDataToSend = "534 Authentication mechanism is too weak"
+                    End If
+                End If
+            Else
+                strDataToSend = "504 Unrecognized authentication type."
+            End If
+        Case "MAIL"
+            If Config.Profile.strPassWord = Empty Or Config.Profile.strUser = Empty Then
+                strDataToSend = "530 Authentication required"
+            Else
+                strMailData = strDataRecived
+                strDataToSend = CODEOK
+            End If
+        Case "RCPT"
+            strMailData = strMailData & strDataRecived
+            strDataToSend = CODEOK
+        Case "RSET"
+            strSMTPState = vbNullString
+            strMailData = vbNullString
+            Erase vMailData
+            strDataToSend = CODEOK
+        Case "DATA"
+            strDataToSend = "354 Start mail input; end with <CRLF>.<CRLF>"
+            strSMTPState = "DATA"
+            ReDim vMailData(1 To 2)
+            vMailData(1) = strMailData & vbNewLine
+            strMailData = vbNullString
+        Case "QUIT"
+            strSMTPState = vbNullString
+            strMailData = vbNullString
+            Erase vMailData
+            strDataToSend = "221 " & Config.strIP & " Service closing transmission channel"
+        Case Else
+            Debug.Assert False
+        End Select
     End Select
-    If strDataToSend <> Empty And skSMTP.State = sckConnected Then
+    If LenB(strDataToSend) > 0 And skSMTP.State = sckConnected Then
         skSMTP.SendData strDataToSend
     End If
 Exit Sub
@@ -371,7 +368,6 @@ ErrHandler:
     WriteLog "skSMTP_DataArrival ->" & Err.Source & vbTab & Err.Description, Fail
     Debug.Assert False
     skSMTP.CloseSck
-    'lngPop3Write = 0
 End Sub
 
 Private Sub skSMTP_Error(ByVal Number As Long, Description As String, ByVal sCode As Long, ByVal Source As String, ByVal HelpFile As String, ByVal HelpContext As Long, CancelDisplay As Boolean)
@@ -384,7 +380,7 @@ End Sub
 '@param bEncode True to encode the string, false to decode
 '
 '@return Output Decoded/Encoded string
-Private Function base64_handler(ByVal strString As String, ByVal bEncode As Boolean) As String
+Private Function base64_handler(ByVal strString As String) As String
 Dim objXMLDoc   As DOMDocument
 Dim bArray()    As Byte
 
@@ -395,14 +391,8 @@ With objXMLDoc
     .validateOnParse = False
     .loadXML "<xml/>"
     .documentElement.dataType = "bin.base64"
-    If bEncode Then
-        bArray() = StrConv(strString, vbFromUnicode)
-        .documentElement.nodeTypedValue = bArray
-        base64_handler = .Text
-    Else
-        .documentElement.Text = strString
-        base64_handler = StrConv(.documentElement.nodeTypedValue, vbUnicode)
-    End If
+    .documentElement.Text = strString
+    base64_handler = StrConv(.documentElement.nodeTypedValue, vbUnicode)
 End With
 Set objXMLDoc = Nothing
 
@@ -448,6 +438,7 @@ Private Sub Socket_CloseSck(ByRef oSocket As CSocketMaster)
         Config.Profile.strPassWord = vbNullString
         Config.Profile.strUser = vbNullString
         bBusy = False
+        'TODO check if this function is called before QUIT command
         Set objOWA = Nothing
     Else
         Debug.Assert False
