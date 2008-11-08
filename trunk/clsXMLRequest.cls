@@ -27,7 +27,7 @@ Private bServerObject As Boolean
 Private Sub Class_Initialize()
 
 If Not Config.Profile.strProxyUser = Empty Then
-    Set objXMLRequest = CreateObject("Msxml2.ServerXMLHTTP.4.0")
+    Set objXMLRequest = CreateObject("MSXML2.ServerXMLHTTP.4.0")
     bServerObject = True
 ElseIf Config.Profile.bForceXMLHTTP Then
     Set objXMLRequest = CreateObject("MSXML2.ServerXMLHTTP")
@@ -122,8 +122,7 @@ End Sub
 Public Sub GetCookies()
 Dim vHeaders()  As String
 Dim intIndex    As Integer
-
-strCookies = vbEmpty
+strCookies = vbNullString
 vHeaders = Split(objXMLRequest.getAllResponseHeaders(), vbNewLine)
 For intIndex = 0 To UBound(vHeaders) - 1
     If Left$(vHeaders(intIndex), 10) = "Set-Cookie" Then
