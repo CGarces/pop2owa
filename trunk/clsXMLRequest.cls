@@ -23,8 +23,20 @@ Private objXMLRequest As Object
 ''
 'True if ServerXMLHTTP is used
 Private bServerObject As Boolean
+''
+'Cookies used for authentication
+Private strCookies  As String
 
-Private Sub Class_Initialize()
+
+''
+'Open one WebDav connection.
+'
+'@param bstrMethod  Method used in open command
+'@param bstrUrl     URL used in open command
+'@param bAuth       User and password from configuration
+'@return            WebDav object
+Public Sub OpenXML(ByVal bstrMethod As String, ByVal bstrUrl As String, Optional ByVal bAuth As Boolean = True)
+
 
 If Not Config.Profile.strProxyUser = Empty Then
     Set objXMLRequest = CreateObject("MSXML2.ServerXMLHTTP.4.0")
@@ -38,16 +50,7 @@ End If
 If bServerObject Then
     objXMLRequest.setOption 3, ""
 End If
-End Sub
 
-''
-'Open one WebDav connection.
-'
-'@param bstrMethod  Method used in open command
-'@param bstrUrl     URL used in open command
-'@param bAuth       User and password from configuration
-'@return            WebDav object
-Public Sub OpenXML(ByVal bstrMethod As String, ByVal bstrUrl As String, Optional ByVal bAuth As Boolean = True)
 If bAuth Then
     objXMLRequest.open bstrMethod, bstrUrl, True, Config.Profile.strUser, Config.Profile.strPassWord
 Else
@@ -55,7 +58,7 @@ Else
 End If
 objXMLRequest.setRequestHeader "Accept-Encoding", "gzip,deflate"
 'objXMLRequest.setRequestHeader "Man", bstrMethod & " " & bstrUrl & " HTTP/1.1"
-If strCookies <> Empty Then
+If LenB(strCookies) <> 0 Then
     objXMLRequest.setRequestHeader "Cookie", "Necessary according to Q234486"
     objXMLRequest.setRequestHeader "Cookie", strCookies
 End If
@@ -134,4 +137,8 @@ End Sub
 
 Public Sub WriteWarning(ByVal strTarget As String)
     WriteLog strTarget & ": " & objXMLRequest.Status & vbTab & objXMLRequest.statusText, Warning
+End Sub
+
+Private Sub Class_Terminate()
+Set objXMLRequest = Nothing
 End Sub
