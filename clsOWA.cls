@@ -34,6 +34,8 @@ Public intMsgCount  As Integer
 'Size of messages in inbox folder
 Public lngSize As Long
 
+Private oXMLHTTP    As clsXMLRequest
+
 Const TWO_NEWLINES = vbNewLine & vbNewLine
 ''
 'Retrieve message in RFC 821 format and send it to the client.
@@ -43,14 +45,11 @@ Const TWO_NEWLINES = vbNewLine & vbNewLine
 Public Sub GetMsg(ByVal strURL As String, ByRef objPOP3 As CSocketMaster)
 On Error GoTo ErrHandler
 
-Dim oXMLHTTP    As clsXMLRequest
 Dim strMsg      As String
 Const ERRCOMMAND As String = Error & "no such message"
 
-Set oXMLHTTP = New clsXMLRequest
-Call oXMLHTTP.OpenXML("GET", strURL & "?ID=" & (Timer * 100))
-
 With oXMLHTTP
+    .OpenXML "GET", strURL & "?ID=" & (Timer * 100)
     .setRequestHeader "Content-type", "text/xml"
     .setRequestHeader "Depth", "infinity"
     .setRequestHeader "Translate", "f"
@@ -82,7 +81,6 @@ With oXMLHTTP
         objPOP3.SendData ERRCOMMAND
     End If
 End With
-Set oXMLHTTP = Nothing
 Exit Sub
 ErrHandler:
     WriteLog "GetMsg " & Err.Description, Fail
@@ -96,21 +94,16 @@ End Sub
 Public Function Delete(ByVal intMsg As Integer) As Boolean
 On Error GoTo ErrHandler
 
-Dim oXMLHTTP    As clsXMLRequest
-    
-Set oXMLHTTP = New clsXMLRequest
-Call oXMLHTTP.OpenXML("DELETE", objDOMInbox.childNodes(1).childNodes(intMsg - 1).selectSingleNode("a:href").Text)
 With oXMLHTTP
+    .OpenXML "DELETE", objDOMInbox.childNodes(1).childNodes(intMsg - 1).selectSingleNode("a:href").Text
     .setRequestHeader "Depth", "infinity"
     .send
     .waitUntilReady
 End With
 Delete = True
-Set oXMLHTTP = Nothing
 Exit Function
 ErrHandler:
     Delete = False
-    Set oXMLHTTP = Nothing
 End Function
 ''
 'Get the list of messages in the inbox folder.
@@ -119,10 +112,8 @@ End Function
 Public Function GetMsgList() As Boolean
 On Error GoTo ErrHandler
 
-Dim oXMLHTTP As clsXMLRequest
-Set oXMLHTTP = New clsXMLRequest
-Call oXMLHTTP.OpenXML("SEARCH", Config.Profile.URLInbox)
 With oXMLHTTP
+    .OpenXML "SEARCH", Config.Profile.URLInbox
     ' Set the header type - we want XML
     .setRequestHeader "Content-type", "text/xml"
     .setRequestHeader "Depth", "1"
@@ -149,13 +140,11 @@ With oXMLHTTP
         Err.Raise vbObjectError + 1, "Receiving msg", .statusText
     End If
 End With
-Set oXMLHTTP = Nothing
 
 GetMsgList = True
 Exit Function
 ErrHandler:
     Debug.Assert False
-    Set oXMLHTTP = Nothing
     GetMsgList = False
 End Function
 
@@ -171,7 +160,6 @@ Public Function GetFoldersURL() As Long
 
 On Error GoTo ErrHandler
 Dim bFBALoginFail   As Boolean
-Dim oXMLHTTP        As clsXMLRequest
 Dim objDOMFolders   As DOMDocument
 
 Select Case Config.Profile.Authentication
@@ -191,11 +179,10 @@ If bFBALoginFail Then
     GetFoldersURL = -1
 Else
     WriteLog "Getting Folders : " & Config.Profile.URLUser
-    Set oXMLHTTP = New clsXMLRequest
-    Call oXMLHTTP.OpenXML("PROPFIND", Config.Profile.URLUser)
     'strURL = strExchSvrName & "/exchange/" & strAccount & "/"
 
     With oXMLHTTP
+        .OpenXML "PROPFIND", Config.Profile.URLUser
         .setRequestHeader "Content-Type", "text/xml"
         .setRequestHeader "Depth", "0"
         .send "<?xml version='1.0'?>" & _
@@ -223,7 +210,6 @@ Else
         GetFoldersURL = .Status
     End With
 End If
-Set oXMLHTTP = Nothing
 
 Exit Function
 ErrHandler:
@@ -239,7 +225,6 @@ End Function
 Private Function LogingFBA() As Boolean
 On Error GoTo ErrHandler
 
-Dim oXMLHTTP    As clsXMLRequest
 Dim strUsername As String
 
 'If InStr(Config.Profile.strUser, "@") = 0 Then
@@ -250,9 +235,8 @@ Dim strUsername As String
 
 WriteLog "LogingFBA -> Config.AuthPage: " & Config.Profile.AuthPage, Information
 
-Set oXMLHTTP = New clsXMLRequest
-Call oXMLHTTP.OpenXML("POST", Config.Profile.AuthPage, False)
 With oXMLHTTP
+    .OpenXML "POST", Config.Profile.AuthPage, False
     .setRequestHeader "Content-type", "application/x-www-form-urlencoded"
     'Generate the body for FBA login
     .send Config.Profile.HiddenField & "=" & Config.Profile.HiddenValue & "&trusted=0&username=" & URLEncode(strUsername) & "&password=" & URLEncode(Config.Profile.strPassWord)
@@ -267,12 +251,10 @@ With oXMLHTTP
         LogingFBA = False
     End If
 End With
-Set oXMLHTTP = Nothing
 
 Exit Function
 ErrHandler:
     WriteLog "LogingFBA: " & Err.Number & vbTab & Err.Description, Fail
-    Set oXMLHTTP = Nothing
     LogingFBA = False
 End Function
 
@@ -284,13 +266,10 @@ End Function
 Public Function SendMail(ByVal strMailData As String) As Boolean
 
 On Error GoTo ErrHandler
-Dim oXMLHTTP As clsXMLRequest
-
-Set oXMLHTTP = New clsXMLRequest
-Call oXMLHTTP.OpenXML("PUT", Config.Profile.URLSend)
  
 'Create the DAV PUT request.
 With oXMLHTTP
+    .OpenXML "PUT", Config.Profile.URLSend
     .setRequestHeader "Content-Type", "message/rfc821"
     If Not Config.Profile.bSaveinsent Then
         .setRequestHeader "Saveinsent", "f"
@@ -306,11 +285,9 @@ With oXMLHTTP
         SendMail = False
     End If
 End With
-Set oXMLHTTP = Nothing
 Exit Function
 ErrHandler:
     WriteLog "SendMail: " & Err.Number & vbTab & Err.Description, Fail
-    Set oXMLHTTP = Nothing
     SendMail = False
 End Function
 
@@ -417,6 +394,7 @@ ErrHandler:
 End Sub
 
 Private Sub Class_Initialize()
+Set oXMLHTTP = New clsXMLRequest
 
 vTypes(0, 0) = "image/jpeg"
 vTypes(0, 1) = "/9j/"
@@ -431,6 +409,7 @@ End Sub
 
 Private Sub Class_Terminate()
 Set objDOMInbox = Nothing
+Set oXMLHTTP = Nothing
 Erase vTypes
 End Sub
 
