@@ -1,6 +1,6 @@
 Attribute VB_Name = "modGlobal"
 ''
-'Store al public variables, constants and common functions.
+'Store all public variables, constants and common functions.
 Option Explicit
 
 Public Const XMLPATH As String = "a:multistatus/a:response/a:propstat/a:prop/"
@@ -13,9 +13,6 @@ Public Const Error As String = "-ERR "
 ''
 'Object to handle POP3/STMP commands.
 Public oPOP3            As clsPOP3
-''
-'Cookies used for authentication
-Public strCookies  As String
 
 Public hStopPendingEvent As Long
 
