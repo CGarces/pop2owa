@@ -216,7 +216,7 @@ Dim strCommand      As String
         WriteLog "Unknown data: " & strDataRecived, Warning
         strDataToSend = Error & "Syntax error"
     End Select
-    If LenB(strDataToSend) > 0 and skPOP3.State = sckConnected Then skPOP3.SendData strDataToSend
+    If LenB(strDataToSend) > 0 And skPOP3.State = sckConnected Then skPOP3.SendData strDataToSend
     Set oElement = Nothing
     Set oElements = Nothing
 Exit Sub
@@ -438,7 +438,6 @@ Private Sub Socket_CloseSck(ByRef oSocket As CSocketMaster)
         Config.Profile.strPassWord = vbNullString
         Config.Profile.strUser = vbNullString
         bBusy = False
-        'TODO check if this function is called before QUIT command
         Set objOWA = Nothing
     Else
         Debug.Assert False
