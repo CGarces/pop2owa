@@ -67,7 +67,7 @@ With oXMLHTTP
         'Fix errors in inline images
         ParseAtachment strMsg
         'Fix OWA errors in received messages
-        If InStr(strMsg, "X-MimeOLE: Produced By Microsoft") <> 0 Then
+        If InStr(1, strMsg, "X-MimeOLE: Produced By Microsoft", vbTextCompare) <> 0 Then
             ParseHeader strMsg
         End If
         If InStr(strMsg, vbNewLine & "." & vbNewLine) > 0 Then
@@ -279,9 +279,9 @@ With oXMLHTTP
 'Process the results.
     If (.Status >= 200 And .Status < 300) Then
         SendMail = True
-        WriteLog "Mail send", Paranoid
+        WriteLog "Mail send OK", Paranoid
     Else
-        .WriteWarning "SendMail"
+        .WriteWarning "SendMail Fails!"
         SendMail = False
     End If
 End With
@@ -323,6 +323,7 @@ If lngPosHeader <> 0 Then
         'Look for end quoted string
         lngPosEnd = InStr(lngPos + 3, strHeader, "?=")
         strQuotedText = Mid$(strHeader, lngPos + 3, lngPosEnd - lngPos - 3)
+        'Look for encoded "," that cause the problem
         If InStr(1, LCase$(strQuotedText), "=2c") <> 0 Then
             If Not Left$(strQuotedText, 3) = ENCODED_QUOTE Then
                 strHeader = Left$(strHeader, lngPos + 2) & (ENCODED_QUOTE & strQuotedText & ENCODED_QUOTE) & Mid$(strHeader, lngPosEnd)
@@ -333,8 +334,8 @@ If lngPosHeader <> 0 Then
     Wend
     If bModified Then
         strMsg = strHeader & Mid$(strMsg, lngPosHeader)
-        strHeader = vbNullString
     End If
+    strHeader = vbNullString
 End If
 
 End Sub
