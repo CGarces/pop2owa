@@ -39,22 +39,15 @@ Private bBusy As Boolean
 Private Const ENDMAIL As String = "." & vbNewLine
 
 ''
-'Close al sockets and call to WSACleanup API
+'Close all sockets and clean OWA object
 Private Sub Disconnect()
-'    If Not (skPOP3 Is Nothing) Then
-'        skPOP3.CloseSck
-        Set skPOP3 = Nothing
-'    End If
-'    If Not (skSMTP Is Nothing) Then
-'        skSMTP.CloseSck
-        Set skSMTP = Nothing
-'    End If
+    Set skPOP3 = Nothing
+    Set skSMTP = Nothing
     Set objOWA = Nothing
 End Sub
 
 ''
-'Initialize Winsock code.
-'
+'Initialize sockets.
 Private Sub Start()
 On Error GoTo ErrHandler
 Set Config = New clsConfig
@@ -79,7 +72,6 @@ End Sub
 '@return SMTP command with the result of the operation
 '
 '@see clsOWA.GetFoldersURL
-'@date 2006/03/31
 Private Function ValidateSMTPAUTH() As String
     SetOWAObject
     Select Case objOWA.GetFoldersURL
@@ -115,7 +107,7 @@ ErrHandler:
 WriteLog "POP3 ConnectionRequest ->" & Err.Source & vbTab & Err.Description, Fail
 End Sub
 ''
-'Evaluate a POP3 command  (<A HREF='http://www.faqs.org/rfcs/rfc1939.html' target='_blank'>RFC1939</A>)
+'Evaluate one POP3 command  (<A HREF='http://www.faqs.org/rfcs/rfc1939.html' target='_blank'>RFC1939</A>)
 'and send a reply to the email client
 '
 '@param bytesTotal bytes received
@@ -135,8 +127,13 @@ Dim strCommand      As String
     skPOP3.GetData strDataRecived
     'Strip last chars (13+10)
     strDataRecived = Mid$(strDataRecived, 1, Len(strDataRecived) - 2)
-    vData = Split(strDataRecived, " ")
-    strCommand = vData(0)
+    If Len(strDataRecived) = 0 Then
+        strCommand = ""
+    Else
+        vData = Split(strDataRecived, " ")
+        strCommand = vData(0)
+    End If
+        
     If strCommand = "PASS" Then
         WriteLog "PASS **********", Paranoid
     Else
@@ -163,6 +160,7 @@ Dim strCommand      As String
         If objOWA.GetMsgList Then
             Set oElements = objOWA.objDOMInbox.selectNodes(XMLPATH & "a:getcontentlength")
             For Each oElement In oElements
+                'Calcutate the size of the entire inbox folder.
                 objOWA.lngSize = objOWA.lngSize + oElement.Text
             Next
             strDataToSend = OK & objOWA.intMsgCount & " " & objOWA.lngSize
@@ -244,7 +242,7 @@ ErrHandler:
     WriteLog "skSMTP_ConnectionRequest ->" & Err.Source & vbTab & Err.Description, Fail
 End Sub
 ''
-'Evaluate a STMP command (<A HREF='http://www.faqs.org/rfcs/rfc2821.html' target='_blank'>RFC2821</A>)
+'Evaluate one STMP command (<A HREF='http://www.faqs.org/rfcs/rfc2821.html' target='_blank'>RFC2821</A>)
 'and send a reply to the email client
 '
 '@param bytesTotal Bytes received
@@ -258,7 +256,6 @@ On Error GoTo ErrHandler
     Dim strDataRecived  As String
     Dim strSTMPCommmad  As String
     Static strSMTPState As String
-    Static strMailData  As String
     Static vMailData()  As String
 
     skSMTP.GetData strDataRecived
@@ -334,26 +331,23 @@ On Error GoTo ErrHandler
             If Config.Profile.strPassWord = Empty Or Config.Profile.strUser = Empty Then
                 strDataToSend = "530 Authentication required"
             Else
-                strMailData = strDataRecived
+                ReDim vMailData(1 To 4)
+                vMailData(1) = strDataRecived
                 strDataToSend = CODEOK
             End If
         Case "RCPT"
-            strMailData = strMailData & strDataRecived
+            vMailData(2) = vMailData(2) & strDataRecived
             strDataToSend = CODEOK
         Case "RSET"
             strSMTPState = vbNullString
-            strMailData = vbNullString
             Erase vMailData
             strDataToSend = CODEOK
         Case "DATA"
             strDataToSend = "354 Start mail input; end with <CRLF>.<CRLF>"
             strSMTPState = "DATA"
-            ReDim vMailData(1 To 2)
-            vMailData(1) = strMailData & vbNewLine
-            strMailData = vbNullString
+            vMailData(3) = vbNewLine
         Case "QUIT"
             strSMTPState = vbNullString
-            strMailData = vbNullString
             Erase vMailData
             strDataToSend = "221 " & Config.strIP & " Service closing transmission channel"
         Case Else
