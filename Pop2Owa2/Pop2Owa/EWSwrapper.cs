@@ -106,9 +106,9 @@ namespace Pop2Owa
 	    	intReturn=1;
 	    	if (e.InnerException is WebException && ((WebException )e.InnerException).Response!=null ) {
 	    		intReturn=(int)((HttpWebResponse) ((WebException )e.InnerException).Response).StatusCode;
-	    		if (intReturn.Equals(HttpStatusCode.ProxyAuthenticationRequired)  && ! MainForm.AuthRequired){
+	    		if (intReturn.Equals(HttpStatusCode.ProxyAuthenticationRequired)  && ! AppSettings.AuthRequired){
 	    			logger.Warn("Proxy Authetication Required");
-		    		MainForm.AuthRequired = true; 
+		    		AppSettings.AuthRequired = true; 
 	    			intReturn=SyncData(ref syncState);
 	    		} else {
 	    			logger.ErrorException("Error conecting to the server", e);
@@ -183,7 +183,7 @@ namespace Pop2Owa
 			service.Credentials = new NetworkCredential(User, Password, EWSSettings.Domain);
 			service.Url = new Uri(EWSSettings.Server);
 
-			if (MainForm.AuthRequired & !MainForm.ProxyConfigured){
+			if (AppSettings.AuthRequired & !AppSettings.ProxyConfigured){
 				if (String.IsNullOrEmpty(EWSSettings.ProxyServer)){
 				    // Try default credentials (e.g. for ISA with NTLM integration)
 				    WebRequest.DefaultWebProxy.Credentials = CredentialCache.DefaultCredentials;
@@ -191,7 +191,7 @@ namespace Pop2Owa
 					WebRequest.DefaultWebProxy = new WebProxy(EWSSettings.ProxyServer,true);
 					WebRequest.DefaultWebProxy.Credentials = new NetworkCredential(EWSSettings.ProxyUser, EWSSettings.ProxyPassword, EWSSettings.ProxyDomain );					
 				}
-				MainForm.ProxyConfigured= true;
+				AppSettings.ProxyConfigured= true;
 	
 			}
 

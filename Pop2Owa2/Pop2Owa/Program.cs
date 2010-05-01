@@ -8,7 +8,7 @@
  */
 using System;
 using System.Windows.Forms;
-
+using System.ServiceProcess;
 namespace Pop2Owa
 {
 	/// <summary>
@@ -22,9 +22,14 @@ namespace Pop2Owa
 		[STAThread]
 		private static void Main(string[] args)
 		{
-			Application.EnableVisualStyles();
-			Application.SetCompatibleTextRenderingDefault(false);
-			Application.Run(new MainForm());
+			if (args !=null && args.Length >0 && args[0]=="-nt"){
+				// To run more than one service you have to add them here
+				ServiceBase.Run(new ServiceBase[] { new NTService() });
+			} else {
+				Application.EnableVisualStyles();
+				Application.SetCompatibleTextRenderingDefault(false);
+				Application.Run(new MainForm());
+			}
 		}
 		
 	}
