@@ -1,0 +1,24 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+# SharpDevelop 3.2.0.5505
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pop2Owa", "Pop2Owa\Pop2Owa.csproj", "{1D1373E2-4925-4554-8D01-53D763BC3923}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x86 = Debug|x86
+		Release|x86 = Release|x86
+		Release_Any|x86 = Release_Any|x86
+		Release_64|x86 = Release_64|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1D1373E2-4925-4554-8D01-53D763BC3923}.Debug|x86.Build.0 = Debug|x86
+		{1D1373E2-4925-4554-8D01-53D763BC3923}.Debug|x86.ActiveCfg = Debug|x86
+		{1D1373E2-4925-4554-8D01-53D763BC3923}.Release|x86.Build.0 = Release|x86
+		{1D1373E2-4925-4554-8D01-53D763BC3923}.Release|x86.ActiveCfg = Release|x86
+		{1D1373E2-4925-4554-8D01-53D763BC3923}.Release_Any|x86.Build.0 = Release|x86
+		{1D1373E2-4925-4554-8D01-53D763BC3923}.Release_Any|x86.ActiveCfg = Release|x86
+		{1D1373E2-4925-4554-8D01-53D763BC3923}.Release_64|x86.Build.0 = Debug|x86
+		{1D1373E2-4925-4554-8D01-53D763BC3923}.Release_64|x86.ActiveCfg = Debug|x86
+	EndGlobalSection
+EndGlobal
