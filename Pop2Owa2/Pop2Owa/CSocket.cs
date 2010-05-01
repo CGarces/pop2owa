@@ -31,7 +31,7 @@ namespace Pop2Owa
 		private Socket m_socListener;
 		private AsyncCallback pfnWorkerCallBack ;
 		private Socket m_socWorker;
-		private bool disposed = false;
+		private bool disposed;
 		
 		private class CSocketPacket
 		{
