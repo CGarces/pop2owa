@@ -53,7 +53,7 @@ namespace Pop2Owa
 		{
 			EWSSettings= ServerSettings;
 			if (String.IsNullOrEmpty(EWSSettings.Server)){
-				throw new System.ArgumentException("Server cannot be null", "strServer");
+				throw new System.ArgumentException("Server cannot be null", "EWSSettings.Server");
 			}
 		}
 		public int SyncData(ref string syncState){
