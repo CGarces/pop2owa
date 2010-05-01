@@ -23,7 +23,7 @@ namespace Pop2Owa
     	private EWSWrapper m_ObjEWS;
 		protected static readonly string ENDMAIL = "." + Environment.NewLine;
 		protected static Logger logger = LogManager.GetCurrentClassLogger();
-    	private CSocket socket= null;
+    	private CSocket socket;
 		public EWSWrapper ObjEWS {
 			get { 
     			if (m_ObjEWS==null){
