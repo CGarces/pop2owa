@@ -21,31 +21,6 @@ using NLog;
 namespace Pop2Owa
 
 {
-	[Serializable()]
-	public class ExchangeSettings
-	{
-		public string Server;
-		public string Domain;
-		public bool SaveOnSend;
-		public ExchangeVersion ServerVersion;
-		public string ProxyServer;
-		public string ProxyUser;
-		public string ProxyPassword;
-		public string ProxyDomain;
-	}
-	
-	/// <summary>
-	/// Class to hold persisted settings
-	/// </summary>
-	[Serializable()]
-	public class Settings: ExchangeSettings
-	{
-		public string HostIP;
-		public int Pop3Port;
-		public int SmtpPort;
-	}
-
-	
 
 	/// <summary>
 	/// Description of MainForm.
@@ -53,10 +28,6 @@ namespace Pop2Owa
 	public partial class MainForm : Form
 	{
 		private static Logger logger = LogManager.GetCurrentClassLogger();
-		internal static Settings pop2OwaSettings = new Settings();
-		internal static bool AuthRequired;
-		internal static bool ProxyConfigured= true;
-
 		private POP3Listener objPOP3;
 		private SMTPListener objSMTP;
 		
@@ -66,11 +37,11 @@ namespace Pop2Owa
 			{
 				logger.Trace("Calling InitializeComponent");
 				InitializeComponent();
-				logger.Trace("Calling LoadConfig");
-				LoadConfig();			
 				logger.Trace("Setting combos");	
 				cboVersion.DataSource = System.Enum.GetValues(typeof(ExchangeVersion));
 	            cboVersion.SelectedItem = ExchangeVersion.Exchange2007_SP1;
+				logger.Trace("Calling LoadConfig");
+				LoadConfig();			
 			}
 			catch(Exception se)
 			{
@@ -80,8 +51,8 @@ namespace Pop2Owa
 			try
 			{
 				logger.Trace("Setting sokects");
-				objPOP3 = new POP3Listener(IPAddress.Parse(pop2OwaSettings.HostIP), pop2OwaSettings.Pop3Port);
-				objSMTP = new SMTPListener(IPAddress.Parse(pop2OwaSettings.HostIP), pop2OwaSettings.SmtpPort);
+				objPOP3 = new POP3Listener(IPAddress.Parse(AppSettings.config.HostIP), AppSettings.config.Pop3Port);
+				objSMTP = new SMTPListener(IPAddress.Parse(AppSettings.config.HostIP), AppSettings.config.SmtpPort);
 			}
 			catch(Exception se)
 			{
@@ -98,31 +69,21 @@ namespace Pop2Owa
 		{
 			try
 			{
-				// Get the isolated store for this assembly
-				IsolatedStorageFile isf = IsolatedStorageFile.GetUserStoreForAssembly();
-	
-				// Open the settings file
-				FileStream flStream = new FileStream("config.xml", FileMode.Open, FileAccess.Read);
-    
-				// Deserialize the XML to an object
-				pop2OwaSettings = new Settings();
-				SoapFormatter SF = new SoapFormatter();
-				pop2OwaSettings = (Settings)SF.Deserialize(flStream);
-				flStream.Close();
-	
-				// And apply the settings to the form
-				txtServer.Text = pop2OwaSettings.Server;
-				txtDomain.Text = pop2OwaSettings.Domain;
-				chkSave.Checked= pop2OwaSettings.SaveOnSend;
-				cboVersion.SelectedItem= pop2OwaSettings.ServerVersion;
-				txtHostIP.Text=pop2OwaSettings.HostIP;
-				txtPop3Port.Text= pop2OwaSettings.Pop3Port.ToString();
-				txtSMTPPort.Text= pop2OwaSettings.SmtpPort.ToString();
 
-				txtProxyDomain.Text = pop2OwaSettings.ProxyDomain;
-				txtProxyServer.Text = pop2OwaSettings.ProxyServer;
-				txtProxyUser.Text = pop2OwaSettings.ProxyUser;
-				txtProxyPasword.Text = pop2OwaSettings.ProxyPassword;
+				AppSettings.ReadConfig();
+				// And apply the settings to the form
+				txtServer.Text = AppSettings.config.Server;
+				txtDomain.Text = AppSettings.config.Domain;
+				chkSave.Checked= AppSettings.config.SaveOnSend;
+				cboVersion.SelectedItem= AppSettings.config.ServerVersion;
+				txtHostIP.Text=AppSettings.config.HostIP;
+				txtPop3Port.Text= AppSettings.config.Pop3Port.ToString();
+				txtSMTPPort.Text= AppSettings.config.SmtpPort.ToString();
+
+				txtProxyDomain.Text = AppSettings.config.ProxyDomain;
+				txtProxyServer.Text = AppSettings.config.ProxyServer;
+				txtProxyUser.Text = AppSettings.config.ProxyUser;
+				txtProxyPasword.Text = AppSettings.config.ProxyPassword;
 			
 			}catch(FileNotFoundException){
 				logger.Warn("Config File not found");
@@ -135,35 +96,57 @@ namespace Pop2Owa
 		{
 
 			// Create a settings object
-			pop2OwaSettings = new Settings();
-			pop2OwaSettings.Server = txtServer.Text;
-			pop2OwaSettings.Domain = txtDomain.Text;
-			pop2OwaSettings.ServerVersion= (ExchangeVersion) cboVersion.SelectedItem;
-			pop2OwaSettings.SaveOnSend = chkSave.Checked;
-			pop2OwaSettings.HostIP=txtHostIP.Text;
-			pop2OwaSettings.Pop3Port= int.Parse(txtPop3Port.Text);
-			pop2OwaSettings.SmtpPort= int.Parse(txtSMTPPort.Text);
+			AppSettings.config = new Settings();
+			AppSettings.config.Server = txtServer.Text;
+			AppSettings.config.Domain = txtDomain.Text;
+			AppSettings.config.ServerVersion= (ExchangeVersion) cboVersion.SelectedItem;
+			AppSettings.config.SaveOnSend = chkSave.Checked;
+			AppSettings.config.HostIP=txtHostIP.Text;
+			AppSettings.config.Pop3Port= int.Parse(txtPop3Port.Text);
+			AppSettings.config.SmtpPort= int.Parse(txtSMTPPort.Text);
 
-			pop2OwaSettings.ProxyServer = txtProxyServer.Text;
-			pop2OwaSettings.ProxyDomain = txtProxyDomain.Text;
-			pop2OwaSettings.ProxyUser = txtProxyUser.Text;
-			pop2OwaSettings.ProxyPassword = txtProxyPasword.Text;
+			AppSettings.config.ProxyServer = txtProxyServer.Text;
+			AppSettings.config.ProxyDomain = txtProxyDomain.Text;
+			AppSettings.config.ProxyUser = txtProxyUser.Text;
+			AppSettings.config.ProxyPassword = txtProxyPasword.Text;
 			// Create or truncate the settings file
 			// This will ensure that only the object we're
 			// saving right now will be in the file
-			FileStream flStream = new FileStream("config.xml", FileMode.Create , FileAccess.Write);
+			string path = System.IO.Path.GetDirectoryName ((new System.Uri(System.Reflection.Assembly.GetExecutingAssembly().CodeBase)).AbsolutePath);
+			FileStream flStream = new FileStream(path + "\\config.xml", FileMode.Create , FileAccess.Write);
 
 			// Serialize the object to the file
 			SoapFormatter SF = new SoapFormatter();
-			SF.Serialize(flStream, pop2OwaSettings);
+			SF.Serialize(flStream, AppSettings.config);
 			flStream.Close();
 		}
 		
 		void BntResetClick(object sender, EventArgs e)
 		{
 			SaveConfig();
-			objPOP3 = new POP3Listener(IPAddress.Parse(pop2OwaSettings.HostIP), pop2OwaSettings.Pop3Port);
-			objSMTP = new SMTPListener(IPAddress.Parse(pop2OwaSettings.HostIP), pop2OwaSettings.SmtpPort);
+			objPOP3 = new POP3Listener(IPAddress.Parse(AppSettings.config.HostIP), AppSettings.config.Pop3Port);
+			objSMTP = new SMTPListener(IPAddress.Parse(AppSettings.config.HostIP), AppSettings.config.SmtpPort);
+
+		}
+		
+		void MainFormResize(object sender, EventArgs e)
+		{
+/*			if (this.WindowState == FormWindowState.Minimized)
+       		{
+	             notifyIcon1.Visible = true;
+	             notifyIcon1.BalloonTipText = "Tool Tip Text";
+	             notifyIcon1.ShowBalloonTip(2);  //show balloon tip for 2 seconds
+	             notifyIcon1.Text = "Balloon Text that shows when minimized to tray for 2 seconds";
+	             this.WindowState = FormWindowState.Minimized;
+	             //this.ShowInTaskbar = false;
+       		}
+*/
+		}
+		
+		void NotifyIcon1DoubleClick(object sender, EventArgs e)
+		{
+			Show();
+    		WindowState = FormWindowState.Normal;
 
 		}
 	}
