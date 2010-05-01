@@ -36,6 +36,7 @@ namespace Pop2Owa
 		/// </summary>
 		private void InitializeComponent()
 		{
+			this.components = new System.ComponentModel.Container();
 			this.bntApply = new System.Windows.Forms.Button();
 			this.bntReset = new System.Windows.Forms.Button();
 			this.tabControl1 = new System.Windows.Forms.TabControl();
@@ -57,12 +58,13 @@ namespace Pop2Owa
 			this.tabProxy = new System.Windows.Forms.TabPage();
 			this.label8 = new System.Windows.Forms.Label();
 			this.label6 = new System.Windows.Forms.Label();
+			this.label9 = new System.Windows.Forms.Label();
 			this.label7 = new System.Windows.Forms.Label();
 			this.txtProxyPasword = new System.Windows.Forms.TextBox();
 			this.txtProxyDomain = new System.Windows.Forms.TextBox();
-			this.txtProxyUser = new System.Windows.Forms.TextBox();
 			this.txtProxyServer = new System.Windows.Forms.TextBox();
-			this.label9 = new System.Windows.Forms.Label();
+			this.txtProxyUser = new System.Windows.Forms.TextBox();
+			this.notifyIcon1 = new System.Windows.Forms.NotifyIcon(this.components);
 			this.tabControl1.SuspendLayout();
 			this.Exchange.SuspendLayout();
 			this.Network.SuspendLayout();
@@ -276,6 +278,14 @@ namespace Pop2Owa
 			this.label6.TabIndex = 37;
 			this.label6.Text = "Domain:";
 			// 
+			// label9
+			// 
+			this.label9.Location = new System.Drawing.Point(17, 22);
+			this.label9.Name = "label9";
+			this.label9.Size = new System.Drawing.Size(100, 17);
+			this.label9.TabIndex = 36;
+			this.label9.Text = "Proxy Server";
+			// 
 			// label7
 			// 
 			this.label7.Location = new System.Drawing.Point(17, 48);
@@ -299,13 +309,6 @@ namespace Pop2Owa
 			this.txtProxyDomain.Size = new System.Drawing.Size(232, 20);
 			this.txtProxyDomain.TabIndex = 34;
 			// 
-			// txtProxyUser
-			// 
-			this.txtProxyUser.Location = new System.Drawing.Point(127, 45);
-			this.txtProxyUser.Name = "txtProxyUser";
-			this.txtProxyUser.Size = new System.Drawing.Size(232, 20);
-			this.txtProxyUser.TabIndex = 35;
-			// 
 			// txtProxyServer
 			// 
 			this.txtProxyServer.Location = new System.Drawing.Point(127, 19);
@@ -313,13 +316,18 @@ namespace Pop2Owa
 			this.txtProxyServer.Size = new System.Drawing.Size(232, 20);
 			this.txtProxyServer.TabIndex = 35;
 			// 
-			// label9
+			// txtProxyUser
 			// 
-			this.label9.Location = new System.Drawing.Point(17, 22);
-			this.label9.Name = "label9";
-			this.label9.Size = new System.Drawing.Size(100, 17);
-			this.label9.TabIndex = 36;
-			this.label9.Text = "Proxy Server";
+			this.txtProxyUser.Location = new System.Drawing.Point(127, 45);
+			this.txtProxyUser.Name = "txtProxyUser";
+			this.txtProxyUser.Size = new System.Drawing.Size(232, 20);
+			this.txtProxyUser.TabIndex = 35;
+			// 
+			// notifyIcon1
+			// 
+			this.notifyIcon1.BalloonTipIcon = System.Windows.Forms.ToolTipIcon.Info;
+			this.notifyIcon1.Text = "notifyIcon1";
+			this.notifyIcon1.DoubleClick += new System.EventHandler(this.NotifyIcon1DoubleClick);
 			// 
 			// MainForm
 			// 
@@ -331,6 +339,7 @@ namespace Pop2Owa
 			this.Controls.Add(this.bntApply);
 			this.Name = "MainForm";
 			this.Text = "Pop2Owa";
+			this.Resize += new System.EventHandler(this.MainFormResize);
 			this.tabControl1.ResumeLayout(false);
 			this.Exchange.ResumeLayout(false);
 			this.Exchange.PerformLayout();
@@ -340,6 +349,7 @@ namespace Pop2Owa
 			this.tabProxy.PerformLayout();
 			this.ResumeLayout(false);
 		}
+		private System.Windows.Forms.NotifyIcon notifyIcon1;
 		private System.Windows.Forms.TextBox txtProxyServer;
 		private System.Windows.Forms.Label label9;
 		private System.Windows.Forms.TextBox txtProxyDomain;
