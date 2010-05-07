@@ -1,0 +1,159 @@
+<?xml version="1.0"?>
+<project name="pop2owa" default="build" xmlns="http://nant.sf.net/NAnt.xsd">
+    <description>Nant script for build and deploy pop2owa.</description>
+	<include buildfile="config.include"/>
+
+    <property name="out.BaseDir" value="."/>
+    <property name="out.path" value="${out.BaseDir}\build"/>
+
+	<property name="scp.addr" value="pop2owa@frs.sourceforge.net:uploads" />
+    <property name="scp.program" value="pscp.exe" />
+
+	<property name="dependencies.vbdox" value="C:\Program Files\VBDOX\" />
+
+    <target name="clean" description="remove all generated files">
+        <delete failonerror="false">
+			<fileset>
+				<include name="${out.path}\pop2owa_v*"/>
+			</fileset>
+		</delete>
+    </target>
+
+	<target name="version" description="Get version number from last compiled executable">
+	<!--
+		Due inexplicable bug in VB, build number is set to 0
+		<property name="out.version" value="${fileversioninfo::get-file-version(fileversioninfo::get-version-info('pop2owa.exe'))}"/>
+	-->
+		<property name="out.exeversion" value="${fileversioninfo::get-file-version(fileversioninfo::get-version-info('pop2owa.exe'))}"/>
+		<property name="out.version" value="${version::get-major(version::parse(out.exeversion))}.${version::get-minor(version::parse(out.exeversion))}.${version::get-revision(version::parse(out.exeversion))}"/>
+		<property name="out.zipfile" value="${out.path}\pop2owa_v${out.version}_src.zip"/>
+		<property name="out.exefile" value="${out.path}\pop2owa_v${out.version}.exe"/>
+	</target>
+	
+    <target name="compile" description="Compile pop2owa">
+		<vb6 project="pop2owa.vbp"/>
+	</target>
+	
+    <target name="zipsource" description="Create one ZIP file with pop2owa sources" depends="version">
+	<zip zipfile="${out.zipfile}" verbose="true" ziplevel="9">
+	    <fileset>
+	        <include name="Be Mail.ico"/>
+	        <include name="clsConfig.cls"/>
+	        <include name="clsOWA.cls"/>
+	        <include name="clsPOP3.cls"/>
+	        <include name="clsProfile.cls"/>
+	        <include name="clsXMLRequest.cls"/>
+	        <include name="cRegistry.cls"/>
+	        <include name="CSocketMaster.cls"/>
+	        <include name="Form1.frm"/>
+	        <include name="Form1.frx"/>
+	        <include name="fSysTray.frm"/>
+	        <include name="gpl.txt"/>
+	        <include name="modGlobal.bas"/>
+	        <include name="modSocketMaster.bas"/>
+	        <include name="NTService.bas"/>
+	        <include name="NTVBSvcW.tlb"/>
+	        <include name="pop2owa.build"/>
+	        <include name="pop2owa.nsi"/>
+	        <include name="pop2owa.vbp"/>
+	        <include name="sample_config.xml"/>
+	        <include name="sample_config.include"/>
+		</fileset>
+	</zip>
+    </target>
+
+    <target name="BuildInstaller" depends="compile, version" description="Build NSIS Installer">
+		<readregistry property="dependencies.nsis" key="SOFTWARE\NSIS\" hive="LocalMachine" />
+		<exec program="${dependencies.nsis}\makensis.exe">
+			<arg value="/XOutFile ${out.exefile}"/>
+			<arg value="/DVERSION=v${out.version}"/>
+			<arg value="/v1"/>
+			<arg value="pop2owa.nsi"/>
+		</exec>	
+	</target>    
+
+    <target name="BuildDoc" description="Build VBDOX documentation">
+		<exec program="${dependencies.vbdox}\VBDOX.exe">
+			<arg value="pop2owa.vbp"/>
+		</exec>	
+	</target>    
+
+	<target name="loadexternaltasks" description="Load NANT tasks">
+        <loadtasks assembly="C:\Program Files\NAnt\bin\ftptask.dll" />
+		<connection id="pop2owa" server="pop2owa.com" username="${ftp.user}" password="${ftp.password}"/>
+	</target>
+
+	<target name="deployOnSourceForge"  depends="version"  description="Build all files and upload it">
+	    <echo message="Uploading ${out.zipfile}..." />
+        <exec program="${scp.program}" commandline="-pw ${scp.password} ${out.zipfile} ${scp.user},${scp.addr}" />
+	    <echo message="Uploading ${out.exefile}..." />
+        <exec program="${scp.program}" commandline="-pw ${scp.password} ${out.exefile} ${scp.user},${scp.addr}" />
+	</target>		
+
+	<target name="uploadchangelog" depends="loadexternaltasks"  description="Build all files and upload it to FTP">
+		<ftp connection="pop2owa"> 
+		    <put type="ascii" localdir="${out.BaseDir}\html\en" remotedir="public_html/en/">
+		       <include name="Change_Log.html" />
+		    </put>
+		    <put type="ascii" localdir="${out.BaseDir}\html\es" remotedir="public_html/es/">
+		       <include name="Change_Log.html" />
+		    </put>
+		</ftp>
+	</target>
+
+	<target name="uploaddoc" depends="loadexternaltasks"  description="Build all files and upload it to FTP">
+		<ftp connection="pop2owa"> 
+		    <put type="bin" localdir="${out.BaseDir}\doc" remotedir="public_html/VBDOX/" update="false">
+		       <include name="*.gif" />
+		    </put>
+		    <put type="ascii" localdir="${out.BaseDir}\doc" remotedir="public_html/VBDOX/">
+		       <include name="*.html" />
+		       <include name="*.css" />
+			</put>
+		</ftp>
+	</target>
+
+    <target name="build" depends="BuildInstaller, BuildDoc, zipsource" description="Build all files, without upload it"/>
+    <target name="deploy" depends="build, deployOnSourceForge, uploadchangelog,  uploaddoc" description="Build all files and upload it to FTP"/>
+	
+	<target name="getSubversionRevision">
+		<!-- Retrieve subversion revision number -->
+		<echo message="Retrieving Subversion revision number"/>
+		<property name="svn.revision" value="0"/>
+		<exec
+			program="svn"
+			commandline='log --xml --limit 1'
+			output=".\_revision.xml"
+			failonerror="false"/>
+		<xmlpeek
+			file=".\_revision.xml"
+			xpath="/log/logentry/@revision"
+			property="svn.revision"
+			failonerror="false"/>
+		<echo message="Using Subversion revision number: ${svn.revision}"/>
+	</target>
+
+	<target name="getChangelog" depends="version, getSubversionRevision">
+		<property name="svn.revision" value="219"/>
+		<property name="svn.previous" value="0"/>
+
+		<xmlpeek file="versions.xml" xpath="/versions/version[vbversion='${out.version}']/@svnrevision" property="svn.previous" failonerror="false"/>
+		<if test="${svn.previous=='0'}">
+			<property name="svn.vbprevious" value="0"/>
+			<xmlpeek file="versions.xml" xpath="//version[last()]/@vbversion" property="svn.vbprevious"/>
+			<xmlpeek file="versions.xml" xpath="//version[last()]/@svnrevision" property="svn.previous"/>
+
+			<property name="xmlnode" value="&lt;version vbversion='${out.version}' svnrevision='${svn.revision}'/&gt;" />
+			<property name="xmlnode" value="${xmlnode}&lt;version vbversion='${svn.vbprevious}' svnrevision='${svn.previous}'/&gt;" />
+			<!-- rewrite it back out to the xml file using xmlpeek -->
+			<xmlpoke file="versions.xml" xpath="/versions" value="${xmlnode}" />
+		</if>
+		<if test="${svn.previous=='0'}" unless="true">
+			<xmlpoke file="versions.xml" xpath="/versions/version[vbversion='${out.version}]/@svnrevision" value="${svn.revision}" />
+			<xmlpeek file="versions.xml" xpath="//version[last()]/@svnrevision" property="svn.previous"/>
+		</if>
+
+		<echo message="log  ${svn.previous}:${svn.revision}"/>			
+
+	</target>
+</project>
