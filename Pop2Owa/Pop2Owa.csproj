@@ -90,7 +90,7 @@
       <LogicalName>AppIcon</LogicalName>
     </EmbeddedResource>
     <None Include="NLog.config">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </None>
     <Content Include="ProfilingSessions\Session20100413_203818.sdps" />
     <Content Include="ProfilingSessions\Session20100424_201220.sdps" />
