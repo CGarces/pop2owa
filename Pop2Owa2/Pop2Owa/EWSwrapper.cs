@@ -100,6 +100,7 @@ namespace Pop2Owa
 	        {
 				messages[intCount] = ItemEntry.Key.ToString();
 	            intCount++;
+	            lngSize+= ((message) ItemEntry.Value).Size;
 	        }
 			
 	    }catch (ServiceRequestException e){
@@ -110,8 +111,10 @@ namespace Pop2Owa
 	    			logger.Warn("Proxy Authetication Required");
 		    		AppSettings.AuthRequired = true; 
 	    			intReturn=SyncData(ref syncState);
+	    		} else if (intReturn.Equals(HttpStatusCode.Unauthorized)) {
+	    			logger.Warn("Unauthorized, check your password");
 	    		} else {
-	    			logger.ErrorException("Error conecting to the server", e);
+		    		logger.ErrorException("Error conecting to the server", e.InnerException);
 	    		}
 	    	} else {
 	    		logger.ErrorException("Error conecting to the server", e);
@@ -141,6 +144,10 @@ namespace Pop2Owa
 			} else {
 				message.Send();			
 			}
+			return true;
+		}
+		public bool DeleteMsg(long lngMessage){
+			service.DeleteItems(new[] {new ItemId(GetMsgData(lngMessage).Id)}, DeleteMode.HardDelete, null, null);
 			return true;
 		}
 		/// <summary>
@@ -183,19 +190,17 @@ namespace Pop2Owa
 			service.Credentials = new NetworkCredential(User, Password, EWSSettings.Domain);
 			service.Url = new Uri(EWSSettings.Server);
 
-			if (AppSettings.AuthRequired & !AppSettings.ProxyConfigured){
-				if (String.IsNullOrEmpty(EWSSettings.ProxyServer)){
+			if (String.IsNullOrEmpty(EWSSettings.ProxyServer)){
+				if (AppSettings.AuthRequired & !AppSettings.ProxyConfigured){
 				    // Try default credentials (e.g. for ISA with NTLM integration)
 				    WebRequest.DefaultWebProxy.Credentials = CredentialCache.DefaultCredentials;
-				}else{
-					WebRequest.DefaultWebProxy = new WebProxy(EWSSettings.ProxyServer,true);
-					WebRequest.DefaultWebProxy.Credentials = new NetworkCredential(EWSSettings.ProxyUser, EWSSettings.ProxyPassword, EWSSettings.ProxyDomain );					
+					AppSettings.ProxyConfigured= true;
 				}
+			}else{
+				WebRequest.DefaultWebProxy = new WebProxy(EWSSettings.ProxyServer,true);
+				WebRequest.DefaultWebProxy.Credentials = new NetworkCredential(EWSSettings.ProxyUser, EWSSettings.ProxyPassword, EWSSettings.ProxyDomain );					
 				AppSettings.ProxyConfigured= true;
-	
 			}
-
-	
 			return service;
 		}
 
@@ -216,6 +221,10 @@ namespace Pop2Owa
             {
             	return false;
             }
+        }
+        ~EWSWrapper()
+        {
+        	logger.Trace("EWSWrapper destroyed");
         }
 
 

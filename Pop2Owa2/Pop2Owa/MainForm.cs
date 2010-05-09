@@ -8,14 +8,11 @@
  */
 using System;
 using System.IO;
-using System.IO.IsolatedStorage;
 using System.Net;
-using System.Net.Sockets;
 using System.Runtime.Serialization.Formatters.Soap;
 using System.Windows.Forms;
+
 using Microsoft.Exchange.WebServices.Data;
-
-
 using NLog;
 
 namespace Pop2Owa
@@ -41,7 +38,10 @@ namespace Pop2Owa
 				cboVersion.DataSource = System.Enum.GetValues(typeof(ExchangeVersion));
 	            cboVersion.SelectedItem = ExchangeVersion.Exchange2007_SP1;
 				logger.Trace("Calling LoadConfig");
-				LoadConfig();			
+				LoadConfig();
+				System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
+				this.Icon = ((System.Drawing.Icon)(resources.GetObject("notifyIcon1.Icon")));
+
 			}
 			catch(Exception se)
 			{
@@ -112,8 +112,7 @@ namespace Pop2Owa
 			// Create or truncate the settings file
 			// This will ensure that only the object we're
 			// saving right now will be in the file
-			string path = System.IO.Path.GetDirectoryName ((new System.Uri(System.Reflection.Assembly.GetExecutingAssembly().CodeBase)).AbsolutePath);
-			FileStream flStream = new FileStream(path + "\\config.xml", FileMode.Create , FileAccess.Write);
+			FileStream flStream = new FileStream(AppSettings.ConfigFile, FileMode.Create , FileAccess.Write);
 
 			// Serialize the object to the file
 			SoapFormatter SF = new SoapFormatter();
@@ -131,21 +130,23 @@ namespace Pop2Owa
 		
 		void MainFormResize(object sender, EventArgs e)
 		{
-/*			if (this.WindowState == FormWindowState.Minimized)
+			if (this.WindowState == FormWindowState.Minimized)
        		{
 	             notifyIcon1.Visible = true;
-	             notifyIcon1.BalloonTipText = "Tool Tip Text";
-	             notifyIcon1.ShowBalloonTip(2);  //show balloon tip for 2 seconds
-	             notifyIcon1.Text = "Balloon Text that shows when minimized to tray for 2 seconds";
+	             notifyIcon1.BalloonTipText = "Pop2Owa minimized to tray";
+	             notifyIcon1.ShowBalloonTip(1);  //show balloon tip for 2 seconds
+	             notifyIcon1.Text = "Pop2Owa";
 	             this.WindowState = FormWindowState.Minimized;
-	             //this.ShowInTaskbar = false;
+	             this.ShowInTaskbar = false;
+	             Hide();
        		}
-*/
+
 		}
 		
 		void NotifyIcon1DoubleClick(object sender, EventArgs e)
 		{
 			Show();
+			notifyIcon1.Visible = false;
     		WindowState = FormWindowState.Normal;
 
 		}

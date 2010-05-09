@@ -7,10 +7,7 @@
  * To change this template use Tools | Options | Coding | Edit Standard Headers.
  */
 using System;
-using System.Collections;
 using System.Net;
-using System.Text;
-
 using NLog;
 
 namespace Pop2Owa

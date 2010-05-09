@@ -52,9 +52,14 @@ namespace Pop2Owa
 		}
 
 		public void Reset(){
-			//m_socWorker.Shutdown(SocketShutdown.Both);
+			Buffer= "";
 			if (m_socWorker.Connected){
+				m_socWorker.Shutdown(SocketShutdown.Both);
 				m_socWorker.Close();
+			}
+			if (m_socListener.Connected){
+				m_socListener.Shutdown(SocketShutdown.Both);
+				m_socListener.Close();
 			}
 			//start listening...
 			m_socListener.Listen (4);
@@ -156,14 +161,15 @@ namespace Pop2Owa
 	            }
 	            // Free your own state (unmanaged objects).
 	            try{
-					logger.Trace("Dispose Executed");
-		            m_socListener.Shutdown(SocketShutdown.Both);
-		            m_socListener.Close();
-		            m_socWorker.Shutdown(SocketShutdown.Both);
-		            m_socWorker.Close();
-		            disposed = true;
+					if (m_socListener.Connected){
+			            m_socListener.Shutdown(SocketShutdown.Both);
+					}
+			        m_socListener.Close();
 	            }catch (Exception ex){
 	            	logger.TraceException("Error Disposing", ex);
+	            }finally{
+	            	Buffer=null;	
+		            disposed = true;
 	            }
 	        }
 		}

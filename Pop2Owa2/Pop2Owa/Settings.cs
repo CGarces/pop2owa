@@ -9,12 +9,11 @@
 using System;
 using System.IO;
 using System.IO.IsolatedStorage;
-using System.Net;
-using System.Net.Sockets;
 using System.Runtime.Serialization.Formatters.Soap;
-using System.Windows.Forms;
+using System.Runtime.CompilerServices;
 using Microsoft.Exchange.WebServices.Data;
 
+[assembly: InternalsVisibleTo("Pop2Owa Test")]
 namespace Pop2Owa
 {
 	
@@ -48,23 +47,31 @@ namespace Pop2Owa
 	/// </summary>
 	public static class AppSettings
 	{
+
 		internal static Settings config = new Settings();
 		internal static bool AuthRequired;
 		internal static bool ProxyConfigured= true;
 		
+		private static string m_ConfigFile;
+		
+		public  static string ConfigFile {
+			get { 
+				if (m_ConfigFile== null){
+					m_ConfigFile = System.IO.Path.GetDirectoryName((new System.Uri(System.Reflection.Assembly.GetExecutingAssembly().CodeBase)).LocalPath);
+					m_ConfigFile =Path.Combine(m_ConfigFile , "config.xml");
+				}
+				return m_ConfigFile; }
+		}
 		public static void ReadConfig(){
-				// Get the isolated store for this assembly
-				IsolatedStorageFile isf = IsolatedStorageFile.GetUserStoreForAssembly();
-	
-				// Open the settings file
-				string path = System.IO.Path.GetDirectoryName ((new System.Uri(System.Reflection.Assembly.GetExecutingAssembly().CodeBase)).AbsolutePath);
-				FileStream flStream = new FileStream(path + "\\config.xml", FileMode.Open, FileAccess.Read);
-    
-				// Deserialize the XML to an object
-				config = new Settings();
-				SoapFormatter SF = new SoapFormatter();
-				config = (Settings)SF.Deserialize(flStream);
-				flStream.Close();
+			// Open the settings file
+			FileStream flStream = new FileStream(ConfigFile, FileMode.Open, FileAccess.Read);
+			// Deserialize the XML to an object
+			config = new Settings();
+			SoapFormatter SF = new SoapFormatter();
+			config = (Settings)SF.Deserialize(flStream);
+			flStream.Close();
+			SF=null;
+			flStream=null;
 		}
 	}
 }
