@@ -12,8 +12,8 @@ Var ALREADY_INSTALLED
 !ifndef VERSION
 	;Defaulf values if is used outside nant
 	!define VERSION "vTest"
-	OutFile "${PRODUCT}_${VERSION}.exe"
 !endif
+OutFile "${PRODUCT}_${VERSION}.exe"
 
 Name "${PRODUCT} ${VERSION}"
 InstallDir "$PROGRAMFILES\${PRODUCT}"
@@ -91,7 +91,7 @@ Section "Principal" SEC01
 ;  File ".\bin\Release\config.xml"
   File ".\bin\Release\Microsoft.Exchange.WebServices.dll"
   File ".\bin\Release\NLog.dll"
-  File ".\bin\Release\NLog.xml"
+  File ".\bin\Release\NLog.config"
 
 ;  File /oname=$INSTDIR\config.xml sample_config.xml
 
@@ -123,7 +123,7 @@ Section Uninstall
   Delete "$INSTDIR\config.xml"
   Delete "$INSTDIR\Microsoft.Exchange.WebServices.dll"
   Delete "$INSTDIR\NLog.dll"
-  Delete "$INSTDIR\NLog.xml"
+  Delete "$INSTDIR\NLog.config"
 
   RMDir "$INSTDIR\logs\logfile.txt"
   RMDir "$INSTDIR"
