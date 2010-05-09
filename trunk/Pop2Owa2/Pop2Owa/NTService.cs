@@ -7,19 +7,10 @@
  * To change this template use Tools | Options | Coding | Edit Standard Headers.
  */
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Diagnostics;
-using System.ServiceProcess;
-using System.Text;
-using System.Runtime.Serialization.Formatters.Soap;
-using NLog;
-using System.IO;
-using System.IO.IsolatedStorage;
 using System.Net;
-using System.Net.Sockets;
+using System.ServiceProcess;
 
+using NLog;
 
 namespace Pop2Owa
 {
@@ -67,6 +58,8 @@ namespace Pop2Owa
 				logger.Trace("Setting sokects");
 				objPOP3 = new POP3Listener(IPAddress.Parse(AppSettings.config.HostIP), AppSettings.config.Pop3Port);
 				objSMTP = new SMTPListener(IPAddress.Parse(AppSettings.config.HostIP), AppSettings.config.SmtpPort);
+				GC.Collect();
+      			GC.WaitForPendingFinalizers();
 			}
 			catch(Exception se)
 			{

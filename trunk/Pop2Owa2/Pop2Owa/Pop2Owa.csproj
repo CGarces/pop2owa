@@ -68,7 +68,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="POP3Listener.cs" />
-    <Compile Include="Settings.cs" />
+    <Compile Include="AppSettings.cs" />
     <Compile Include="CSocket.cs" />
     <Compile Include="EWSwrapper.cs" />
     <Compile Include="Listener.cs" />
@@ -86,7 +86,9 @@
     <EmbeddedResource Include="MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Be Mail.ico" />
+    <EmbeddedResource Include="Be Mail.ico">
+      <LogicalName>AppIcon</LogicalName>
+    </EmbeddedResource>
     <None Include="NLog.config">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -94,5 +96,8 @@
     <Content Include="ProfilingSessions\Session20100424_201220.sdps" />
     <Content Include="ProfilingSessions\Session20100425_010659.sdps" />
     <Content Include="ProfilingSessions\Session20100425_010743.sdps" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="resources" />
   </ItemGroup>
 </Project>
