@@ -71,7 +71,7 @@ namespace Pop2Owa
 			m_socWorker.Send (byData);
 		}
 		public void Send(string data){
-			byte[] byData = System.Text.Encoding.ASCII.GetBytes(data + Environment.NewLine);
+			byte[] byData = System.Text.Encoding.ASCII.GetBytes(string.Concat(data, Environment.NewLine));
 			m_socWorker.Send (byData);
 		}
 			
