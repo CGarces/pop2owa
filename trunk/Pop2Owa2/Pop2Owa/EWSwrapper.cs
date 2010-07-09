@@ -73,7 +73,7 @@ namespace Pop2Owa
 
             ChangeCollection<ItemChange> changeCollection;
 			lngSize =0;
-			
+
 			logger.Debug("Start findResults");
 			do
 			{
@@ -105,17 +105,29 @@ namespace Pop2Owa
 			
 	    }catch (ServiceRequestException e){
 	    	intReturn=1;
-	    	if (e.InnerException is WebException && ((WebException )e.InnerException).Response!=null ) {
-	    		intReturn=(int)((HttpWebResponse) ((WebException )e.InnerException).Response).StatusCode;
-	    		if (intReturn.Equals(HttpStatusCode.ProxyAuthenticationRequired)  && ! AppSettings.AuthRequired){
-	    			logger.Warn("Proxy Authetication Required");
-		    		AppSettings.AuthRequired = true; 
-	    			intReturn=SyncData(ref syncState);
-	    		} else if (intReturn.Equals(HttpStatusCode.Unauthorized)) {
-	    			logger.Warn("Unauthorized, check your password");
-	    		} else {
-		    		logger.ErrorException("Error conecting to the server", e.InnerException);
-	    		}
+	    	if (e.InnerException is WebException){
+	    		WebException webexception = (WebException) e.InnerException;
+	    		if (webexception.Response!=null ) {
+	    			intReturn=(int) ((HttpWebResponse) webexception.Response).StatusCode;
+		    		if (intReturn.Equals(HttpStatusCode.ProxyAuthenticationRequired)  && ! AppSettings.AuthRequired){
+		    			logger.Warn("Proxy Authetication Required");
+			    		AppSettings.AuthRequired = true; 
+		    			intReturn=SyncData(ref syncState);
+		    		} else if (intReturn.Equals(HttpStatusCode.Unauthorized)) {
+		    			logger.Warn("Unauthorized, check your password");
+		    		} else {
+			    		logger.FatalException("Error conecting to the server", webexception);
+		    		}
+	    		}else{
+	    			switch (webexception.Status){
+    				case WebExceptionStatus.ConnectFailure:
+		    			logger.Fatal("Error conecting to the server, check your internet connection");
+		    			break;
+		    		default:
+		    			logger.FatalException("Error connecting to the server", webexception);
+		    			break;
+	    			}
+	    		} 		
 	    	} else {
 	    		logger.ErrorException("Error conecting to the server", e);
 	    	}
@@ -123,7 +135,6 @@ namespace Pop2Owa
 		return intReturn;
 		}
 
-		
 		public byte[] GetMsg(long lngMessage){
 			string strMsg;
 			Item newitem = Item.Bind(service, GetMsgData(lngMessage).Id, new PropertySet(BasePropertySet.IdOnly, new List<PropertyDefinitionBase>() { EmailMessageSchema.MimeContent }));
@@ -136,15 +147,22 @@ namespace Pop2Owa
 			}
 		}
 		public bool SendMsg(string msg){
-			EmailMessage message = new EmailMessage(Connection());
-			message.MimeContent = new MimeContent();
-			message.MimeContent.Content=System.Text.Encoding.ASCII.GetBytes(msg);
-			if (EWSSettings.SaveOnSend){
-				message.SendAndSaveCopy();
-			} else {
-				message.Send();			
+			try {
+				EmailMessage message = new EmailMessage(Connection());
+				message.MimeContent = new MimeContent();
+				message.ItemClass= "IPM.Note";
+				//TODO: Check conversion between stringbuilder & byte[].
+				message.MimeContent.Content=System.Text.Encoding.ASCII.GetBytes(msg);
+				if (EWSSettings.SaveOnSend){
+					message.SendAndSaveCopy();
+				} else {
+					message.Send();			
+				}
+				return true;
+			} catch (Exception e) {
+				logger.WarnException("Exception sending mail", e);
+				return false;
 			}
-			return true;
 		}
 		public bool DeleteMsg(long lngMessage){
 			service.DeleteItems(new[] {new ItemId(GetMsgData(lngMessage).Id)}, DeleteMode.HardDelete, null, null);
