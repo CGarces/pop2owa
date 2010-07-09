@@ -8,9 +8,9 @@
  */
 using System;
 using System.IO;
-using System.IO.IsolatedStorage;
-using System.Runtime.Serialization.Formatters.Soap;
 using System.Runtime.CompilerServices;
+using System.Runtime.Serialization.Formatters.Soap;
+
 using Microsoft.Exchange.WebServices.Data;
 
 [assembly: InternalsVisibleTo("Pop2Owa Test")]
