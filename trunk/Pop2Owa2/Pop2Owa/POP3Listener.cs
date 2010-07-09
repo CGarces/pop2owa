@@ -31,6 +31,8 @@ namespace Pop2Owa
 	    protected override  void OnDataArrival(CSocket socket)
 		{
 			socket.Buffer = socket.Buffer.TrimEnd();
+			//TODO Check implementation RSET command.
+			//TODO Maybe we have a bug if the user has a password that start with space.
 			string[] vData = socket.Buffer.Split(' ');
 			byte[] byData = null;
 			string strDataToSend="";
@@ -80,7 +82,6 @@ namespace Pop2Owa
 					socket.Send (byData);
 					socket.Reset();
 					ObjEWS= null;
-					GC.Collect();
 					break;
 				case "NOOP":
 					socket.Send (OK);
