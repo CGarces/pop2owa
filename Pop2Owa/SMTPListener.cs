@@ -40,25 +40,22 @@ namespace Pop2Owa
 					break;
 				case State.PASSWORD:
 					ObjEWS.Password= Decode(socket.Buffer);
+					//TODO Reset the connection?
 					strDataToSend =ValidateSMTPAUTH();
 					state= State.INITIAL;
 					break;
 				case State.MAILDATA:
-					//Store Msg in the buffer
-					Maildata.Append(socket.Buffer);
-					if (Maildata.Length >5) {
-						char[] endData= new char[5];
-						Maildata.CopyTo(Maildata.Length -5, endData,0,5);
-						if (new String(endData).ToString() ==("\r\n.\r\n")) {
-							Maildata.Remove(Maildata.Length -5, 5);
-							if(ObjEWS.SendMsg(Maildata.ToString())){
-								strDataToSend = CODEOK;
-							}else{
-								strDataToSend = "500 Syntax error, command unrecognized";
-							}
-							Maildata = null;
-							state=State.INITIAL;
+					if (socket.Buffer ==".\r\n") {
+						if(ObjEWS.SendMsg(Maildata.ToString())){
+							strDataToSend = CODEOK;
+						}else{
+							strDataToSend = "500 Syntax error, command unrecognized";
 						}
+						Maildata = null;
+						state=State.INITIAL;
+					}else{
+						//Store Msg in the buffer
+						Maildata.Append(socket.Buffer);						
 					}
 					break;
 				default:
@@ -127,6 +124,7 @@ namespace Pop2Owa
 							state = State.MAILDATA;
 							break;
 						case "QUIT":
+							//TODO Check is must be deleted on QUIT
 							strDataToSend = "221 Service closing transmission channel" + Environment.NewLine;
 							byData = System.Text.Encoding.ASCII.GetBytes(strDataToSend);
 							socket.Send (byData);
