@@ -92,10 +92,6 @@
     <None Include="NLog.config">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </None>
-    <Content Include="ProfilingSessions\Session20100413_203818.sdps" />
-    <Content Include="ProfilingSessions\Session20100424_201220.sdps" />
-    <Content Include="ProfilingSessions\Session20100425_010659.sdps" />
-    <Content Include="ProfilingSessions\Session20100425_010743.sdps" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="resources" />
