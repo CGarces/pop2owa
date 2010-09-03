@@ -56,8 +56,9 @@ namespace Pop2Owa
 			try
 			{
 				logger.Trace("Setting sokects");
-				objPOP3 = new POP3Listener(IPAddress.Parse(AppSettings.config.HostIP), AppSettings.config.Pop3Port);
-				objSMTP = new SMTPListener(IPAddress.Parse(AppSettings.config.HostIP), AppSettings.config.SmtpPort);
+				IPAddress serverIP = IPAddress.Parse(AppSettings.config.HostIP);
+				objPOP3 = new POP3Listener(serverIP, AppSettings.config.Pop3Port);
+				objSMTP = new SMTPListener(serverIP, AppSettings.config.SmtpPort);
 				GC.Collect();
       			GC.WaitForPendingFinalizers();
 			}
