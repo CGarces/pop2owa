@@ -15,12 +15,12 @@ namespace Pop2Owa
 	public class SMTPListener : Listener
 	    {
 		private StringBuilder Maildata;
-		
+
 		public SMTPListener(IPAddress address, int port): base(address,port){
-			
 		}
+		
 		protected override void OnConnectionRequest(CSocket socket){
-			socket.Send ("220 Simple Mail Transfer Service Ready");
+			socket.SendCRLF ("220 Simple Mail Transfer Service Ready");
 	    	}
 		protected override void OnDataArrival(CSocket socket)
 		{
@@ -30,8 +30,22 @@ namespace Pop2Owa
 			//strBuffer = strBuffer.TrimEnd();
 			byte[] byData = null;
 			string strDataToSend="";
-				
 			switch (state){
+				case State.MAILDATA:
+					//Store Msg in the buffer
+					Maildata.Append(socket.Buffer);						
+					if (socket.Buffer.Length > 4 && socket.Buffer.Substring(socket.Buffer.Length-5)  =="\r\n.\r\n") {
+						logger.Debug("End Mail Recived ");
+						if(ObjEWS.SendMsg(Maildata.ToString(0, Maildata.Length -5 ))){
+							strDataToSend = CODEOK;
+							logger.Debug("Mail Send");
+						}else{
+							strDataToSend = "500 Syntax error, command unrecognized";
+						}
+						Maildata = null;
+						state=State.INITIAL;
+					}
+					break;
 				case State.LOGIN :
 					ObjEWS.User= Decode(socket.Buffer);
 					//"Password:" base64 encoded
@@ -43,20 +57,6 @@ namespace Pop2Owa
 					//TODO Reset the connection?
 					strDataToSend =ValidateSMTPAUTH();
 					state= State.INITIAL;
-					break;
-				case State.MAILDATA:
-					if (socket.Buffer ==".\r\n") {
-						if(ObjEWS.SendMsg(Maildata.ToString())){
-							strDataToSend = CODEOK;
-						}else{
-							strDataToSend = "500 Syntax error, command unrecognized";
-						}
-						Maildata = null;
-						state=State.INITIAL;
-					}else{
-						//Store Msg in the buffer
-						Maildata.Append(socket.Buffer);						
-					}
 					break;
 				default:
 					if (socket.Buffer.Length >3){
@@ -80,6 +80,7 @@ namespace Pop2Owa
 								"250 HELP";
 							break;
 						case "AUTH":
+							//TODO implement more auth modes see RFC2554
 							if (socket.Buffer == "AUTH LOGIN" +Environment.NewLine){
 								//"Username:" as base64 encoded
 								strDataToSend = "334 VXNlcm5hbWU6";
@@ -108,11 +109,15 @@ namespace Pop2Owa
 								strDataToSend = "530 Authentication required";
 							}else{
 								Maildata= new StringBuilder();
+								Maildata.Append(socket.Buffer);
 								strDataToSend = CODEOK;
 							}
 							break;
 						case "RCPT":
 							strDataToSend = CODEOK;
+							Maildata.Append(socket.Buffer);
+							string strEmail=socket.Buffer.Substring(9, socket.Buffer.Length -12);
+							ObjEWS.emails.Add(strEmail, strEmail);
 							break;
 						case "RSET":
 							state= State.INITIAL;
@@ -123,8 +128,11 @@ namespace Pop2Owa
 							strDataToSend = "354 Start mail input; end with <CRLF>.<CRLF>";
 							state = State.MAILDATA;
 							break;
+						case "NOOP":
+							strDataToSend = CODEOK;
+							break;
 						case "QUIT":
-							//TODO Check is must be deleted on QUIT
+							//TODO Check if must be deleted on QUIT
 							strDataToSend = "221 Service closing transmission channel" + Environment.NewLine;
 							byData = System.Text.Encoding.ASCII.GetBytes(strDataToSend);
 							socket.Send (byData);
