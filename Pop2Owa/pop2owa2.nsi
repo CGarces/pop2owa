@@ -12,8 +12,8 @@ Var ALREADY_INSTALLED
 !ifndef VERSION
 	;Defaulf values if is used outside nant
 	!define VERSION "vTest"
+	OutFile "${PRODUCT}_${VERSION}.exe"
 !endif
-OutFile "${PRODUCT}_${VERSION}.exe"
 
 Name "${PRODUCT} ${VERSION}"
 InstallDir "$PROGRAMFILES\${PRODUCT}"
