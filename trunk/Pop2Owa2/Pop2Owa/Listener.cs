@@ -26,6 +26,10 @@ namespace Pop2Owa
 	    // connection state
 	    protected State state = State.INITIAL;
 
+	    public int BufferSize {
+			set{socket.BufferSize=value;}
+	    }
+	    
 		public EWSWrapper ObjEWS {
 			get { 
     			if (m_ObjEWS==null){
