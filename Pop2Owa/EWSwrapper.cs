@@ -139,7 +139,7 @@ namespace Pop2Owa
 		public byte[] GetMsg(long lngMessage){
 			string strMsg;
 			byte[] MimeString= Item.Bind(service, GetMsgData(lngMessage).Id, new PropertySet(BasePropertySet.IdOnly, new List<PropertyDefinitionBase>() { EmailMessageSchema.MimeContent })).MimeContent.Content;  
-			//Item newitem = Item.Bind(service, GetMsgData(lngMessage).Id, new PropertySet(BasePropertySet.IdOnly, new List<PropertyDefinitionBase>() { EmailMessageSchema.MimeContent }));
+
 			strMsg = System.Text.ASCIIEncoding.ASCII.GetString(MimeString);
 			if (strMsg.IndexOf(EndMail)>1){
 				return System.Text.Encoding.ASCII.GetBytes(strMsg.Replace(EndMail, ReplacedEndMail));
