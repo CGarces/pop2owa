@@ -8,7 +8,7 @@
 using System;
 using System.Net;
 using System.Net.Sockets;
-
+using System.Text;
 using NLog;
 
 namespace Pop2Owa
@@ -25,22 +25,32 @@ namespace Pop2Owa
         internal delegate void ConnectionRequestEventHandler(CSocket sender);
         internal delegate void ConnectionClosedEventHandler(CSocket sender);
 
-        internal string Buffer="";
-		
+        internal StringBuilder internalBuffer= new StringBuilder();
+		internal string Buffer="";
+        
 		private static Logger logger = LogManager.GetCurrentClassLogger();
 		private Socket m_socListener;
 		private AsyncCallback pfnWorkerCallBack ;
 		private Socket m_socWorker;
 		private bool disposed;
+
+		private char[] EndLine = {'\n', '\0'};
+	    private int m_BufferSize;
+		public int BufferSize {
+			set{m_BufferSize=value;}
+	    }
 		
 		private class CSocketPacket
 		{
 			public System.Net.Sockets.Socket thisSocket;
-			public byte[] dataBuffer = new byte[1];
+			public byte[] dataBuffer = new byte[1024];
 		}		
 		public CSocket(IPAddress address, int port) {
+			m_BufferSize=65536;
 			//create the listening socket...
 			m_socListener = new Socket(AddressFamily.InterNetwork,SocketType.Stream,ProtocolType.Tcp);
+			m_socListener.SendBufferSize=m_BufferSize;
+			m_socListener.ReceiveBufferSize=m_BufferSize;
 			m_socListener.SetSocketOption(SocketOptionLevel.Socket,SocketOptionName.ReuseAddress, true);
 			IPEndPoint ipLocal = new IPEndPoint (address, port);
 			//bind to local IP Address...
@@ -52,7 +62,7 @@ namespace Pop2Owa
 		}
 
 		public void Reset(){
-			Buffer= "";
+			internalBuffer= new StringBuilder();
 			if (m_socWorker.Connected){
 				m_socWorker.Shutdown(SocketShutdown.Both);
 				m_socWorker.Close();
@@ -70,8 +80,12 @@ namespace Pop2Owa
 		public void Send(byte[] byData){
 			m_socWorker.Send (byData);
 		}
-		public void Send(string data){
+		public void SendCRLF(string data){
 			byte[] byData = System.Text.Encoding.ASCII.GetBytes(string.Concat(data, Environment.NewLine));
+			m_socWorker.Send (byData);
+		}
+		public void Send(string data){
+			byte[] byData = System.Text.Encoding.ASCII.GetBytes(data);
 			m_socWorker.Send (byData);
 		}
 			
@@ -80,6 +94,8 @@ namespace Pop2Owa
 			try
 			{
 				m_socWorker = m_socListener.EndAccept (asyn);
+				m_socWorker.SendBufferSize=m_BufferSize;
+				m_socWorker.ReceiveBufferSize=m_BufferSize;
 				ConnectionRequest(this);
 				WaitForData(m_socWorker);
 			}
@@ -128,13 +144,14 @@ namespace Pop2Owa
 				char[] chars = new char[iRx +  1];
 				System.Text.Decoder d = System.Text.Encoding.UTF8.GetDecoder();
 				d.GetChars(theSockId.dataBuffer, 0, iRx, chars, 0);
-				System.String szData = new System.String(chars);
-				
-				Buffer= Buffer + szData.Trim('\0');
-				if (szData.Equals("\n\0") ){
+
+				internalBuffer.Append(chars, 0, iRx);
+				if (iRx>0 && chars[iRx-1]=='\n' && chars[iRx]=='\0'){
+					this.Buffer = internalBuffer.ToString();
 					DataArrival(this);
-					Buffer= "";
+					internalBuffer= new StringBuilder();
 				}
+					
 				WaitForData(m_socWorker);
 			}
 			catch (ObjectDisposedException )
@@ -168,7 +185,7 @@ namespace Pop2Owa
 	            }catch (Exception ex){
 	            	logger.TraceException("Error Disposing", ex);
 	            }finally{
-	            	Buffer=null;	
+	            	internalBuffer=null;	
 		            disposed = true;
 	            }
 	        }
