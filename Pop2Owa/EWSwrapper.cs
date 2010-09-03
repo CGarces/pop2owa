@@ -34,8 +34,9 @@ namespace Pop2Owa
 		
 		public string User;
 		public string Password;
-		
-		
+		private static string EndMail = Environment.NewLine+'.'+Environment.NewLine;
+		private static string ReplacedEndMail = Environment.NewLine+".."+Environment.NewLine;
+		internal Hashtable emails = new Hashtable();
 		internal struct message{
 			public string Id;
 			public string Uid;
@@ -137,13 +138,13 @@ namespace Pop2Owa
 
 		public byte[] GetMsg(long lngMessage){
 			string strMsg;
-			Item newitem = Item.Bind(service, GetMsgData(lngMessage).Id, new PropertySet(BasePropertySet.IdOnly, new List<PropertyDefinitionBase>() { EmailMessageSchema.MimeContent }));
-			strMsg = System.Text.ASCIIEncoding.ASCII.GetString(newitem.MimeContent.Content);
-			if (strMsg.IndexOf(Environment.NewLine+'.'+Environment.NewLine)>1){
-				strMsg = strMsg.Replace(Environment.NewLine+'.'+Environment.NewLine, Environment.NewLine+".."+Environment.NewLine); 
-				return System.Text.Encoding.ASCII.GetBytes(strMsg);
+			byte[] MimeString= Item.Bind(service, GetMsgData(lngMessage).Id, new PropertySet(BasePropertySet.IdOnly, new List<PropertyDefinitionBase>() { EmailMessageSchema.MimeContent })).MimeContent.Content;  
+			//Item newitem = Item.Bind(service, GetMsgData(lngMessage).Id, new PropertySet(BasePropertySet.IdOnly, new List<PropertyDefinitionBase>() { EmailMessageSchema.MimeContent }));
+			strMsg = System.Text.ASCIIEncoding.ASCII.GetString(MimeString);
+			if (strMsg.IndexOf(EndMail)>1){
+				return System.Text.Encoding.ASCII.GetBytes(strMsg.Replace(EndMail, ReplacedEndMail));
 			} else {
-				return newitem.MimeContent.Content;
+				return MimeString;
 			}
 		}
 		public bool SendMsg(string msg){
@@ -151,19 +152,28 @@ namespace Pop2Owa
 				EmailMessage message = new EmailMessage(Connection());
 				message.MimeContent = new MimeContent();
 				message.ItemClass= "IPM.Note";
+
 				//TODO: Check conversion between stringbuilder & byte[].
 				message.MimeContent.Content=System.Text.Encoding.ASCII.GetBytes(msg);
+
+				foreach( DictionaryEntry ItemEntry in emails)
+		        {
+					message.BccRecipients.Add(ItemEntry.Key.ToString());
+				}
+
 				if (EWSSettings.SaveOnSend){
 					message.SendAndSaveCopy();
 				} else {
 					message.Send();			
 				}
+				
 				return true;
 			} catch (Exception e) {
 				logger.WarnException("Exception sending mail", e);
 				return false;
 			}
 		}
+		
 		public bool DeleteMsg(long lngMessage){
 			service.DeleteItems(new[] {new ItemId(GetMsgData(lngMessage).Id)}, DeleteMode.HardDelete, null, null);
 			return true;
@@ -198,7 +208,7 @@ namespace Pop2Owa
 			return lngSize;
 			
 		}
-		public long TotalCount(){
+		public int TotalCount(){
 			return intCount;
 		}
 		
