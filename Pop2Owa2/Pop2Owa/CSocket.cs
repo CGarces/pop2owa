@@ -43,7 +43,7 @@ namespace Pop2Owa
 		private class CSocketPacket
 		{
 			public System.Net.Sockets.Socket thisSocket;
-			public byte[] dataBuffer = new byte[1024];
+			public byte[] dataBuffer = new byte[65536];
 		}		
 		public CSocket(IPAddress address, int port) {
 			m_BufferSize=65536;
@@ -123,7 +123,7 @@ namespace Pop2Owa
 				CSocketPacket theSocPkt = new CSocketPacket ();
 				theSocPkt.thisSocket = soc;
 				// now start to listen for any data...
-				soc .BeginReceive (theSocPkt.dataBuffer ,0,theSocPkt.dataBuffer.Length ,SocketFlags.None,pfnWorkerCallBack,theSocPkt);
+				soc.BeginReceive (theSocPkt.dataBuffer ,0,theSocPkt.dataBuffer.Length ,SocketFlags.None,pfnWorkerCallBack,theSocPkt);
 			}
 			catch(SocketException se)
 			{
@@ -146,13 +146,21 @@ namespace Pop2Owa
 				d.GetChars(theSockId.dataBuffer, 0, iRx, chars, 0);
 
 				internalBuffer.Append(chars, 0, iRx);
-				if (iRx>0 && chars[iRx-1]=='\n' && chars[iRx]=='\0'){
-					this.Buffer = internalBuffer.ToString();
-					DataArrival(this);
+				logger.Trace("Socket {0} {1}", m_socListener.LocalEndPoint , iRx );
+				if (iRx==0){
+					logger.Trace("Close requested");
 					internalBuffer= new StringBuilder();
-				}
+					ConnectionClosed(this);
+				} else {
+					if (iRx>0 && chars[iRx-1]=='\n' && chars[iRx]=='\0'){
+						logger.Trace("End msg defected");
+						this.Buffer = internalBuffer.ToString();
+						DataArrival(this);
+						internalBuffer= new StringBuilder();
+					}
 					
-				WaitForData(m_socWorker);
+					WaitForData(m_socWorker);
+				}
 			}
 			catch (ObjectDisposedException )
 			{
