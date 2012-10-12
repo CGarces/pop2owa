@@ -149,7 +149,9 @@ namespace Pop2Owa
 		}
 		public bool SendMsg(string msg){
 			try {
-				EmailMessage message = new EmailMessage(Connection());
+				ExchangeService service = Connection();
+				service.Timeout= 300000; //5 minutes
+				EmailMessage message = new EmailMessage(service);
 				message.MimeContent = new MimeContent();
 				message.ItemClass= "IPM.Note";
 
@@ -161,12 +163,13 @@ namespace Pop2Owa
 					message.BccRecipients.Add(ItemEntry.Key.ToString());
 				}
 
+				logger.Trace("Start send");
 				if (EWSSettings.SaveOnSend){
 					message.SendAndSaveCopy();
 				} else {
 					message.Send();			
 				}
-				
+				logger.Trace("End send");
 				return true;
 			} catch (Exception e) {
 				logger.WarnException("Exception sending mail", e);
@@ -241,12 +244,15 @@ namespace Pop2Owa
             try
             {
 				service =Connection();
+	        	logger.Trace("Testing conection");
             	string DummyEntryId = "ABCDEABCDEABCDEABCDEABCDEABCDEABCDEABCDEABCDEABCDEABCDEABCDEABCDEABCDEABCDEABCDEABCDEABCDEABCDEABCDEABCDEABCDEABCDEABCDEABCDEABCDEABCDEABCDE";
                 service.ConvertIds(new AlternateId[] { new AlternateId(IdFormat.HexEntryId, DummyEntryId, "pop2owa@pop2owa.com") }, IdFormat.HexEntryId);
+	        	logger.Trace("End SMTP conection");
 				return true;
             }
-            catch (ServiceRequestException)
+            catch (ServiceRequestException e)
             {
+	        	logger.FatalException("SMTP conection error", e);
             	return false;
             }
         }
