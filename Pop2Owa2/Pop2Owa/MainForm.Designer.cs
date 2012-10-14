@@ -77,7 +77,7 @@ namespace Pop2Owa
 			this.bntApply.Location = new System.Drawing.Point(226, 173);
 			this.bntApply.Name = "bntApply";
 			this.bntApply.Size = new System.Drawing.Size(75, 23);
-			this.bntApply.TabIndex = 0;
+			this.bntApply.TabIndex = 7;
 			this.bntApply.Text = "Save";
 			this.bntApply.UseVisualStyleBackColor = true;
 			this.bntApply.Click += new System.EventHandler(this.BntApplyClick);
@@ -87,7 +87,7 @@ namespace Pop2Owa
 			this.bntReset.Location = new System.Drawing.Point(307, 173);
 			this.bntReset.Name = "bntReset";
 			this.bntReset.Size = new System.Drawing.Size(75, 23);
-			this.bntReset.TabIndex = 0;
+			this.bntReset.TabIndex = 8;
 			this.bntReset.Text = "Reset";
 			this.bntReset.UseVisualStyleBackColor = true;
 			this.bntReset.Click += new System.EventHandler(this.BntResetClick);
@@ -301,28 +301,28 @@ namespace Pop2Owa
 			this.txtProxyPasword.Name = "txtProxyPasword";
 			this.txtProxyPasword.PasswordChar = '*';
 			this.txtProxyPasword.Size = new System.Drawing.Size(232, 20);
-			this.txtProxyPasword.TabIndex = 34;
+			this.txtProxyPasword.TabIndex = 6;
 			// 
 			// txtProxyDomain
 			// 
 			this.txtProxyDomain.Location = new System.Drawing.Point(127, 71);
 			this.txtProxyDomain.Name = "txtProxyDomain";
 			this.txtProxyDomain.Size = new System.Drawing.Size(232, 20);
-			this.txtProxyDomain.TabIndex = 34;
+			this.txtProxyDomain.TabIndex = 5;
 			// 
 			// txtProxyServer
 			// 
 			this.txtProxyServer.Location = new System.Drawing.Point(127, 19);
 			this.txtProxyServer.Name = "txtProxyServer";
 			this.txtProxyServer.Size = new System.Drawing.Size(232, 20);
-			this.txtProxyServer.TabIndex = 35;
+			this.txtProxyServer.TabIndex = 3;
 			// 
 			// txtProxyUser
 			// 
 			this.txtProxyUser.Location = new System.Drawing.Point(127, 45);
 			this.txtProxyUser.Name = "txtProxyUser";
 			this.txtProxyUser.Size = new System.Drawing.Size(232, 20);
-			this.txtProxyUser.TabIndex = 35;
+			this.txtProxyUser.TabIndex = 4;
 			// 
 			// notifyIcon1
 			// 
