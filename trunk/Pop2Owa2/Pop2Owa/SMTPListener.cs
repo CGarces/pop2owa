@@ -33,8 +33,18 @@ namespace Pop2Owa
 			switch (state){
 				case State.MAILDATA:
 					//Store Msg in the buffer
-					Maildata.Append(socket.Buffer);						
-					if (socket.Buffer.Length > 4 && socket.Buffer.Substring(socket.Buffer.Length-5)  =="\r\n.\r\n") {
+					Maildata.Append(socket.Buffer);
+					string lastChars=null;
+					
+					if (socket.Buffer.Length > 4) {
+						lastChars = socket.Buffer.Substring(socket.Buffer.Length-5);
+					} else {
+						if (Maildata.Length > 4) {
+							lastChars = Maildata.ToString(Maildata.Length -5,  5);
+						}
+					}
+					logger.Debug("lastChars {0}", lastChars  =="\r\n.\r\n");
+					if (lastChars  =="\r\n.\r\n") {
 						logger.Debug("End Mail Recived ");
 						if(ObjEWS.SendMsg(Maildata.ToString(0, Maildata.Length -5 ))){
 							strDataToSend = CODEOK;
