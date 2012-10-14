@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Configuration.Install;
 using System.ServiceProcess;
+using NLog;
 
 namespace Pop2Owa
 {
@@ -19,9 +20,11 @@ namespace Pop2Owa
 	{
 		private ServiceProcessInstaller serviceProcessInstaller;
 		private ServiceInstaller serviceInstaller;
+		private static Logger logger = LogManager.GetCurrentClassLogger();
 		
 		public ProjectInstaller()
 		{
+			logger.Trace("Execution");
 			serviceProcessInstaller = new ServiceProcessInstaller();
 			serviceInstaller = new ServiceInstaller();
 			// Here you can set properties on serviceProcessInstaller or register event handlers

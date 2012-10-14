@@ -21,30 +21,16 @@ namespace Pop2Owa
 		public const string MyServiceName = "Pop2Owa";
 		private static Logger logger = LogManager.GetCurrentClassLogger();
 		
-		public NTService()
-		{
-			InitializeComponent();
-		}
-		
-		private void InitializeComponent()
-		{
-			try
-			{
-				logger.Trace("Load Settings");
-				AppSettings.ReadConfig();
-			}
-			catch(Exception se)
-			{
-				logger.FatalException("Loadding Settings ", se);
-			}
 
+		public NTService(){
+			logger.Trace("Creating class");
 		}
-		
 		/// <summary>
 		/// Clean up any resources being used.
 		/// </summary>
 		protected override void Dispose(bool disposing)
 		{
+			logger.Trace("Dispose");
 			base.Dispose(disposing);
 		}
 		
@@ -55,6 +41,10 @@ namespace Pop2Owa
 		{
 			try
 			{
+				logger.Trace("Start");
+				this.RequestAdditionalTime(120000);
+				logger.Trace("RequestAdditionalTime");
+ 				AppSettings.ReadConfig();
 				logger.Trace("Setting sokects");
 				IPAddress serverIP = IPAddress.Parse(AppSettings.config.HostIP);
 				objPOP3 = new POP3Listener(serverIP, AppSettings.config.Pop3Port);
@@ -62,9 +52,9 @@ namespace Pop2Owa
 				GC.Collect();
       			GC.WaitForPendingFinalizers();
 			}
-			catch(Exception se)
+			catch(Exception)
 			{
-				logger.FatalException("Error creating sockets ", se);
+//				logger.FatalException("Error creating sockets ", se);
 			}
 		}
 		
@@ -73,8 +63,8 @@ namespace Pop2Owa
 		/// </summary>
 		protected override void OnStop()
 		{
-			objPOP3= null;
-			objSMTP= null;
+			//objPOP3= null;
+			//objSMTP= null;
 		}
 	}
 }
