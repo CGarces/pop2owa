@@ -1,4 +1,5 @@
-﻿<Project ToolsVersion="3.5" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <ProjectGuid>{1D1373E2-4925-4554-8D01-53D763BC3923}</ProjectGuid>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -14,6 +15,9 @@
     <WarningLevel>4</WarningLevel>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <ApplicationIcon>Be Mail.ico</ApplicationIcon>
+    <TargetFrameworkProfile />
+    <SignAssembly>False</SignAssembly>
+    <DelaySign>False</DelaySign>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Platform)' == 'x86' ">
     <PlatformTarget>x86</PlatformTarget>
@@ -29,6 +33,7 @@
     <Optimize>False</Optimize>
     <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <StartAction>Project</StartAction>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <OutputPath>bin\Release\</OutputPath>
@@ -41,7 +46,7 @@
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.Targets" />
   <ItemGroup>
     <Reference Include="Microsoft.Exchange.WebServices">
-      <HintPath>..\..\..\..\..\..\Program Files\Microsoft\Exchange\Web Services\1.0\Microsoft.Exchange.WebServices.dll</HintPath>
+      <HintPath>..\..\..\..\..\Program Files\Microsoft\Exchange\Web Services\1.2\Microsoft.Exchange.WebServices.dll</HintPath>
     </Reference>
     <Reference Include="NLog">
       <HintPath>..\..\..\..\..\..\Desarrollo\NLog-1.0-Refresh\bin\.NET Framework 2.0\NLog.dll</HintPath>
@@ -89,6 +94,7 @@
     <EmbeddedResource Include="Be Mail.ico">
       <LogicalName>AppIcon</LogicalName>
     </EmbeddedResource>
+    <None Include="app.config" />
     <None Include="NLog.config">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </None>
