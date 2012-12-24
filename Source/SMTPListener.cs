@@ -21,7 +21,7 @@ namespace Pop2Owa
 		
 		protected override void OnConnectionRequest(CSocket socket){
 			socket.SendCRLF ("220 Simple Mail Transfer Service Ready");
-	    	}
+	    }
 		protected override void OnDataArrival(CSocket socket)
 		{
 			const string CODEOK  = "250 OK";
@@ -43,10 +43,9 @@ namespace Pop2Owa
 							lastChars = Maildata.ToString(Maildata.Length -5,  5);
 						}
 					}
-					logger.Debug("lastChars {0}", lastChars  =="\r\n.\r\n");
 					if (lastChars  =="\r\n.\r\n") {
 						logger.Debug("End Mail Recived ");
-						if(ObjEWS.SendMsg(Maildata.ToString(0, Maildata.Length -5 ))){
+							if(ObjEWS.SendMsg(Maildata.ToString(0, Maildata.Length -5 ))){
 							strDataToSend = CODEOK;
 							logger.Debug("Mail Send");
 						}else{
@@ -54,6 +53,8 @@ namespace Pop2Owa
 						}
 						Maildata = null;
 						state=State.INITIAL;
+					} else {
+						logger.Debug("lastChars {0}", lastChars  =="\r\n.\r\n");
 					}
 					break;
 				case State.LOGIN :
