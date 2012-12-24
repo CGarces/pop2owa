@@ -2,7 +2,7 @@
 Microsoft Visual Studio Solution File, Format Version 10.00
 # Visual Studio 2008
 # SharpDevelop 3.2.0.5505
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pop2Owa", "Pop2Owa\Pop2Owa.csproj", "{1D1373E2-4925-4554-8D01-53D763BC3923}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pop2Owa", "Source\Pop2Owa.csproj", "{1D1373E2-4925-4554-8D01-53D763BC3923}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

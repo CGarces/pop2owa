@@ -182,7 +182,7 @@ namespace Pop2Owa
 			return true;
 		}
 		/// <summary>
-		/// Calculate MD5 Hast used as POP3 UID string
+		/// Calculate MD5 Hash used as POP3 UID string
 		/// </summary>
 		/// <param name="input">EWS message id</param>
 		/// <returns></returns>
