@@ -1,0 +1,48 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003"  DefaultTargets="Default">
+
+
+	<PropertyGroup>
+		<Basedir>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)\..'))</Basedir>
+		<Solution>$(Basedir)\Pop2Owa.sln</Solution>
+		<BuildDir>$(Basedir)\temp\</BuildDir>
+		<OutputDir>$(Basedir)\final\</OutputDir>
+		<NsisDir>$(registry:HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\NSIS@InstallLocation)</NsisDir>
+		<OutVersion>test</OutVersion>
+		<OutZipfile>$(OutputDir)pop2owa_v$(OutVersion)_src.zip</OutZipfile>
+	</PropertyGroup>  
+
+	<Target Name="Clean">
+		<RemoveDir Directories="$(BuildDir)"/>
+		<MakeDir Directories="$(BuildDir);$(OutputDir)"/>
+	</Target>
+  
+	<Target Name="Build">
+		<MSBuild Projects="$(Solution)" 
+				 Targets="Rebuild" 
+				 Properties="OutDir=$(BuildDir);Configuration=Release"/>
+	</Target>
+  
+	<Target Name="Default" DependsOnTargets="
+			  Clean;
+			  Build"/>  
+  
+	<Target Name="BuildInstaller" DependsOnTargets="Build; getversion" Label="Build NSIS Installer">
+		<PropertyGroup>
+			<OutExefile>$(OutputDir)pop2owa_v$(OutVersion).exe</OutExefile>
+		</PropertyGroup>
+		<Copy SourceFiles="$(Basedir)\Source\gpl.txt" DestinationFolder="$(BuildDir)"/>
+		<Exec command="&quot;$(NsisDir)\makensis.exe&quot; &quot;/XOutFile $(OutExefile)&quot; &quot;/DVERSION=$(OutVersion)&quot; /v1 pop2owa2.nsi " />
+	</Target>   
+
+	<Target Name="getversion">
+		<GetAssemblyIdentity AssemblyFiles="$(BuildDir)\Pop2Owa.exe">
+			<Output TaskParameter="Assemblies" ItemName="fooAssemblyInfo"/>
+		</GetAssemblyIdentity>
+		<Message Text="Version = %(fooAssemblyInfo.Version)"/>
+		<PropertyGroup>
+			<Pattern>(\d+)\.(\d+)\.(\d+)</Pattern>
+			<In>%(fooAssemblyInfo.Version)</In>
+			<OutVersion>$([System.Text.RegularExpressions.Regex]::Match($(In), $(Pattern)))</OutVersion>
+		</PropertyGroup>
+	</Target>
+</Project>
