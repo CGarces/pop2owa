@@ -1,0 +1,15 @@
+---
+layout: default
+---
+
+<section>
+{% if page.lang == undefined %}
+	{% assign lang = "en" %}		
+{% else %}
+	{% assign lang = page.lang %}		
+{% endif %}	
+{% assign myposts=site.posts | where:"name", "welcome" | where:"lang", lang %}
+{% assign title=myposts.first.title %}
+{% include dummypost.html content = myposts.first.content  %}
+</section>
+

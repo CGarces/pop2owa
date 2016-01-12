@@ -1,0 +1,66 @@
+permalink: "/:title"
+
+defaults:
+  -
+    scope:
+      path: "_posts/es"
+    values:
+      layout: default
+      lang: es
+      is_post: true
+  -
+    scope:
+      path: "_posts/en"
+    values:
+      layout: default
+      lang: en
+      is_post: true
+
+navigation:
+- root: Welcome!
+  post: welcome
+
+- root: Why POP2OWA?
+  post: whypop2owa
+  
+- root: Development
+  first-level:
+    - text: API
+      url: /VBDOX/pop2owa.html
+      target: _blank
+ 
+    - text: Change Log
+      post: Changelog
+ 
+    - text: Tecnical Documentation
+      url: #
+      second-level:
+        - text: Content-Class Types
+          url: /contentclasstypes.html
+          
+        - text: Mapi Schemas
+          url: /mapischemas.html															
+
+    - text: Links
+      post: links
+      
+- root: Documentation
+  url: #
+  first-level:
+    - text: Frequently Asked Questions
+      post: faq
+
+    - text: Configure your email client
+      url: #
+      second-level:
+        - text: Outlook Express
+          post: outlookexpress
+
+    - text: Pop2Owa v 1.x
+      post: pop2owa1
+
+    - text: Pop2Owa v 2.x
+      post: pop2owa2
+
+- root: Download
+  post: download

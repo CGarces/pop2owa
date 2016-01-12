@@ -1,0 +1,44 @@
+{% if page.lang == undefined %}
+	{% assign lang = "en" %}		
+{% else %}
+	{% assign lang = page.lang %}		
+{% endif %}
+
+<!-- {{lang}} -->
+<!-- {{page.lang}} -->
+
+<nav id="mainNav" class="navbar navbar-default navbar-fixed-top">
+    <ul id="primary-nav">
+      {% for link in site.navigation %}
+		<!-- {{link.root}} -->
+        {% assign url = page.url|remove:'index.html' %}
+        {% assign hasFirst = link.first-level != undefined %}
+        {% include toc_geturl.html object=link name=link.root lang=lang %}        
+        <li 
+            {% if hasFirst %} class="menuparent" {% endif%} {% if url == itemurl %} class="menuactive"{% endif %}>
+             <a href="{{itemurl}}">{{itemname}}</a>
+           {% if hasFirst %} 
+                <ul class="first-level">
+                    {% for firstlevel in link.first-level %}  
+                        {% assign hasSecond = firstlevel.second-level != undefined %}
+						{% include toc_geturl.html object=firstlevel name=firstlevel.text lang=lang %}
+                        <li {% if url == itemurl %} class="menuactive" {% endif %} >
+                            <a {% if firstlevel.target != undefined %} target="{{firstlevel.target}}" {% endif %} href="{{ itemurl }}">{{itemname}}{% if hasSecond %} <i class='icon-right-dir-2'></i>{% endif %}</a>
+                            {% if hasSecond %} 
+                                <ul class="second-level">
+                                    {% for secondlevel in firstlevel.second-level %}
+										{% include toc_geturl.html object=secondlevel name=secondlevel.text lang=lang %}
+                                        <li>
+                                            <a href="{{ itemurl }}">{{itemname}}</a>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>                   
+            {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+</nav>

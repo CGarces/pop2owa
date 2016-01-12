@@ -1,0 +1,64 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" >
+<head>
+<meta charset="UTF-8"/>
+<title>POP2OWA&nbsp;
+  {% if page.title %}
+    {{ page.title }}
+  {% else %}
+    Default Page Title
+  {% endif %}
+</title>
+<link rel="stylesheet" type="text/css" href="{{ "/css/stylesheet.css" | prepend: site.baseurl }}" />
+
+<!--[if IE]>
+<script type="text/javascript" src="/css/CSSMenu.js"></script>
+<![endif]--></head>
+
+<body>
+
+
+
+<div class="banner">
+	{% include googleads.html %} 
+</div>
+<div class="heading">
+<img border="0" src="{{"/img/top.gif" | prepend: site.baseurl }}" width="790" height="114" alt="Logo image"/>
+
+</div>
+
+<div class="leftsidebar">
+<img border="0" src="{{"/img/side_top.gif" | prepend: site.baseurl }}" width="178" height="89" alt="Header image"/>
+
+<div id="menuwrapper">
+	{% include nav.html %}    
+</div>
+{% if page.is_post %}
+	{% assign posts=site.posts | where:"name", page.name | sort: 'path' %}
+	{% for post in posts %}
+	<a href="{{ post.url | prepend: site.baseurl }}"><img src="{{site.baseurl}}/img/{{ post.lang }}.gif" width="18" height="12" border="0"/></a>
+	{% endfor %}
+{% else %}
+	<a href="{{site.baseurl}}/welcome"><img src="{{"/img/en.gif" | prepend: site.baseurl }}" width="18" height="12" border="0" alt="English" /></a>
+	<a href="{{site.baseurl}}/bienvenido"><img src="{{"/img/es.gif" | prepend: site.baseurl }}" width="18" height="12" border="0" alt="Spanish" /></a>
+{% endif %}
+http://0.0.0.0:4000/pop2owa/welcome
+<BR />
+<a href="http://sourceforge.net"><img src="http://sflogo.sourceforge.net/sflogo.php?group_id=152204&amp;type=2" width="125" height="37" border="0" alt="SourceForge.net Logo" /></a>
+<BR />
+</div>
+<div class="thebody">
+	{% if page.title %}
+	<p class="breadcrumbs"><strong>{{ page.title }}</strong></p>
+	{% else %}
+		{% if title %}
+		<p class="breadcrumbs"><strong>{{ title }}</strong></p>
+		{% endif %}
+	{% endif %}
+    {{ content }}
+</div>
+<!-- Before Footer -->
+</body>
+</html>
+
+    

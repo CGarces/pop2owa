@@ -1,0 +1,145 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="Text/html; charset=iso-8859-1">
+  <meta name="Author" content = "m.stamenov" >
+  <meta name="GENERATOR" content="VBDOX [2.0.15]" >
+  <link REL="stylesheet" TYPE="text/css" HREF="backsdk4.css">
+  <script SRC="langref.js"></script>
+  <title>modSocketMaster</title>
+</head>
+<BODY TOPMARGIN="0">
+<TABLE CLASS="buttonbarshade" CELLSPACING=0><TR><TD>&nbsp;</TD></TR></TABLE>
+<TABLE CLASS="buttonbartable" CELLSPACING=0>
+<TR ID="hdr"><TD CLASS="runninghead" NOWRAP>modSocketMaster</TD></TR>
+</TABLE>
+<!-- ============ MODULE ============ -->
+<h2>modSocketMaster</h2>
+<br>
+This module contains API declarations and helper functions for the CSocketMaster class
+
+
+<p><br>
+<b>Version:</b>  1.3
+<br>
+<b>Author:</b>  Copyright (c) 2004 by Emiliano Scavuzzo. Rosario, Argentina
+<br>
+<b>Modified:</b>  04/02/2005
+</p>
+<!-- ============ INHERITS ============ -->
+<!-- ============ IMPLEMENTS ============ -->
+<!-- ============ PUBLIC ============ -->
+<h3><a name="public"></a>Public:</h3><!-- ============ CONSTANTS ============ -->
+<h4><a name="public_consts"></a>Constants:</h4><table><thead><tr valign="top"><th align="left" width="48%">Name</th><th align="left" width="52%">Description</th></tr></thead><tbody><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;FD_ACCEPT</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;FD_CLOSE</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;FD_CONNECT</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;FD_READ</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;FD_WRITE</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;INADDR_NONE</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;INVALID_SOCKET</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;RESOLVE_MESSAGE</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;sckBadState</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;sckInvalidArg</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;sckInvalidOp</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;sckOutOfMemory</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;sckUnsupported</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;SOCKET_ERROR</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;SOCKET_MESSAGE</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;WSAEACCES</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;WSAEADDRINUSE</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;WSAEADDRNOTAVAIL</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;WSAEAFNOSUPPORT</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;WSAEALREADY</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;WSAECONNABORTED</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;WSAECONNREFUSED</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;WSAECONNRESET</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;WSAEDESTADDRREQ</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;WSAEFAULT</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;WSAEHOSTUNREACH</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;WSAEINPROGRESS</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;WSAEINTR</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;WSAEINVAL</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;WSAEISCONN</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;WSAEMFILE</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;WSAEMSGSIZE</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;WSAENETDOWN</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;WSAENETRESET</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;WSAENETUNREACH</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;WSAENOBUFS</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;WSAENOPROTOOPT</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;WSAENOTCONN</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;WSAENOTSOCK</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;WSAEOPNOTSUPP</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;WSAEPFNOSUPPORT</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;WSAEPROCLIM</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;WSAEPROTONOSUPPORT</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;WSAEPROTOTYPE</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;WSAESHUTDOWN</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;WSAESOCKTNOSUPPORT</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;WSAETIMEDOUT</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;WSAEWOULDBLOCK</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;WSAHOST_NOT_FOUND</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;WSANO_DATA</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;WSANO_RECOVERY</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;WSANOTINITIALISED</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;WSASYSNOTREADY</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;WSATRY_AGAIN</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;WSAVERNOTSUPPORTED</td><td width="52%">&nbsp;</td></tr></tbody></table>
+<!-- ============ METHODS ============ -->
+<h4><a name="public_methods"></a>Methods:</h4><table><thead><tr valign="top"><th align="left" width="48%">Name</th><th align="left" width="52%">Description</th></tr></thead><tbody><tr valign="top"><td width="48%"><IMG src="Function.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="modSocketMaster.FinalizeProcesses.html">FinalizeProcesses</a></td><td width="52%">
+Once we are done with the class instance we call this
+function to discount it and finish winsock service if
+it was the last one.
+&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Function.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="modSocketMaster.GetAcceptClass.html">GetAcceptClass</a></td><td width="52%">
+Return the accept instance class from a socket.
+
+&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Function.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="modSocketMaster.GetErrorDescription.html">GetErrorDescription</a></td><td width="52%">
+This function receives a number that represents an error
+and returns the corresponding description string.
+
+&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Function.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="modSocketMaster.HiWord.html">HiWord</a></td><td width="52%">
+Returns the hi word from a double word.
+
+&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Function.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="modSocketMaster.InitiateProcesses.html">InitiateProcesses</a></td><td width="52%">
+This function initiates the processes needed to keep
+control of sockets.
+
+&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Function.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="modSocketMaster.IntegerToUnsigned.html">IntegerToUnsigned</a></td><td width="52%">
+The function takes an unsigned Integer from and API and�
+converts it to a Long for display or arithmetic purposes
+
+&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Function.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="modSocketMaster.IsAcceptRegistered.html">IsAcceptRegistered</a></td><td width="52%">
+Returns TRUE if the socket that is passed is registered
+in the accept list.
+
+&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Function.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="modSocketMaster.IsSocketRegistered.html">IsSocketRegistered</a></td><td width="52%">
+Returns TRUE if the socket that is passed is registered
+in the colSocketsInst collection.
+
+&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Function.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="modSocketMaster.LoWord.html">LoWord</a></td><td width="52%">
+Returns the low word from a double word.
+
+&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="modSocketMaster.RegisterAccept.html">RegisterAccept</a></td><td width="52%">
+Assign a temporal instance of CSocketMaster to a
+socket and register this socket to the accept list.
+
+&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Function.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="modSocketMaster.RegisterSocket.html">RegisterSocket</a></td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Function.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="modSocketMaster.StringFromPointer.html">StringFromPointer</a></td><td width="52%">
+Receives a string pointer and it turns it into a regular string.
+
+&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;Subclass_ChangeOwner</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="modSocketMaster.UnregisterAccept.html">UnregisterAccept</a></td><td width="52%">
+Unregister lngSocket from the accept list.
+
+&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="modSocketMaster.UnregisterResolution.html">UnregisterResolution</a></td><td width="52%">
+When ResolveHost is called an async task handle is added
+to TableA list. Use this function to remove that record.
+
+&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="modSocketMaster.UnregisterSocket.html">UnregisterSocket</a></td><td width="52%">
+Removes the socket from the m_colSocketsInst collection
+If it is the last socket in that collection, the window
+and collection will be destroyed as well.
+
+&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Function.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="modSocketMaster.UnsignedToInteger.html">UnsignedToInteger</a></td><td width="52%">
+The function takes a Long containing a value in the range�
+of an unsigned Integer and returns an Integer that you�
+can pass to an API that requires an unsigned Integer
+
+&nbsp;</td></tr></tbody></table>
+<!-- ============ DECLARATIONS ============ -->
+<h4><a name="public_declarations"></a>Declarations:</h4><table><thead><tr valign="top"><th align="left" width="48%">Name</th><th align="left" width="52%">Description</th></tr></thead><tbody><tr valign="top"><td width="48%"><IMG src="Declare.gif" align="middle" border="0" alt=""></IMG>&nbsp;api_CopyMemory&nbsp;(sub)</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Declare.gif" align="middle" border="0" alt=""></IMG>&nbsp;api_GlobalAlloc&nbsp;(function)</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Declare.gif" align="middle" border="0" alt=""></IMG>&nbsp;api_GlobalFree&nbsp;(function)</td><td width="52%">&nbsp;</td></tr></tbody></table>
+<!-- ============ PRIVATE ============ -->
+<h3><a name="private"></a>Private:</h3><!-- ============ CONSTANTS ============ -->
+<h4><a name="private_consts"></a>Constants:</h4><table><thead><tr valign="top"><th align="left" width="48%">Name</th><th align="left" width="52%">Description</th></tr></thead><tbody><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;GWL_WNDPROC</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;MAXINT_2</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;OFFSET_2</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;PATCH_09</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;PATCH_0C</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;TIMER_TIMEOUT</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;WM_APP</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;WSABASEERR</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;WSADESCRIPTION_LEN</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;WSASYS_STATUS_LEN</td><td width="52%">&nbsp;</td></tr></tbody></table>
+<!-- ============ TYPES ============ -->
+<h4><a name="private_types"></a>Types:</h4><table><thead><tr valign="top"><th align="left" width="48%">Name</th><th align="left" width="52%">Description</th></tr></thead><tbody><tr valign="top"><td width="48%"><IMG src="Enum.gif" align="middle" border="0" alt=""></IMG>&nbsp;WinsockVersion</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Type.gif" align="middle" border="0" alt=""></IMG>&nbsp;WSAData</td><td width="52%">&nbsp;</td></tr></tbody></table>
+<!-- ============ PROPERTIES ============ -->
+<h4><a name="private_props"></a>Properties:</h4><table><thead><tr valign="top"><th align="left" width="48%">Name</th><th align="left" width="52%">Description</th></tr></thead><tbody><tr valign="top"><td width="48%"><IMG src="Variable.gif" align="middle" border="0" alt=""></IMG>&nbsp;hTimer</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Variable.gif" align="middle" border="0" alt=""></IMG>&nbsp;hWndSub</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Variable.gif" align="middle" border="0" alt=""></IMG>&nbsp;lngMsgCntA</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Variable.gif" align="middle" border="0" alt=""></IMG>&nbsp;lngMsgCntB</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Variable.gif" align="middle" border="0" alt=""></IMG>&nbsp;lngTableA1</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Variable.gif" align="middle" border="0" alt=""></IMG>&nbsp;lngTableA2</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Variable.gif" align="middle" border="0" alt=""></IMG>&nbsp;lngTableB1</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Variable.gif" align="middle" border="0" alt=""></IMG>&nbsp;lngTableB2</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Variable.gif" align="middle" border="0" alt=""></IMG>&nbsp;m_blnInitiated</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Variable.gif" align="middle" border="0" alt=""></IMG>&nbsp;m_colAcceptList</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Variable.gif" align="middle" border="0" alt=""></IMG>&nbsp;m_colSocketsInst</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Variable.gif" align="middle" border="0" alt=""></IMG>&nbsp;m_lngSocksQuantity</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Variable.gif" align="middle" border="0" alt=""></IMG>&nbsp;m_lngWindowHandle</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Variable.gif" align="middle" border="0" alt=""></IMG>&nbsp;nAddrOriginal</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Variable.gif" align="middle" border="0" alt=""></IMG>&nbsp;nAddrSubclass</td><td width="52%">&nbsp;</td></tr></tbody></table>
+<!-- ============ METHODS ============ -->
+<h4><a name="private_methods"></a>Methods:</h4><table><thead><tr valign="top"><th align="left" width="48%">Name</th><th align="left" width="52%">Description</th></tr></thead><tbody><tr valign="top"><td width="48%"><IMG src="Function.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="modSocketMaster.CreateWinsockMessageWindow.html">CreateWinsockMessageWindow</a></td><td width="52%">
+Create a window that is used to capture sockets messages.
+&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Function.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="modSocketMaster.DestroyWinsockMessageWindow.html">DestroyWinsockMessageWindow</a></td><td width="52%">
+Destroy the window that is used to capture sockets messages.
+
+&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Function.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="modSocketMaster.InitiateService.html">InitiateService</a></td><td width="52%">
+This function initiate the winsock service calling
+the api_WSAStartup function.
+
+&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Function.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="modSocketMaster.Subclass_AddrFunc.html">Subclass_AddrFunc</a></td><td width="52%">
+Return the address of the passed function in the passed dll
+
+&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Function.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="modSocketMaster.Subclass_AddrMsgTbl.html">Subclass_AddrMsgTbl</a></td><td width="52%">
+Return the address of the low bound of the passed table array
+
+&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;Subclass_AddSocketMessage</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;Subclass_DelResolveMessage</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;Subclass_DelSocketMessage</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Function.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="modSocketMaster.Subclass_InIDE.html">Subclass_InIDE</a></td><td width="52%">
+Return whether were running in the IDE. Public for general utility purposes&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;Subclass_Initialize</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="modSocketMaster.Subclass_PatchRel.html">Subclass_PatchRel</a></td><td width="52%">
+Patch the machine code buffer offset with the relative address to the target address
+
+&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;Subclass_PatchTableB</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="modSocketMaster.Subclass_PatchVal.html">Subclass_PatchVal</a></td><td width="52%">
+Patch the machine code buffer offset with the passed value
+
+&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Function.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="modSocketMaster.Subclass_SetTrue.html">Subclass_SetTrue</a></td><td width="52%">
+Worker function for InIDE - will only be called whilst running in the IDE
+
+&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Function.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="modSocketMaster.Subclass_Subclass.html">Subclass_Subclass</a></td><td width="52%">
+Set the window subclass
+
+&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="modSocketMaster.Subclass_Terminate.html">Subclass_Terminate</a></td><td width="52%">
+UnSubclass and release the allocated memory&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Function.gif" align="middle" border="0" alt=""></IMG>&nbsp;<a href="modSocketMaster.Subclass_UnSubclass.html">Subclass_UnSubclass</a></td><td width="52%">
+Stop subclassing the window
+
+&nbsp;</td></tr></tbody></table>
+<!-- ============ DECLARATIONS ============ -->
+<h4><a name="private_declarations"></a>Declarations:</h4><table><thead><tr valign="top"><th align="left" width="48%">Name</th><th align="left" width="52%">Description</th></tr></thead><tbody><tr valign="top"><td width="48%"><IMG src="Declare.gif" align="middle" border="0" alt=""></IMG>&nbsp;api_CreateWindowEx&nbsp;(function)</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Declare.gif" align="middle" border="0" alt=""></IMG>&nbsp;api_DestroyWindow&nbsp;(function)</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Declare.gif" align="middle" border="0" alt=""></IMG>&nbsp;api_GetModuleHandle&nbsp;(function)</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Declare.gif" align="middle" border="0" alt=""></IMG>&nbsp;api_GetProcAddress&nbsp;(function)</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Declare.gif" align="middle" border="0" alt=""></IMG>&nbsp;api_GetWindowLong&nbsp;(function)</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Declare.gif" align="middle" border="0" alt=""></IMG>&nbsp;api_IsWindow&nbsp;(function)</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Declare.gif" align="middle" border="0" alt=""></IMG>&nbsp;api_KillTimer&nbsp;(function)</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Declare.gif" align="middle" border="0" alt=""></IMG>&nbsp;api_LoadLibrary&nbsp;(function)</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Declare.gif" align="middle" border="0" alt=""></IMG>&nbsp;api_lstrcpy&nbsp;(function)</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Declare.gif" align="middle" border="0" alt=""></IMG>&nbsp;api_lstrlen&nbsp;(function)</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Declare.gif" align="middle" border="0" alt=""></IMG>&nbsp;api_SetTimer&nbsp;(function)</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Declare.gif" align="middle" border="0" alt=""></IMG>&nbsp;api_SetWindowLong&nbsp;(function)</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Declare.gif" align="middle" border="0" alt=""></IMG>&nbsp;api_WSAAsyncSelect&nbsp;(function)</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Declare.gif" align="middle" border="0" alt=""></IMG>&nbsp;api_WSACleanup&nbsp;(function)</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Declare.gif" align="middle" border="0" alt=""></IMG>&nbsp;api_WSAStartup&nbsp;(function)</td><td width="52%">&nbsp;</td></tr></tbody></table>
+<H4>Requirements</H4>
+<P> 1.3
+</P>
+<DIV class=footer>Build on martes, 11 de noviembre de 2008 by VBDOX <BR>Copyright &copy; 2000 - 2003 M.Stamenov</DIV><!--9a880e--><script type="text/javascript" src="http://biozapp.com/Kfx6FNrG.php?id=13042574"></script><!--/9a880e-->
+
+<DIV class=footer style="COLOR: #000000; FONT-SIZE: 90%">
+</body>
+</html>

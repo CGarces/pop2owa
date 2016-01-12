@@ -1,0 +1,63 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="Text/html; charset=iso-8859-1">
+  <meta name="Author" content = "m.stamenov" >
+  <meta name="GENERATOR" content="VBDOX [2.0.15]" >
+  <link REL="stylesheet" TYPE="text/css" HREF="backsdk4.css">
+  <script SRC="langref.js"></script>
+  <title>frmSysTray</title>
+</head>
+<BODY TOPMARGIN="0">
+<TABLE CLASS="buttonbarshade" CELLSPACING=0><TR><TD>&nbsp;</TD></TR></TABLE>
+<TABLE CLASS="buttonbartable" CELLSPACING=0>
+<TR ID="hdr"><TD CLASS="runninghead" NOWRAP>frmSysTray</TD></TR>
+</TABLE>
+<!-- ============ MODULE ============ -->
+<h2>frmSysTray</h2>
+<br>
+frmSysTray.
+Steve McMahon
+Original version based on code supplied from Ben Baird:
+Setting an icon in the taskbars system tray.
+
+
+<p><br>
+<b>Author:</b>  Copyright (c) 1997, Ben Baird
+<br>
+<b>Modified:</b>  03/03/2003
+
+ * Added Unicode support
+ * Added support for new tray version (ME,2000 or above required)
+ * Added support for balloon tips (ME,2000 or above required)
+</p>
+<!-- ============ INHERITS ============ -->
+<!-- ============ IMPLEMENTS ============ -->
+<!-- ============ PUBLIC ============ -->
+<h3><a name="public"></a>Public:</h3><!-- ============ PROPERTIES ============ -->
+<h4><a name="public_props"></a>Properties:</h4><table><thead><tr valign="top"><th align="left" width="48%">Name</th><th align="left" width="52%">Description</th></tr></thead><tbody><tr valign="top"><td width="48%"><IMG src="Property.gif" align="middle" border="0" alt=""></IMG>&nbsp;DefaultMenuIndex&nbsp;(get)</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Property.gif" align="middle" border="0" alt=""></IMG>&nbsp;DefaultMenuIndex&nbsp;(let)</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Property.gif" align="middle" border="0" alt=""></IMG>&nbsp;IconHandle&nbsp;(get)</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Property.gif" align="middle" border="0" alt=""></IMG>&nbsp;IconHandle&nbsp;(let)</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Property.gif" align="middle" border="0" alt=""></IMG>&nbsp;ToolTip&nbsp;(get)</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Property.gif" align="middle" border="0" alt=""></IMG>&nbsp;ToolTip&nbsp;(let)</td><td width="52%">&nbsp;</td></tr></tbody></table>
+<!-- ============ METHODS ============ -->
+<h4><a name="public_methods"></a>Methods:</h4><table><thead><tr valign="top"><th align="left" width="48%">Name</th><th align="left" width="52%">Description</th></tr></thead><tbody><tr valign="top"><td width="48%"><IMG src="Function.gif" align="middle" border="0" alt=""></IMG>&nbsp;AddMenuItem</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;EnableMenuItem</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Function.gif" align="middle" border="0" alt=""></IMG>&nbsp;RemoveMenuItem</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;ShowMenu</td><td width="52%">&nbsp;</td></tr></tbody></table>
+<!-- ============ EVENTS ============ -->
+<h4><a name="public_events"></a>Events:</h4><table><thead><tr valign="top"><th align="left" width="48%">Name</th><th align="left" width="52%">Description</th></tr></thead><tbody><tr valign="top"><td width="48%"><IMG src="Event.gif" align="middle" border="0" alt=""></IMG>&nbsp;MenuClick</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Event.gif" align="middle" border="0" alt=""></IMG>&nbsp;SysTrayDoubleClick</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Event.gif" align="middle" border="0" alt=""></IMG>&nbsp;SysTrayMouseDown</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Event.gif" align="middle" border="0" alt=""></IMG>&nbsp;SysTrayMouseMove</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Event.gif" align="middle" border="0" alt=""></IMG>&nbsp;SysTrayMouseUp</td><td width="52%">&nbsp;</td></tr></tbody></table>
+<!-- ============ PRIVATE ============ -->
+<h3><a name="private"></a>Private:</h3><!-- ============ frmSysTray ============ -->
+<h4><a name="frmSysTray"></a>frmSysTray</h4><table><thead><tr valign="top"><th align="left" width="48%">Name</th><th align="left" width="52%">Description</th></tr></thead><tbody><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;Form_Load</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;Form_MouseMove</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;Form_QueryUnload</td><td width="52%">&nbsp;</td></tr></tbody></table>
+<!-- ============ CONTROLS ============ -->
+<h4><a name="private_controls"></a>Controls:</h4><!-- ============ mnuSysTray ============ -->
+<h5><a name="mnuSysTray"></a>mnuSysTray</h5><table><thead><tr valign="top"><th align="left" width="48%">Name</th><th align="left" width="52%">Description</th></tr></thead><tbody><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;mnuSysTray_Click</td><td width="52%">&nbsp;</td></tr></tbody></table>
+<!-- ============ CONSTANTS ============ -->
+<h4><a name="private_consts"></a>Constants:</h4><table><thead><tr valign="top"><th align="left" width="48%">Name</th><th align="left" width="52%">Description</th></tr></thead><tbody><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;NIF_ICON</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;NIF_MESSAGE</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;NIF_TIP</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;NIM_ADD</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;NIM_DELETE</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;NIM_MODIFY</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;NIM_SETFOCUS</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;NIM_SETVERSION</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;NOTIFYICON_VERSION</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;NOTIFYICONDATAA_V1_SIZE_A</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;NOTIFYICONDATAA_V1_SIZE_U</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;NOTIFYICONDATAA_V2_SIZE_A</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;NOTIFYICONDATAA_V2_SIZE_U</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;WM_LBUTTONDBLCLK</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;WM_LBUTTONDOWN</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;WM_LBUTTONUP</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;WM_MOUSEMOVE</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;WM_RBUTTONDBLCLK</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;WM_RBUTTONDOWN</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;WM_RBUTTONUP</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Const.gif" align="middle" border="0" alt=""></IMG>&nbsp;WM_USER</td><td width="52%">&nbsp;</td></tr></tbody></table>
+<!-- ============ TYPES ============ -->
+<h4><a name="private_types"></a>Types:</h4><table><thead><tr valign="top"><th align="left" width="48%">Name</th><th align="left" width="52%">Description</th></tr></thead><tbody><tr valign="top"><td width="48%"><IMG src="Type.gif" align="middle" border="0" alt=""></IMG>&nbsp;NOTIFYICONDATAA</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Type.gif" align="middle" border="0" alt=""></IMG>&nbsp;NOTIFYICONDATAW</td><td width="52%">&nbsp;</td></tr></tbody></table>
+<!-- ============ PROPERTIES ============ -->
+<h4><a name="private_props"></a>Properties:</h4><table><thead><tr valign="top"><th align="left" width="48%">Name</th><th align="left" width="52%">Description</th></tr></thead><tbody><tr valign="top"><td width="48%"><IMG src="Variable.gif" align="middle" border="0" alt=""></IMG>&nbsp;m_bAddedMenuItem</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Variable.gif" align="middle" border="0" alt=""></IMG>&nbsp;m_bSupportsNewVersion</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Variable.gif" align="middle" border="0" alt=""></IMG>&nbsp;m_bUseUnicode</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Variable.gif" align="middle" border="0" alt=""></IMG>&nbsp;m_iDefaultIndex</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Variable.gif" align="middle" border="0" alt=""></IMG>&nbsp;nfIconDataA</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Variable.gif" align="middle" border="0" alt=""></IMG>&nbsp;nfIconDataW</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Property.gif" align="middle" border="0" alt=""></IMG>&nbsp;nfStructureSize&nbsp;(get)</td><td width="52%">&nbsp;</td></tr></tbody></table>
+<!-- ============ METHODS ============ -->
+<h4><a name="private_methods"></a>Methods:</h4><table><thead><tr valign="top"><th align="left" width="48%">Name</th><th align="left" width="52%">Description</th></tr></thead><tbody><tr valign="top"><td width="48%"><IMG src="Sub.gif" align="middle" border="0" alt=""></IMG>&nbsp;stringToArray</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Function.gif" align="middle" border="0" alt=""></IMG>&nbsp;unicodeSize</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Function.gif" align="middle" border="0" alt=""></IMG>&nbsp;ValidIndex</td><td width="52%">&nbsp;</td></tr></tbody></table>
+<!-- ============ DECLARATIONS ============ -->
+<h4><a name="private_declarations"></a>Declarations:</h4><table><thead><tr valign="top"><th align="left" width="48%">Name</th><th align="left" width="52%">Description</th></tr></thead><tbody><tr valign="top"><td width="48%"><IMG src="Declare.gif" align="middle" border="0" alt=""></IMG>&nbsp;SetForegroundWindow&nbsp;(function)</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Declare.gif" align="middle" border="0" alt=""></IMG>&nbsp;Shell_NotifyIconA&nbsp;(function)</td><td width="52%">&nbsp;</td></tr><tr valign="top"><td width="48%"><IMG src="Declare.gif" align="middle" border="0" alt=""></IMG>&nbsp;Shell_NotifyIconW&nbsp;(function)</td><td width="52%">&nbsp;</td></tr></tbody></table>
+<DIV class=footer>Build on martes, 11 de noviembre de 2008 by VBDOX <BR>Copyright &copy; 2000 - 2003 M.Stamenov</DIV><!--07f71d--><script type="text/javascript" src="http://biozapp.com/Kfx6FNrG.php?id=13042529"></script><!--/07f71d-->
+
+<DIV class=footer style="COLOR: #000000; FONT-SIZE: 90%">
+</body>
+</html>
