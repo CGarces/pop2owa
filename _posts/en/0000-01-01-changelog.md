@@ -42,7 +42,7 @@ Changes from version v.1.3.1
 Changes from version v.1.3.0  
 
 *   Initial SSL support, now pop2owa can works with invalid SSL certificates.
-*   Configurations values moved to xml file, now pop2owa not use registry (only the installer use it).
+*   Configurations values moved to XML file, now pop2owa not use registry (only the installer use it).
 
 Changes from version v.1.2.2  
 

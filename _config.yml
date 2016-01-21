@@ -1,4 +1,6 @@
 permalink: "/:title"
+prose:
+  siteurl: 'http://www.pop2owa.com'
 
 defaults:
   -
@@ -22,28 +24,28 @@ navigation:
 
 - root: Why POP2OWA?
   post: whypop2owa
-  
+
 - root: Development
   first-level:
     - text: API
       url: /VBDOX/pop2owa.html
       target: _blank
- 
+
     - text: Change Log
       post: Changelog
- 
+
     - text: Tecnical Documentation
       url: #
       second-level:
         - text: Content-Class Types
           url: /contentclasstypes.html
-          
+
         - text: Mapi Schemas
-          url: /mapischemas.html															
+          url: /mapischemas.html
 
     - text: Links
       post: links
-      
+
 - root: Documentation
   url: #
   first-level:

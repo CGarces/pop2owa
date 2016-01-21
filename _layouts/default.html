@@ -10,18 +10,31 @@
   {% endif %}
 </title>
 <link rel="stylesheet" type="text/css" href="{{ "/css/stylesheet.css" | prepend: site.baseurl }}" />
-{% include googleanalytics.html %} 
- 
+{% include googleanalytics.html %}
+
 <!--[if IE]>
 <script type="text/javascript" src="/css/CSSMenu.js"></script>
-<![endif]--></head>
+<![endif]-->
+
+<!-- Begin Cookie Consent plugin by Silktide - http://silktide.com/cookieconsent -->
+<script type="text/javascript">
+    window.cookieconsent_options = {
+      "message":"This site use Google AdSense and Google Analytics and those use cookies internally.",
+      "dismiss":"Got it!",
+      "learnMore":"More info",
+      "link":null,
+      "theme":"dark-bottom"};
+</script>
+
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/cookieconsent2/1.0.9/cookieconsent.min.js"></script>
+<!-- End Cookie Consent plugin -->
+
+</head>
 
 <body>
 
-
-
 <div class="banner">
-	{% include googleads.html %} 
+	{% include googleads.html %}
 </div>
 <div class="heading">
 <img border="0" src="{{"/img/top.gif" | prepend: site.baseurl }}" width="790" height="114" alt="Logo image"/>
@@ -32,7 +45,7 @@
 <img border="0" src="{{"/img/side_top.gif" | prepend: site.baseurl }}" width="178" height="89" alt="Header image"/>
 
 <div id="menuwrapper">
-	{% include nav.html %}    
+	{% include nav.html %}
 </div>
 {% if page.is_post %}
 	{% assign posts=site.posts | where:"name", page.name | sort: 'path' %}
@@ -59,7 +72,6 @@ http://0.0.0.0:4000/pop2owa/welcome
     {{ content }}
 </div>
 <!-- Before Footer -->
+{% include javascripts.html %}
 </body>
 </html>
-
-    

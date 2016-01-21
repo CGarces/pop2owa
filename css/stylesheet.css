@@ -56,73 +56,71 @@ a:hover    { color: #800000;
 .bad      { color: #CC3300;
              font-weight: bold }
 
-div.banner { 
-    margin-left: 270px; 
-	margin-top: 20px; 
-    font-size: 10pt; 
-    font-family: Tahoma; 
+div.banner {
+	margin-left: 50px;
+	margin-top: 5px; 
 	z-index:1;
 	position:absolute;
 }
 div.heading {
-       width: 790px; 
+       width: 790px;
        margin: 0;
        border: 0;
        padding: 0;
 	   z-index:0;
 }
-div.leftsidebar { 
-    float: left; 
-    width: 179px; 
+div.leftsidebar {
+    float: left;
+    width: 179px;
     height: 100%;
-    font-size: 12px; 
+    font-size: 12px;
     color: #FFFFFF;
     margin: 0;
     border: 0;
-    padding: 0; 
+    padding: 0;
 }
-div.thebody { 
-    padding: 5px; 
-    margin-left: 180px; 
-    font-size: 10pt; 
-    width: 605px; 
-    font-family: Tahoma; 
+div.thebody {
+    padding: 5px;
+    margin-left: 180px;
+    font-size: 10pt;
+    width: 605px;
+    font-family: Tahoma;
 }
 div.bottom {
-    background-color: #6699CC; 
+    background-color: #6699CC;
     border: 1px solid #336699;
     color: #FFFFFF;
-    padding: 3px; 
-    margin: 14px 0px 0px 0px; 
+    padding: 3px;
+    margin: 14px 0px 0px 0px;
     text-align: center;
-    font-size: 11; 
+    font-size: 11;
 }
-p.title { 
-    font-size: 14pt; 
-    font-weight: bold; 
-    margin: 0; 
+p.title {
+    font-size: 14pt;
+    font-weight: bold;
+    margin: 0;
 }
-p.smalltitle { 
-    font-size: 12pt; 
-    font-weight: bold; 
-    margin: 0; 
-    padding: 4px; 
-    background-color: #CCCCCC; 
-    text-transform: uppercase; 
-}
-.breadcrumbs {
-    font-size: 14pt; 
-    margin: 0px 0px 20px 0px; 
-    padding: 2px 0 2px 9px; 
-    background-color: #CCCCCC; 
+p.smalltitle {
+    font-size: 12pt;
+    font-weight: bold;
+    margin: 0;
+    padding: 4px;
+    background-color: #CCCCCC;
     text-transform: uppercase;
 }
-.breadcrumbs a { 
-    font-size: 8pt; 
-    text-transform: uppercase; 
+.breadcrumbs {
+    font-size: 14pt;
+    margin: 0px 0px 20px 0px;
+    padding: 2px 0 2px 9px;
+    background-color: #CCCCCC;
+    text-transform: uppercase;
 }
-p.sectionname { 
-    font-weight: bold; 
+.breadcrumbs a {
+    font-size: 8pt;
+    text-transform: uppercase;
+}
+p.sectionname {
+    font-weight: bold;
     margin: 0;
 }
 .leftsidebar p.sectionname {
@@ -207,33 +205,33 @@ p.sectionname {
 
 /* The wrapper determines the width of the menu elements */
 
-#menuwrapper { 
-	width: 170px; 
+#menuwrapper {
+	width: 170px;
 	}
 
 
-/* Unless you know what you do, do not touch this */ 
+/* Unless you know what you do, do not touch this */
 
-#primary-nav, #primary-nav ul { 
-	list-style: none; 
-	margin: 0px; 
-	padding: 0px; 
-	width: 100%; 
+#primary-nav, #primary-nav ul {
+	list-style: none;
+	margin: 0px;
+	padding: 0px;
+	width: 100%;
 	}
-#primary-nav ul { 
-	position: absolute; 
-	top: 0; 
-	left: 100%; 
-	display: none; 
+#primary-nav ul {
+	position: absolute;
+	top: 0;
+	left: 100%;
+	display: none;
 	}
-#primary-nav li { 
-	position: relative; 
+#primary-nav li {
+	position: relative;
 	}
 
 
 /* Styling the basic apperance of the menu elements */
 
-#primary-nav a { 
+#primary-nav a {
   display: block;
   text-decoration: none;
   color: #FFFFFF;
@@ -243,43 +241,43 @@ p.sectionname {
 	}
 #primary-nav a:hover { color: #E2144A; }
 
-#primary-nav li, #primary-nav li.menuparent { 
-	background-color: #6699CC; 
+#primary-nav li, #primary-nav li.menuparent {
+	background-color: #6699CC;
 	}
 
 
 /* Styling the basic apperance of the active page elements (shows what page in the menu is being displayed) */
 
-#primary-nav li.menuactive { 
-	background-color: #000000; 
+#primary-nav li.menuactive {
+	background-color: #000000;
 	}
 
 
 /* Styling the basic apperance of the menuparents - here styled the same on hover (fixes IE bug) */
 
-#primary-nav li.menuparent, #primary-nav li.menuparent:hover, #primary-nav li.menuparenth { 
-	background-image: url(../img/arrow.gif); 
-	background-position: center right; 
-	background-repeat: no-repeat; 
+#primary-nav li.menuparent, #primary-nav li.menuparent:hover, #primary-nav li.menuparenth {
+	background-image: url(../img/arrow.gif);
+	background-position: center right;
+	background-repeat: no-repeat;
 	}
 
 
 /* Styling the apperance of menu items on hover */
 
-#primary-nav li:hover, #primary-nav li.menuh, #primary-nav li.menuparenth, #primary-nav li.menuactiveh { 
+#primary-nav li:hover, #primary-nav li.menuh, #primary-nav li.menuparenth, #primary-nav li.menuactiveh {
 	}
 
 
 /* The magic - set to work for up to a 3 level menu, but can be increased unlimited */
 
-#primary-nav ul, #primary-nav li:hover ul, #primary-nav li:hover ul ul, 
-#primary-nav li.menuparenth ul, #primary-nav li.menuparenth ul ul { 
-	display: none; 
+#primary-nav ul, #primary-nav li:hover ul, #primary-nav li:hover ul ul,
+#primary-nav li.menuparenth ul, #primary-nav li.menuparenth ul ul {
+	display: none;
 
 	}
-#primary-nav li:hover ul, #primary-nav ul li:hover ul, #primary-nav ul ul li:hover ul, 
-#primary-nav li.menuparenth ul, #primary-nav ul li.menuparenth ul, #primary-nav ul ul li.menuparenth ul { 
-	display: block; 
+#primary-nav li:hover ul, #primary-nav ul li:hover ul, #primary-nav ul ul li:hover ul,
+#primary-nav li.menuparenth ul, #primary-nav ul li.menuparenth ul, #primary-nav ul ul li.menuparenth ul {
+	display: block;
 
 
 	}
