@@ -58,10 +58,20 @@ a:hover    { color: #800000;
 
 div.banner {
 	margin-left: 50px;
-	margin-top: 5px; 
+	margin-top: 5px;
 	z-index:1;
 	position:absolute;
 }
+#ad {
+	margin-left: 190px;
+	margin-top: 20px;
+	width: 550px;
+	font-family: Open Sans, MundoSans, "Helvetica Neue", Arial, Helvetica, sans-serif;
+	color: #F6F6F6;
+	z-index:1;
+	position:absolute;
+}
+
 div.heading {
        width: 790px;
        margin: 0;
@@ -84,7 +94,7 @@ div.thebody {
     margin-left: 180px;
     font-size: 10pt;
     width: 605px;
-    font-family: Tahoma;
+		font-family: Open Sans, MundoSans, "Helvetica Neue", Arial, Helvetica, sans-serif;
 }
 div.bottom {
     background-color: #6699CC;
