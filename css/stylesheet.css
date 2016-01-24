@@ -297,3 +297,22 @@ p.sectionname {
 
 #primary-nav li, #primary-nav li.menuparenth { _float: left; _height: 1%; }
 #primary-nav li a { _height: 1%; }
+
+.flags {
+    background-image:  url(../img/flags.png);;
+    background-repeat: no-repeat;
+    display: block;
+    float: left;
+    width: 18px;
+    height: 12px;
+    padding-left: 5px;
+    margin: 5px 0 5px 0;    
+}
+
+.flags-en {
+    background-position: -5px -5px;
+}
+
+.flags-es {
+    background-position: -33px -5px;
+}
