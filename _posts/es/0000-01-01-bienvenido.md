@@ -14,4 +14,4 @@ POP2OWA se ofrece bajo licencia [GPL](http://www.gnu.org/licenses/licenses.html#
 
 Pop2OWA  ha sido probado en Exchange 2003 y 2007\. Usa pop2owa bajo tu propia responsabilidad, pero es recomendable configurar el correo para que mantenga una copia del mensaje en la bandeja de entrada.
 
-Si encuentra un error, [porfavor reportelo aquí](http://sourceforge.net/tracker/?group_id=152204&atid=783596).
+Si encuentra un error, [porfavor reportelo aquí](https://github.com/CGarces/pop2owa/issues).
