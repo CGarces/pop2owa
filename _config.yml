@@ -1,4 +1,10 @@
 permalink: "/:title"
+
+exclude: 
+  - README.md
+  - LICENSE.md
+  - CNAME
+  
 prose:
   siteurl: 'http://www.pop2owa.com'
 
