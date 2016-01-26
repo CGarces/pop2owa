@@ -1,0 +1,22 @@
+---
+layout: default
+title: "404: Page not found"
+permalink: 404.html
+---
+
+{% if page.lang == undefined %}
+	{% assign lang = "en" %}		
+{% else %}
+	{% assign lang = page.lang %}		
+{% endif %}
+
+<div class="page">
+  {% if lang == "es" %}
+    <h1 class="page-title">404: Página no encontrada</h1>
+    <p class="lead">No encuentro la página que estas buscando. <a href="{{ site.baseurl }}/">Vuelve al inicio</a> y prueba de nuevo.</p>
+  {% else %}
+    <h1 class="page-title">404: Page not found</h1>
+    <p class="lead">Sorry. The page you requested, could not be found. <a href="{{ site.baseurl }}/">Back to Home</a> and try again.</p>
+  {% endif %}
+</div>
+
