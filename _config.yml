@@ -1,5 +1,6 @@
 permalink: "/:title"
-
+gems:
+  - jekyll-redirect-from
 exclude: 
   - README.md
   - LICENSE.md
