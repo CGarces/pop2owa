@@ -10,7 +10,9 @@ Accede a OWA transformando la información y proveyendo de un interfase POP3 est
 
 POP2OWA se ofrece bajo licencia [GPL](http://www.gnu.org/licenses/licenses.html#GPL)
 
-<font color="#ff0000" size="5">Aviso!</font>
+* * *
+
+<h3 style="color: red;">Aviso!</h3>
 
 Pop2OWA  ha sido probado en Exchange 2003 y 2007\. Usa pop2owa bajo tu propia responsabilidad, pero es recomendable configurar el correo para que mantenga una copia del mensaje en la bandeja de entrada.
 

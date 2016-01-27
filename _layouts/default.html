@@ -1,7 +1,11 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" >
+<!DOCTYPE html>
+{% if page.lang == undefined %}
+<html lang="en">
+{% else %}
+<html lang="{{page.lang}}">
+{% endif %}
 <head>
-<meta charset="UTF-8"/>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>POP2OWA&nbsp;
   {% if page.title %}
     {{ page.title }}
@@ -12,11 +16,14 @@
 <link rel="stylesheet" type="text/css" href="{{ "/css/stylesheet.css" | prepend: site.baseurl }}" />
 {% include googleanalytics.html %}
 
-<!--[if IE]>
+<!--[if lt IE 8]>
 <script type="text/javascript" src="/js/CSSMenu.js"></script>
 <![endif]-->
-
+<!--[if lt IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.min.js"></script>
+<![endif]-->
 <!-- Begin Cookie Consent plugin by Silktide - http://silktide.com/cookieconsent -->
+
 <script type="text/javascript">
     window.cookieconsent_options = {
       "message":"This site use Google AdSense and Google Analytics and those use cookies internally.",
@@ -37,12 +44,12 @@
 	{% include googleads.html %}
 </div>
 <div class="heading">
-<img border="0" src="{{"/img/top.gif" | prepend: site.baseurl }}" width="790" height="114" alt="Logo image"/>
+<img src="{{"/img/top.gif" | prepend: site.baseurl }}" width="790" height="114" alt="Logo image"/>
 
 </div>
 
 <div class="leftsidebar">
-<img border="0" src="{{"/img/side_top.gif" | prepend: site.baseurl }}" width="178" height="89" alt="Header image"/>
+<img src="{{"/img/side_top.gif" | prepend: site.baseurl }}" width="178" height="89" alt="Header image"/>
 
 <div id="menuwrapper">
 	{% include nav.html %}
@@ -56,7 +63,7 @@
 	<a href="{{site.baseurl}}/welcome"><i class="flags flags-en"></i></a><a href="{{site.baseurl}}/bienvenido"><i class="flags flags-es"></i></a>
 {% endif %}
 <BR style="clear: both;"/>
-<a href="http://sourceforge.net"><img src="http://sflogo.sourceforge.net/sflogo.php?group_id=152204&amp;type=2" width="125" height="37" border="0" alt="SourceForge.net Logo" /></a>
+<a href="http://sourceforge.net"><img src="http://sflogo.sourceforge.net/sflogo.php?group_id=152204&amp;type=2" width="125" height="37" alt="SourceForge.net Logo" /></a>
 <BR />
 </div>
 <div class="thebody">
