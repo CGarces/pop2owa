@@ -8,7 +8,7 @@ name: Changelog
 
 Cambios en la versión v.1.3.6  
 
-*   Solucionado error en mensajes con la secuencia CRLF+".".+CRLF [Bug [2220343](https://sourceforge.net/tracker2/?func=detail&aid=2220343&group_id=152204&atid=783596)]
+*   Solucionado error en mensajes con la secuencia CRLF+".".+CRLF [Bug [2220343](http://sourceforge.net/tracker2/?func=detail&aid=2220343&group_id=152204&atid=783596)]
 
 Cambios en la versión v.1.3.5  
 

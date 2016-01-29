@@ -1,9 +1,5 @@
-
-
 {% if include.object.url == undefined %}
-<!-- NOT HAS URL -->
 	{% if include.object.post == undefined %}
-	<!-- NOT IS A POST -->
 		{% assign itemurl = "javascript:void(0)" %}		
 		{% assign itemname = include.name %}
 	{% else %}
@@ -12,13 +8,6 @@
 		{% assign itemname = post.first.title %}
 	{% endif %}
 {% else %}
-<!-- HAS URL -->
 	{% assign itemurl = include.object.url | prepend: site.baseurl %}		
 	{% assign itemname = include.name %}
 {% endif %}
-<!-- {{include.name}} -->
-<!-- {{itemurl}} -->
-<!-- {{itemname}} -->
-<!-- {{include.object.post}} -->
-
-

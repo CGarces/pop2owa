@@ -93,7 +93,7 @@ div.leftsidebar {
     border: 0;
     padding: 0;
 }
-div.thebody {
+.thebody {
     padding: 5px;
     margin-left: 180px;
     font-size: 10pt;

@@ -13,6 +13,8 @@
     Default Page Title
   {% endif %}
 </title>
+
+<link rel="shortcut icon" href="/favicon.ico">
 <link rel="stylesheet" type="text/css" href="{{ "/css/stylesheet.css" | prepend: site.baseurl }}" />
 {% include googleanalytics.html %}
 
@@ -66,7 +68,7 @@
 <a href="http://sourceforge.net"><img src="http://sflogo.sourceforge.net/sflogo.php?group_id=152204&amp;type=2" width="125" height="37" alt="SourceForge.net Logo" /></a>
 <BR />
 </div>
-<div class="thebody">
+<article class="thebody">
 	{% if page.title %}
 	<p class="breadcrumbs"><strong>{{ page.title }}</strong></p>
 	{% else %}
@@ -75,7 +77,7 @@
 		{% endif %}
 	{% endif %}
     {{ content }}
-</div>
+</article>
 <!-- Before Footer -->
 {% include javascripts.html %}
 </body>

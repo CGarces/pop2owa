@@ -8,7 +8,8 @@ name: Changelog
 
 Changes from version v.1.3.6  
 
-*   Fixed bug with sequence CRLF+".".+CRLF [Bug [2220343](https://sourceforge.net/tracker2/?func=detail&aid=2220343&group_id=152204&atid=783596)]
+*   Fixed bug with sequence CRLF+".".+CRLF [Bug [2220343](http://sourceforge.net/tracker2/?func=detail&aid=2220343&group_id=152204&atid=783596)]
+
 
 Changes from version v.1.3.5  
 

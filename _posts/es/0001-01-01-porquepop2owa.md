@@ -8,6 +8,6 @@ Si estas detrás de un cortafuegos OWA es la única forma de leer en correo, ya 
 
 OWA esta bastante bien, pero algunos usuarios prefieren poder leer el correo off-line, directamente con un cliente de correo.
 
-Microsoft también permite conectarse mediante [RPC over HTTP](http://office.microsoft.com/en-us/assistance/HA011402731033.aspx) pero solo funciona con Outlook 2003 y Exchange 2003 Server.
+Microsoft también permite conectarse mediante [RPC over HTTP](https://support.office.com/en-us/article/Use-Outlook-Anywhere-to-connect-to-your-Exchange-server-without-a-VPN-bce4e37b-3d2c-4159-9796-1ce8a183fc5f) pero solo funciona en algunas situaciones y tiene que estar activado en tu servidor Exchange.
 
 POP2OWA es la forma más cómoda si no quieres usar OWA y no pues usar RPC over HTTP
