@@ -1,6 +1,7 @@
 permalink: "/:title"
 gems:
   - jekyll-redirect-from
+  - jekyll-sitemap
 exclude: 
   - README.md
   - LICENSE.md
