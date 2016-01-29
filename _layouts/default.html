@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 {% if page.lang == undefined %}
-<html lang="en">
+	{% assign current_lang = "es" %}	
 {% else %}
-<html lang="{{page.lang}}">
+	{% assign current_lang = page.lang %}	
 {% endif %}
+<html lang="{{current_lang}}">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>POP2OWA&nbsp;
@@ -13,7 +14,14 @@
     Default Page Title
   {% endif %}
 </title>
-
+{% if page.is_post %}
+	{% assign posts=site.posts | where:"name", page.name %}
+	{% for post in posts %}
+		{% unless post.lang  == current_lang %}
+<link rel="alternate" hreflang="{{ post.lang }}" href="{{ post.url | prepend: site.baseurl }}" />
+		{% endunless %}
+	{% endfor %}
+{% endif %}
 <link rel="shortcut icon" href="/favicon.ico">
 <link rel="stylesheet" type="text/css" href="{{ "/css/stylesheet.css" | prepend: site.baseurl }}" />
 {% include googleanalytics.html %}
