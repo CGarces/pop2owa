@@ -17,9 +17,7 @@
 {% if page.is_post %}
 	{% assign posts=site.posts | where:"name", page.name %}
 	{% for post in posts %}
-		{% unless post.lang  == current_lang %}
 <link rel="alternate" hreflang="{{ post.lang }}" href="{{ post.url | prepend: site.baseurl }}" />
-		{% endunless %}
 	{% endfor %}
 {% endif %}
 <link rel="shortcut icon" href="/favicon.ico">
@@ -67,10 +65,10 @@
 {% if page.is_post %}
 	{% assign posts=site.posts | where:"name", page.name | sort: 'path' %}
 	{% for post in posts %}
-	<a href="{{ post.url | prepend: site.baseurl }}"><i class="flags flags-{{ post.lang }}"></i></a>
+	<a rel="alternate" href="{{ post.url | prepend: site.baseurl }}"><i class="flags flags-{{ post.lang }}"></i></a>
 	{% endfor %}
 {% else %}
-	<a href="{{site.baseurl}}/welcome"><i class="flags flags-en"></i></a><a href="{{site.baseurl}}/bienvenido"><i class="flags flags-es"></i></a>
+	<a rel="alternate" href="{{site.baseurl}}/welcome"><i class="flags flags-en"></i></a><a rel="alternate" href="{{site.baseurl}}/bienvenido"><i class="flags flags-es"></i></a>
 {% endif %}
 <BR style="clear: both;"/>
 <a href="http://sourceforge.net"><img src="http://sflogo.sourceforge.net/sflogo.php?group_id=152204&amp;type=2" width="125" height="37" alt="SourceForge.net Logo" /></a>
