@@ -1,30 +1,50 @@
 permalink: "/:title"
+
+kramdown:
+  input: GFM
+  hard_wrap: false
+  
 gems:
-  - jekyll-redirect-from
   - jekyll-sitemap
+  - jekyll-redirect-from
 exclude: 
   - README.md
   - LICENSE.md
   - CNAME
-  
+  - Gemfile
+  - Gemfile.lock
+  - .c9
+
 prose:
   siteurl: 'http://www.pop2owa.com'
+
+collections:
+  docs:
+    output: true
+    permalink: "/:title"
+    lang: "default"
 
 defaults:
   -
     scope:
-      path: "_posts/es"
+      type: "docs"       
+      path: "_docs/es/"
     values:
       layout: default
-      lang: es
-      is_post: true
+      lang: "es"
   -
     scope:
-      path: "_posts/en"
+      type: "docs"     
+      path: "_docs/en/"
     values:
       layout: default
-      lang: en
-      is_post: true
+      lang: "en"
+  -
+    scope:
+      type: "docs"     
+      path: ""
+    values:
+      is_doc: true
 
 navigation:
 - root: Welcome!

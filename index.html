@@ -7,13 +7,23 @@ redirect_from:
 ---
 
 <section>
-{% if page.lang == undefined %}
-	{% assign lang = "en" %}		
-{% else %}
-	{% assign lang = page.lang %}		
-{% endif %}	
-{% assign myposts=site.posts | where:"name", "welcome" | where:"lang", lang %}
-{% assign title=myposts.first.title %}
-{% include dummypost.html content = myposts.first.content  %}
+	{% include getlang path=page.path %}
+	
+	{% assign current_lang=lang %}
+		<!--current_lang {{current_lang}}-->
+	{% assign docs = site.docs | where:"name", "welcome" %}
+	{% for doc in docs %}
+		<!--doc {{doc.url}}-->
+		{% include getlang path=doc.path %}
+		<!--lang {{lang}}-->
+		{% unless current_lang != lang %}
+		<!-- assign myposts -->
+			{% assign myposts = doc %}
+		{% endunless %}
+	{% endfor %}
+
+	{% assign title=myposts.first.title %}
+	{% include dummypost.html content = myposts.content  %}
+	
 </section>
 

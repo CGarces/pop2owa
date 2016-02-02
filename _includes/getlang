@@ -1,0 +1,7 @@
+{% if include.path contains 'docs/es/' %}
+	{% assign lang = "es" %}		
+{% elsif include.path contains 'docs/en/' %}
+	{% assign lang = "en" %}		
+{% else %}
+	{% assign lang = "en" %}		
+{% endif %}

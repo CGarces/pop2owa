@@ -4,6 +4,7 @@ title: Integración continua con VB6
 name: Integración continua con VB6
 language: es
 permalink: /wordpress/2009/12/integracion-continua-con-vb6/
+sitemap: false
 ---
 <html>
 <head>

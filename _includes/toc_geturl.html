@@ -1,13 +1,21 @@
+{% capture toc_cache %}
 {% if include.object.url == undefined %}
 	{% if include.object.post == undefined %}
 		{% assign itemurl = "javascript:void(0)" %}		
 		{% assign itemname = include.name %}
 	{% else %}
-		{% assign post = (site.posts | where:"name", include.object.post) | where:"lang", include.lang %}
-		{% assign itemurl = post.first.url | prepend: site.baseurl %}
-		{% assign itemname = post.first.title %}
+		{% assign docs = site.docs | where:"name", include.object.post %}
+		{% for doc in docs %}
+			{% include getlang path=doc.path %}
+			{% unless lang != include.lang %}
+				{% assign itemurl = doc.url | prepend: site.baseurl %}
+				{% assign itemname = doc.title %}
+			{% endunless %}
+		{% endfor %}
 	{% endif %}
 {% else %}
 	{% assign itemurl = include.object.url | prepend: site.baseurl %}		
 	{% assign itemname = include.name %}
 {% endif %}
+{% assign lang = include.lang %}
+{% endcapture %}{% assign toc_cache = nil %}
