@@ -2,6 +2,9 @@
 layout: default
 title: Bienvenido
 name: welcome
+permalink: "/es/"
+redirect_from:
+  - /es/index.php/
 ---
 
 **POP2OWA** es un pequeño programa realizado en Visual Basic que permite acceder al servidor Exchange mediante el protocolo POP3, usando el servidor de Outlook Web Access (OWA).
