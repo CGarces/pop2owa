@@ -8,16 +8,11 @@ redirect_from:
 
 <section>
 	{% include getlang path=page.path %}
-	
 	{% assign current_lang=lang %}
-		<!--current_lang {{current_lang}}-->
 	{% assign docs = site.docs | where:"name", "welcome" %}
 	{% for doc in docs %}
-		<!--doc {{doc.url}}-->
 		{% include getlang path=doc.path %}
-		<!--lang {{lang}}-->
 		{% unless current_lang != lang %}
-		<!-- assign myposts -->
 			{% assign myposts = doc %}
 		{% endunless %}
 	{% endfor %}
