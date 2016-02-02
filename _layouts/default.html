@@ -10,7 +10,7 @@
     Default Page Title
   {% endif %}
 </title>
-{% if page.is_post %}
+{% if page.is_doc %}
 	{% assign docs=site.docs | where:"name", page.name %}
 	{% for doc in docs %}
 {% include getlang path=doc.path %}
