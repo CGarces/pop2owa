@@ -1,9 +1,4 @@
-{% if page.lang == undefined %}
-	{% assign lang = "en" %}		
-{% else %}
-	{% assign lang = page.lang %}		
-{% endif %}
-
+{% include getlang path=page.path %}
 <nav id="mainNav" class="navbar navbar-default navbar-fixed-top">
     <ul id="primary-nav">
       {% for link in site.navigation %}

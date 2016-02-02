@@ -1,10 +1,6 @@
 <!DOCTYPE html>
-{% if page.lang == undefined %}
-	{% assign current_lang = "es" %}	
-{% else %}
-	{% assign current_lang = page.lang %}	
-{% endif %}
-<html lang="{{current_lang}}">
+{% include getlang path=page.path %}
+<html lang="{{lang}}">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>POP2OWA&nbsp;
@@ -15,9 +11,10 @@
   {% endif %}
 </title>
 {% if page.is_post %}
-	{% assign posts=site.posts | where:"name", page.name %}
-	{% for post in posts %}
-<link rel="alternate" hreflang="{{ post.lang }}" href="{{ post.url | prepend: site.baseurl }}" />
+	{% assign docs=site.docs | where:"name", page.name %}
+	{% for doc in docs %}
+{% include getlang path=doc.path %}
+<link rel="alternate" hreflang="{{lang }}" href="{{ doc.url | prepend: site.baseurl }}" />
 	{% endfor %}
 {% endif %}
 <link rel="shortcut icon" href="/favicon.ico">
@@ -62,10 +59,11 @@
 <div id="menuwrapper">
 	{% include nav.html %}
 </div>
-{% if page.is_post %}
-	{% assign posts=site.posts | where:"name", page.name | sort: 'path' %}
-	{% for post in posts %}
-	<a rel="alternate" href="{{ post.url | prepend: site.baseurl }}"><i class="flags flags-{{ post.lang }}"></i></a>
+{% if page.is_doc %}
+	{% assign docs=site.docs | where:"name", page.name | sort: 'path' %}
+	{% for doc in docs %}
+	{% include getlang path=doc.path %}
+	<a rel="alternate" href="{{ doc.url | prepend: site.baseurl }}"><i class="flags flags-{{lang}}"></i></a>
 	{% endfor %}
 {% else %}
 	<a rel="alternate" href="{{site.baseurl}}/welcome"><i class="flags flags-en"></i></a><a rel="alternate" href="{{site.baseurl}}/bienvenido"><i class="flags flags-es"></i></a>
