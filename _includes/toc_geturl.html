@@ -10,6 +10,7 @@
 			{% unless lang != include.lang %}
 				{% assign itemurl = doc.url | prepend: site.baseurl %}
 				{% assign itemname = doc.title %}
+				{% break %}
 			{% endunless %}
 		{% endfor %}
 	{% endif %}

