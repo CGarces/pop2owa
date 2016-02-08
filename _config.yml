@@ -21,7 +21,7 @@ prose:
 collections:
   docs:
     output: true
-    permalink: "/:title"
+    permalink: "/:title/"
     lang: "default"
 
 defaults:
