@@ -5,6 +5,7 @@ name: welcome
 permalink: "/"
 redirect_from:
   - /en/index.php/
+  - /en/
   - /index.php/
 ---
 
