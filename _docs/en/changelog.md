@@ -19,7 +19,7 @@ Changes from version v.1.3.5
 Changes from version v.1.3.4  
 
 *   Fixed bug parsing attachments. [Bug [2031676](http://sourceforge.net/tracker/index.php?func=detail&aid=2031676&group_id=152204&atid=783596)]
-*   Fixed bug with AUTH PLAIN command. [Bug [2000676](http://sourceforge.net/tracker/index.php?func=detail&aid=2000676 &group_id=152204&atid=783596)]
+*   Fixed bug with AUTH PLAIN command. [Bug [2000676](http://sourceforge.net/tracker/index.php?func=detail&aid=2000676&group_id=152204&atid=783596)]
 *   Fixed minor bug with TOP and LIST commands.
 *   SMTP responses changes to RFC standard.
 

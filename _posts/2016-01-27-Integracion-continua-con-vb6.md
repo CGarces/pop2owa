@@ -1,13 +1,13 @@
 ---
-layout: null
+layout: empty
 title: Integración continua con VB6
 name: Integración continua con VB6
 language: es
 permalink: /wordpress/2009/12/integracion-continua-con-vb6/
 sitemap: false
 ---
-<html>
 <head>
+<title>{{ page.title }}</title>
 <noscript>
 <meta http-equiv="refresh" content="0; url=http://cgarces.github.io/2009/12/30/integracion-continua-con-vb6">
 </noscript>
@@ -18,4 +18,3 @@ sitemap: false
 <body>
 Este articulo ha sido migrado a mi blog, sigue [este link](http://cgarces.github.io/2009/12/30/integracion-continua-con-vb6) si no eres redirigido automáticamente.
 </body>
-</html>

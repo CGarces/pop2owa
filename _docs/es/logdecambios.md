@@ -18,7 +18,7 @@ Cambios en la versión v.1.3.5
 Cambios en la versión v.1.3.4  
 
 *   Corregido error en el tratamiento de adjuntos. [Bug [2031676](http://sourceforge.net/tracker/index.php?func=detail&aid=2031676&group_id=152204&atid=783596)]
-*   Corregido error con el comando AUTH PLAIN. [Bug [2000676](http://sourceforge.net/tracker/index.php?func=detail&aid=2000676 &group_id=152204&atid=783596)]
+*   Corregido error con el comando AUTH PLAIN. [Bug [2000676](http://sourceforge.net/tracker/index.php?func=detail&aid=2000676&group_id=152204&atid=783596)]
 *   Corregido error menor con commandos TOP y LIST.
 *   Modificadas respuestas del servidor SMTP para adecuarse al estandar.
 
